@@ -40,5 +40,23 @@ class UserRolesSeeder extends Seeder
             'role' => User::ROLE_USUARIO_JUNTA_VECINOS,
             'status' => true,
         ]);
+
+        // Crear usuario admin@sc.com
+        User::create([
+            'name' => 'Admin SC',
+            'email' => 'admin@sc.com',
+            'password' => Hash::make('admin123'),
+            'role' => User::ROLE_ADMIN,
+            'status' => true,
+        ]);
+
+        // Crear usuario edrey@sc.com
+        User::create([
+            'name' => 'Edrey SC',
+            'email' => 'edrey@sc.com',
+            'password' => Hash::make('edrey123'),
+            'role' => User::ROLE_ADMIN,
+            'status' => true,
+        ]);
     }
 }
