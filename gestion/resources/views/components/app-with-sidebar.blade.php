@@ -16,109 +16,138 @@
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
-            <!-- Navigation Header -->
-            <nav class="bg-white shadow">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between h-16">
-                        <div class="flex">
-                            <!-- Logo -->
-                            <div class="shrink-0 flex items-center">
-                                <a href="{{ route('dashboard') }}">
+            <!-- Main content -->
+            <div>
+                <!-- Top navigation -->
+                <nav class="bg-white shadow">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div class="flex justify-between h-16">
+                            <div class="flex items-center space-x-8">
+                                <!-- Logo and title -->
+                                <div class="flex items-center">
                                     <img src="{{ asset('logo.png') }}" alt="Logo" class="h-8 w-auto">
-                                </a>
-                            </div>
-
-                            <!-- Navigation Links -->
-                            <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
-                                <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                                    Dashboard
-                                </a>
+                                    <span class="ml-2 text-gray-900 font-semibold text-lg">Residencias Alfa</span>
+                                </div>
                                 
-                                <!-- Gestión de Documentos -->
-                                <div class="relative inline-flex items-center px-1 pt-1">
-                                    <button class="{{ request()->routeIs('actas.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" onclick="toggleDropdown('actas-dropdown')">
-                                        Gestión de Documentos
-                                        <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                        </svg>
-                                    </button>
-                                    <div id="actas-dropdown" class="hidden absolute top-full left-0 mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
-                                        <a href="{{ route('actas.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Crear Documento</a>
-                                        <a href="{{ route('actas.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Documentos</a>
-                                        <a href="{{ route('actas.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Documentos</a>
+                                <!-- Navigation Menu -->
+                                <nav class="hidden md:flex space-x-8">
+                                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200">
+                                        Dashboard
+                                    </a>
+                                    
+                                    <!-- Gestión de Documentos Dropdown -->
+                                    <div class="relative">
+                                        <button class="{{ request()->routeIs('actas.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200 flex items-center" onclick="toggleDropdown('docs-nav-dropdown')">
+                                            Gestión de Documentos
+                                            <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                        <div id="docs-nav-dropdown" class="hidden absolute left-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
+                                            <a href="{{ route('actas.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Crear Documento</a>
+                                            <a href="{{ route('actas.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Documentos</a>
+                                            <a href="{{ route('actas.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Documentos</a>
+                                        </div>
                                     </div>
-                                </div>
+                                    
+                                    <!-- Gestión de Deudas Dropdown -->
+                                    <div class="relative">
+                                        <button class="{{ request()->routeIs('inquilinos.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200 flex items-center" onclick="toggleDropdown('debts-nav-dropdown')">
+                                            Gestión de Deudas
+                                            <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                        <div id="debts-nav-dropdown" class="hidden absolute left-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
+                                            <a href="{{ route('inquilinos.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ingresar Deuda</a>
+                                            <a href="{{ route('inquilinos.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Lista de Apartamentos</a>
+                                            <a href="{{ route('inquilinos.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Deudas</a>
+                                        </div>
+                                    </div>
+                                </nav>
+                            </div>
 
-                                <!-- Gestión de Inquilinos -->
-                                <div class="relative inline-flex items-center px-1 pt-1">
-                                    <button class="{{ request()->routeIs('inquilinos.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" onclick="toggleDropdown('inquilinos-dropdown')">
-                                        Gestión de Deudas
+                            <!-- User Menu -->
+                            <div class="hidden sm:flex sm:items-center sm:ml-6">
+                                <div class="relative">
+                                    <button class="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none" onclick="toggleDropdown('user-dropdown')">
+                                        <div>{{ Auth::user()->name }}</div>
                                         <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                         </svg>
                                     </button>
-                                    <div id="inquilinos-dropdown" class="hidden absolute top-full left-0 mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
-                                        <a href="{{ route('inquilinos.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ingresar Deuda</a>
-                                        <a href="{{ route('inquilinos.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Lista de Apartamentos</a>
-                                        <a href="{{ route('inquilinos.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Deudas</a>
+                                    <div id="user-dropdown" class="hidden absolute right-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
+                                        <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Perfil</a>
+                                        <form method="POST" action="{{ route('logout') }}">
+                                            @csrf
+                                            <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                Cerrar Sesión
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- User Menu -->
-                        <div class="hidden sm:flex sm:items-center sm:ml-6">
-                            <div class="relative">
-                                <button class="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none" onclick="toggleDropdown('user-dropdown')">
-                                    <div>{{ Auth::user()->name }}</div>
-                                    <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            <!-- Mobile menu button -->
+                            <div class="md:hidden flex items-center space-x-2">
+                                <!-- Mobile menu button -->
+                                <button type="button" class="bg-white p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" onclick="toggleMobileMenu()">
+                                    <span class="sr-only">Open main menu</span>
+                                    <svg id="mobile-menu-icon" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                    </svg>
+                                    <svg id="mobile-close-icon" class="h-6 w-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                     </svg>
                                 </button>
-                                <div id="user-dropdown" class="hidden absolute right-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
-                                    <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Perfil</a>
-                                    <form method="POST" action="{{ route('logout') }}">
-                                        @csrf
-                                        <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            Cerrar Sesión
-                                        </button>
-                                    </form>
-                                </div>
+                                
+                                <!-- User menu button -->
+                                <button type="button" class="bg-white p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" onclick="toggleDropdown('user-menu')">
+                                    <span class="sr-only">Open user menu</span>
+                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
-
-                        <!-- Mobile menu button -->
-                        <div class="-mr-2 flex items-center sm:hidden">
-                            <button class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none" onclick="toggleMobileMenu()">
-                                <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
-                            </button>
-                        </div>
                     </div>
-                </div>
+                </nav>
 
                 <!-- Mobile menu -->
-                <div id="mobile-menu" class="hidden sm:hidden">
-                    <div class="pt-2 pb-3 space-y-1">
-                        <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200">
+                    <div class="px-2 pt-2 pb-3 space-y-1">
+                        <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
                             Dashboard
                         </a>
                         
-                        <!-- Mobile Documentos Menu -->
-                        <div class="border-l-4 border-transparent">
-                            <div class="pl-3 pr-4 py-2 text-base font-medium text-gray-600">Gestión de Documentos</div>
-                            <a href="{{ route('actas.create') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Crear Documento</a>
-                            <a href="{{ route('actas.index') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Ver Documentos</a>
-                            <a href="{{ route('actas.import') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Importar Documentos</a>
+                        <!-- Gestión de Documentos -->
+                        <div>
+                            <button class="{{ request()->routeIs('actas.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center justify-between" onclick="toggleMobileSubmenu('docs-mobile-submenu')">
+                                Gestión de Documentos
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="docs-mobile-submenu" class="hidden pl-6 space-y-1">
+                                <a href="{{ route('actas.create') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Crear Documento</a>
+                                <a href="{{ route('actas.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Ver Documentos</a>
+                                <a href="{{ route('actas.import') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Importar Documentos</a>
+                            </div>
                         </div>
                         
-                        <!-- Mobile Inquilinos Menu -->
-                        <div class="border-l-4 border-transparent">
-                            <div class="pl-3 pr-4 py-2 text-base font-medium text-gray-600">Gestión de Deudas</div>
-                            <a href="{{ route('inquilinos.create') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Ingresar Deuda</a>
-                            <a href="{{ route('inquilinos.index') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Lista de Apartamentos</a>
-                            <a href="{{ route('inquilinos.import') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Importar Deudas</a>
+                        <!-- Gestión de Deudas -->
+                        <div>
+                            <button class="{{ request()->routeIs('inquilinos.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center justify-between" onclick="toggleMobileSubmenu('debts-mobile-submenu')">
+                                Gestión de Deudas
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="debts-mobile-submenu" class="hidden pl-6 space-y-1">
+                                <a href="{{ route('inquilinos.create') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Ingresar Deuda</a>
+                                <a href="{{ route('inquilinos.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Lista de Apartamentos</a>
+                                <a href="{{ route('inquilinos.import') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Importar Deudas</a>
+                            </div>
                         </div>
                     </div>
                     
@@ -142,8 +171,8 @@
             </nav>
 
             <!-- Page Content -->
-            <main class="py-12">
-                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
+                <div class="container mx-auto px-6 py-8">
                     {{ $slot }}
                 </div>
             </main>
@@ -153,41 +182,42 @@
         <script>
             function toggleDropdown(dropdownId) {
                 const dropdown = document.getElementById(dropdownId);
-                const allDropdowns = document.querySelectorAll('[id$="-dropdown"]');
+                const isHidden = dropdown.classList.contains('hidden');
                 
                 // Close all other dropdowns
-                allDropdowns.forEach(dd => {
-                    if (dd.id !== dropdownId) {
-                        dd.classList.add('hidden');
+                document.querySelectorAll('[id$="-dropdown"]').forEach(el => {
+                    if (el.id !== dropdownId) {
+                        el.classList.add('hidden');
                     }
                 });
                 
                 // Toggle current dropdown
                 dropdown.classList.toggle('hidden');
             }
-            
+
             function toggleMobileMenu() {
                 const mobileMenu = document.getElementById('mobile-menu');
+                const menuIcon = document.getElementById('mobile-menu-icon');
+                const closeIcon = document.getElementById('mobile-close-icon');
+                
                 mobileMenu.classList.toggle('hidden');
+                menuIcon.classList.toggle('hidden');
+                closeIcon.classList.toggle('hidden');
             }
-            
+
+            function toggleMobileSubmenu(submenuId) {
+                const submenu = document.getElementById(submenuId);
+                submenu.classList.toggle('hidden');
+            }
+
             // Close dropdowns when clicking outside
             document.addEventListener('click', function(event) {
                 const dropdowns = document.querySelectorAll('[id$="-dropdown"]');
-                const buttons = document.querySelectorAll('button[onclick*="toggleDropdown"]');
-                
-                let clickedButton = false;
-                buttons.forEach(button => {
-                    if (button.contains(event.target)) {
-                        clickedButton = true;
+                dropdowns.forEach(dropdown => {
+                    if (!dropdown.closest('.relative').contains(event.target)) {
+                        dropdown.classList.add('hidden');
                     }
                 });
-                
-                if (!clickedButton) {
-                    dropdowns.forEach(dropdown => {
-                        dropdown.classList.add('hidden');
-                    });
-                }
             });
         </script>
     </body>

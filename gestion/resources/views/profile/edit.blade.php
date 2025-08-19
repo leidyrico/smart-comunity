@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-with-sidebar>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Perfil') }}
@@ -26,4 +26,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-app-with-sidebar>
