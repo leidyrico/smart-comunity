@@ -165,17 +165,38 @@ class ActaController extends Controller
         
         $imported = 0;
         $errors = [];
+        $skipped = 0;
         
         foreach ($data as $index => $row) {
             try {
+                // Verificar que la fila no esté vacía
+                if (empty($row) || (count($row) == 1 && empty(trim($row[0])))) {
+                    $skipped++;
+                    continue;
+                }
+                
                 if (count($row) >= 4) {
+                    // Limpiar y validar los datos
+                    $nroActa = trim($row[0]);
+                    $nombreActa = trim($row[1]);
+                    $fecha = trim($row[2]);
+                    $descripcion = trim($row[3]);
+                    
+                    // Verificar que los campos requeridos no estén vacíos
+                    if (empty($nroActa) || empty($nombreActa) || empty($fecha) || empty($descripcion)) {
+                        $errors[] = 'Fila ' . ($index + 2) . ': Campos requeridos vacíos';
+                        continue;
+                    }
+                    
                     Acta::create([
-                        'nro_acta' => $row[0],
-                        'nombre_acta' => $row[1],
-                        'fecha' => $row[2],
-                        'descripcion' => $row[3]
+                        'nro_acta' => $nroActa,
+                        'nombre_acta' => $nombreActa,
+                        'fecha' => $fecha,
+                        'descripcion' => $descripcion
                     ]);
                     $imported++;
+                } else {
+                    $errors[] = 'Fila ' . ($index + 2) . ': Faltan columnas (se encontraron ' . count($row) . ', se requieren 4)';
                 }
             } catch (\Exception $e) {
                 $errors[] = 'Error en fila ' . ($index + 2) . ': ' . $e->getMessage();
@@ -183,6 +204,9 @@ class ActaController extends Controller
         }
         
         $message = "Se importaron $imported actas exitosamente.";
+        if ($skipped > 0) {
+            $message .= " Se omitieron $skipped filas vacías.";
+        }
         if (!empty($errors)) {
             $message .= ' Errores: ' . implode(', ', $errors);
         }

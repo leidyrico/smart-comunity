@@ -12,9 +12,9 @@
                     <form method="POST" action="{{ route('inquilinos.store') }}">
                         @csrf
 
-                        <!-- Nombre del Inquilino -->
+                        <!-- Nombre del Propietario -->
                         <div class="mb-4">
-                            <x-input-label for="nombre_inquilino" :value="__('Nombre del Inquilino *')" />
+                            <x-input-label for="nombre_inquilino" :value="__('Nombre del Propietario *')" />
                             <x-text-input id="nombre_inquilino" class="block mt-1 w-full" type="text" name="nombre_inquilino" :value="old('nombre_inquilino')" required autofocus />
                             <x-input-error :messages="$errors->get('nombre_inquilino')" class="mt-2" />
                         </div>
@@ -54,7 +54,7 @@
                                 Cancelar
                             </a>
                             <x-primary-button>
-                                {{ __('Registrar Inquilino') }}
+                                {{ __('Ingresar Deuda') }}
                             </x-primary-button>
                         </div>
                     </form>

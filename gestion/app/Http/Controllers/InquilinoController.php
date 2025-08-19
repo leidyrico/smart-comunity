@@ -49,7 +49,7 @@ class InquilinoController extends Controller
         $inquilino->save();
 
         return redirect()->route('inquilinos.index')
-            ->with('success', 'Inquilino registrado exitosamente.');
+            ->with('success', 'Propietario registrado exitosamente.');
     }
 
     /**
@@ -93,7 +93,7 @@ class InquilinoController extends Controller
         $inquilino->save();
 
         return redirect()->route('inquilinos.index')
-            ->with('success', 'Información del inquilino actualizada exitosamente.');
+            ->with('success', 'Información del propietario actualizada exitosamente.');
     }
 
     /**
@@ -126,7 +126,7 @@ class InquilinoController extends Controller
     {
         $inquilino->delete();
         return redirect()->route('inquilinos.index')
-            ->with('success', 'Inquilino eliminado exitosamente.');
+            ->with('success', 'Propietario eliminado exitosamente.');
     }
 
     /**
@@ -173,7 +173,7 @@ class InquilinoController extends Controller
             }
         }
         
-        $message = "Se importaron $imported inquilinos exitosamente.";
+        $message = "Se importaron $imported propietarios exitosamente.";
         if (!empty($errors)) {
             $message .= ' Errores: ' . implode(', ', $errors);
         }

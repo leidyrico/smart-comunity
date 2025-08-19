@@ -15,7 +15,7 @@
             <h3 class="font-semibold text-blue-800 mb-2">Instrucciones:</h3>
             <ul class="text-sm text-blue-700 space-y-1">
                 <li> El archivo debe ser formato CSV</li>
-                <li> Columnas: numero_acta, fecha, descripcion, observaciones</li>
+                <li> Columnas: nro_acta, nombre_acta, fecha, descripcion</li>
                 <li> La primera fila debe contener los encabezados</li>
                 <li> Formato de fecha: YYYY-MM-DD</li>
             </ul>

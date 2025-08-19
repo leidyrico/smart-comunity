@@ -1,7 +1,7 @@
 <x-app-with-sidebar>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Editar Inquilino') }}
+            {{ __('Editar Propietario') }}
         </h2>
     </x-slot>
 
@@ -13,9 +13,9 @@
                         @csrf
                         @method('PUT')
 
-                        <!-- Nombre del Inquilino -->
+                        <!-- Nombre del Propietario -->
                         <div class="mb-4">
-                            <x-input-label for="nombre_inquilino" :value="__('Nombre del Inquilino *')" />
+                            <x-input-label for="nombre_inquilino" :value="__('Nombre del Propietario *')" />
                             <x-text-input id="nombre_inquilino" class="block mt-1 w-full" type="text" name="nombre_inquilino" :value="old('nombre_inquilino', $inquilino->nombre_inquilino)" required autofocus />
                             <x-input-error :messages="$errors->get('nombre_inquilino')" class="mt-2" />
                         </div>
@@ -53,7 +53,7 @@
                                 Cancelar
                             </a>
                             <x-primary-button>
-                                {{ __('Actualizar Inquilino') }}
+                                {{ __('Actualizar Propietario') }}
                             </x-primary-button>
                         </div>
                     </form>

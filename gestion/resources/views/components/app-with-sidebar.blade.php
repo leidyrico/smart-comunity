@@ -52,15 +52,15 @@
                                 <!-- Gestión de Inquilinos -->
                                 <div class="relative inline-flex items-center px-1 pt-1">
                                     <button class="{{ request()->routeIs('inquilinos.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" onclick="toggleDropdown('inquilinos-dropdown')">
-                                        Gestión de Inquilinos
+                                        Gestión de Deudas
                                         <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                         </svg>
                                     </button>
                                     <div id="inquilinos-dropdown" class="hidden absolute top-full left-0 mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
-                                        <a href="{{ route('inquilinos.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Crear Inquilino</a>
-                                        <a href="{{ route('inquilinos.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Inquilinos</a>
-                                        <a href="{{ route('inquilinos.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Inquilinos</a>
+                                        <a href="{{ route('inquilinos.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ingresar Deuda</a>
+                                        <a href="{{ route('inquilinos.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Lista de Apartamentos</a>
+                                        <a href="{{ route('inquilinos.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Deudas</a>
                                     </div>
                                 </div>
                             </div>
@@ -115,10 +115,10 @@
                         
                         <!-- Mobile Inquilinos Menu -->
                         <div class="border-l-4 border-transparent">
-                            <div class="pl-3 pr-4 py-2 text-base font-medium text-gray-600">Gestión de Inquilinos</div>
-                            <a href="{{ route('inquilinos.create') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Crear Inquilino</a>
-                            <a href="{{ route('inquilinos.index') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Ver Inquilinos</a>
-                            <a href="{{ route('inquilinos.import') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Importar Inquilinos</a>
+                            <div class="pl-3 pr-4 py-2 text-base font-medium text-gray-600">Gestión de Deudas</div>
+                            <a href="{{ route('inquilinos.create') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Ingresar Deuda</a>
+                            <a href="{{ route('inquilinos.index') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Lista de Apartamentos</a>
+                            <a href="{{ route('inquilinos.import') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Importar Deudas</a>
                         </div>
                     </div>
                     
