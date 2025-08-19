@@ -14,10 +14,13 @@
         <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <h3 class="font-semibold text-blue-800 mb-2">Instrucciones:</h3>
             <ul class="text-sm text-blue-700 space-y-1">
-                <li> El archivo debe ser formato CSV</li>
-                <li> Columnas: nro_acta, nombre_acta, fecha, descripcion</li>
-                <li> La primera fila debe contener los encabezados</li>
-                <li> Formato de fecha: YYYY-MM-DD</li>
+                <li>✓ El archivo debe ser formato CSV</li>
+                <li>✓ Columnas requeridas: nro_doc, nombre_doc, fecha, descripcion, tipo_documento</li>
+                <li>✓ La primera fila debe contener los encabezados</li>
+                <li>✓ Formato de fecha: YYYY-MM-DD (ejemplo: 2024-01-15)</li>
+                <li>✓ Tipos de documento válidos: Correspondencia, Comunicado, Actas</li>
+                <li>✓ Si no se especifica tipo_documento, se asignará "Actas" por defecto</li>
+                <li>✓ Separadores admitidos: coma (,) o punto y coma (;)</li>
             </ul>
         </div>
         

@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Acta extends Model
 {
     protected $fillable = [
-        'nro_acta',
-        'nombre_acta',
+        'nro_doc',
+        'nombre_doc',
         'fecha',
         'descripcion',
         'archivo_contenido',

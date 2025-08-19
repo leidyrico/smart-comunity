@@ -18,7 +18,7 @@ class ActaController extends Controller
 
         // Filtro por número de documento
         if ($request->filled('nro_documento')) {
-            $query->where('nro_acta', 'like', '%' . $request->nro_documento . '%');
+            $query->where('nro_doc', 'like', '%' . $request->nro_documento . '%');
         }
 
         // Filtro por tipo de documento
@@ -56,16 +56,16 @@ class ActaController extends Controller
     {
         // Validación de campos requeridos y archivo
         $request->validate([
-            'nro_acta' => 'required|string|max:255|unique:actas,nro_acta',
-            'nombre_acta' => 'required|string|max:20',
+            'nro_doc' => 'required|string|max:255|unique:actas,nro_doc',
+            'nombre_doc' => 'required|string|max:20',
             'fecha' => 'required|date',
             'descripcion' => 'required|string|min:10',
             'tipo_documento' => 'required|in:Correspondencia,Comunicado,Actas',
             'archivo' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240' // 10MB máximo
         ], [
-            'nro_acta.required' => 'El número de documento es obligatorio.',
-            'nro_acta.unique' => 'Este número de documento ya existe.',
-            'nombre_acta.required' => 'El nombre del documento es obligatorio.',
+            'nro_doc.required' => 'El número de documento es obligatorio.',
+            'nro_doc.unique' => 'Este número de documento ya existe.',
+            'nombre_doc.required' => 'El nombre del documento es obligatorio.',
             'fecha.required' => 'La fecha es obligatoria.',
             'descripcion.required' => 'La descripción es obligatoria.',
             'descripcion.min' => 'La descripción debe tener al menos 10 caracteres.',
@@ -77,8 +77,8 @@ class ActaController extends Controller
 
         // Preparar datos para crear el documento
         $datosActa = [
-            'nro_acta' => trim($request->nro_acta),
-            'nombre_acta' => trim($request->nombre_acta),
+            'nro_doc' => trim($request->nro_doc),
+            'nombre_doc' => trim($request->nombre_doc),
             'fecha' => $request->fecha,
             'descripcion' => trim($request->descripcion),
             'tipo_documento' => $request->tipo_documento,
@@ -91,7 +91,7 @@ class ActaController extends Controller
         // Manejar archivo si se subió
         if ($request->hasFile('archivo') && $request->file('archivo')->isValid()) {
             $archivo = $request->file('archivo');
-            $nombreArchivo =  'documento_'.($request->nro_acta) . '_' . $archivo->getClientOriginalName();
+            $nombreArchivo =  'documento_'.($request->nro_doc) . '_' . $archivo->getClientOriginalName();
             
             // Convertir archivo a base64
             $contenidoArchivo = base64_encode(file_get_contents($archivo->getRealPath()));
@@ -231,8 +231,8 @@ class ActaController extends Controller
                     }
                     
                     Acta::create([
-                        'nro_acta' => $nroActa,
-                        'nombre_acta' => $nombreActa,
+                        'nro_doc' => $nroActa,
+                        'nombre_doc' => $nombreActa,
                         'fecha' => $fecha,
                         'descripcion' => $descripcion,
                         'tipo_documento' => $tipoDocumento
@@ -269,7 +269,7 @@ class ActaController extends Controller
         
         $callback = function() {
             $file = fopen('php://output', 'w');
-            fputcsv($file, ['nro_acta', 'nombre_acta', 'fecha', 'descripcion', 'tipo_documento']);
+            fputcsv($file, ['nro_doc', 'nombre_doc', 'fecha', 'descripcion', 'tipo_documento']);
             fputcsv($file, ['DOC001', 'Documento Ejemplo', '2024-01-15', 'Descripción de ejemplo', 'Actas']);
             fclose($file);
         };

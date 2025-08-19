@@ -14,17 +14,17 @@
 
                         <!-- Número de Documento -->
                         <div>
-                            <x-input-label for="nro_acta" :value="__('Número de Documento')" />
-                            <x-text-input id="nro_acta" class="block mt-1 w-full" type="text" name="nro_acta" :value="old('nro_acta')" required autofocus />
-                            <x-input-error :messages="$errors->get('nro_acta')" class="mt-2" />
-                        </div>
+                <x-input-label for="nro_doc" :value="__('Número de Documento')" />
+                <x-text-input id="nro_doc" class="block mt-1 w-full" type="text" name="nro_doc" :value="old('nro_doc')" required autofocus />
+                <x-input-error :messages="$errors->get('nro_doc')" class="mt-2" />
+            </div>
 
                         <!-- Nombre de Documento -->
                         <div>
-                            <x-input-label for="nombre_acta" :value="__('Nombre de Documento')" />
-                            <x-text-input id="nombre_acta" class="block mt-1 w-full" type="text" name="nombre_acta" :value="old('nombre_acta')" required />
-                            <x-input-error :messages="$errors->get('nombre_acta')" class="mt-2" />
-                        </div>
+                <x-input-label for="nombre_doc" :value="__('Nombre de Documento')" />
+                <x-text-input id="nombre_doc" class="block mt-1 w-full" type="text" name="nombre_doc" :value="old('nombre_doc')" required />
+                <x-input-error :messages="$errors->get('nombre_doc')" class="mt-2" />
+            </div>
 
                         <!-- Tipo de Documento -->
                         <div>
