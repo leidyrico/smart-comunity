@@ -1,7 +1,7 @@
 <x-app-with-sidebar>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Importar Actas') }}
+            {{ __('Importar Documentos') }}
         </h2>
     </x-slot>
 
@@ -9,7 +9,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="container mx-auto px-4">
     <div class="max-w-lg mx-auto bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Importar Actas desde CSV</h2>
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Importar Documentos desde CSV</h2>
         
         <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <h3 class="font-semibold text-blue-800 mb-2">Instrucciones:</h3>
@@ -44,7 +44,7 @@
             
             <div class="flex space-x-4">
                 <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                    Importar Actas
+                    Importar Documentos
                 </button>
                 <a href="{{ route('actas.index') }}" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors text-center">
                     Cancelar

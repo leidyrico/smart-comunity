@@ -13,7 +13,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <h3 class="text-2xl font-bold text-gray-900">¡Bienvenido, {{ Auth::user()->name }}!</h3>
-                            <p class="text-gray-600 mt-1">Sistema de Gestión - Edificio Alfa</p>
+                            <p class="text-gray-600 mt-1">Sistema de Gestión - Residencias Alfa</p>
                         </div>
                         <div class="text-right">
                             <p class="text-sm text-gray-500">{{ now()->format('d/m/Y H:i') }}</p>
@@ -89,14 +89,14 @@
                             <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
-                            <span class="text-blue-800 font-medium">Nueva Acta</span>
+                            <span class="text-blue-800 font-medium">Nuevo Documento</span>
                         </a>
                         
                         <a href="{{ route('actas.index') }}" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors duration-200">
                             <svg class="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                             </svg>
-                            <span class="text-green-800 font-medium">Ver Actas</span>
+                            <span class="text-green-800 font-medium">Ver Documentos</span>
                         </a>
                         
                         <a href="{{ route('inquilinos.create') }}" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors duration-200">

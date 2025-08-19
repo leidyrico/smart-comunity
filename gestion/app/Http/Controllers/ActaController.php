@@ -12,9 +12,32 @@ class ActaController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $actas = Acta::orderBy('created_at', 'desc')->get();
+        $query = Acta::query();
+
+        // Filtro por número de documento
+        if ($request->filled('nro_documento')) {
+            $query->where('nro_acta', 'like', '%' . $request->nro_documento . '%');
+        }
+
+        // Filtro por tipo de documento
+        if ($request->filled('tipo_documento')) {
+            $query->where('tipo_documento', $request->tipo_documento);
+        }
+
+        // Filtro por fecha desde
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha', '>=', $request->fecha_desde);
+        }
+
+        // Filtro por fecha hasta
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha', '<=', $request->fecha_hasta);
+        }
+
+        $actas = $query->orderBy('created_at', 'desc')->get();
+        
         return view('actas.index', compact('actas'));
     }
 
@@ -37,24 +60,28 @@ class ActaController extends Controller
             'nombre_acta' => 'required|string|max:20',
             'fecha' => 'required|date',
             'descripcion' => 'required|string|min:10',
+            'tipo_documento' => 'required|in:Correspondencia,Comunicado,Actas',
             'archivo' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240' // 10MB máximo
         ], [
-            'nro_acta.required' => 'El número de acta es obligatorio.',
-            'nro_acta.unique' => 'Este número de acta ya existe.',
-            'nombre_acta.required' => 'El nombre del acta es obligatorio.',
+            'nro_acta.required' => 'El número de documento es obligatorio.',
+            'nro_acta.unique' => 'Este número de documento ya existe.',
+            'nombre_acta.required' => 'El nombre del documento es obligatorio.',
             'fecha.required' => 'La fecha es obligatoria.',
             'descripcion.required' => 'La descripción es obligatoria.',
             'descripcion.min' => 'La descripción debe tener al menos 10 caracteres.',
+            'tipo_documento.required' => 'El tipo de documento es obligatorio.',
+            'tipo_documento.in' => 'El tipo de documento debe ser: Correspondencia, Comunicado o Actas.',
             'archivo.mimes' => 'El archivo debe ser de tipo: PDF, DOC, DOCX, JPG o PNG.',
             'archivo.max' => 'El archivo no puede ser mayor a 10MB.'
         ]);
 
-        // Preparar datos para crear el acta
+        // Preparar datos para crear el documento
         $datosActa = [
             'nro_acta' => trim($request->nro_acta),
             'nombre_acta' => trim($request->nombre_acta),
             'fecha' => $request->fecha,
             'descripcion' => trim($request->descripcion),
+            'tipo_documento' => $request->tipo_documento,
             'archivo_contenido' => null,
             'archivo_nombre' => null,
             'archivo_tipo' => null,
@@ -64,7 +91,7 @@ class ActaController extends Controller
         // Manejar archivo si se subió
         if ($request->hasFile('archivo') && $request->file('archivo')->isValid()) {
             $archivo = $request->file('archivo');
-            $nombreArchivo =  'acta_'.($request->nro_acta) . '_' . $archivo->getClientOriginalName();
+            $nombreArchivo =  'documento_'.($request->nro_acta) . '_' . $archivo->getClientOriginalName();
             
             // Convertir archivo a base64
             $contenidoArchivo = base64_encode(file_get_contents($archivo->getRealPath()));
@@ -75,12 +102,12 @@ class ActaController extends Controller
             $datosActa['archivo_tamaño'] = $archivo->getSize();
         }
 
-        // Crear el acta
+        // Crear el documento
         Acta::create($datosActa);
 
         $mensaje = $request->hasFile('archivo') ? 
-            'Acta creada exitosamente con archivo adjunto.' : 
-            'Acta creada exitosamente sin archivo adjunto.';
+            'Documento creado exitosamente con archivo adjunto.' : 
+            'Documento creado exitosamente sin archivo adjunto.';
 
         return redirect()->route('actas.index')->with('success', $mensaje);
     }
@@ -118,13 +145,13 @@ class ActaController extends Controller
     }
 
     /**
-     * Download the specified acta file.
+     * Download the specified documento file.
      */
     public function download(Acta $acta)
     {
-        // Verificar si el acta tiene archivo adjunto
+        // Verificar si el documento tiene archivo adjunto
         if (!$acta->archivo_contenido || !$acta->archivo_nombre) {
-            abort(404, 'Esta acta no tiene archivo adjunto.');
+            abort(404, 'Este documento no tiene archivo adjunto.');
         }
 
         // Decodificar el archivo desde base64
@@ -140,7 +167,7 @@ class ActaController extends Controller
     }
 
     /**
-     * Show the import form for actas.
+     * Show the import form for documentos.
      */
     public function showImport()
     {
@@ -148,7 +175,7 @@ class ActaController extends Controller
     }
 
     /**
-     * Process the import of actas from CSV file.
+     * Process the import of documentos from CSV file.
      */
     public function import(Request $request)
     {
@@ -184,12 +211,13 @@ class ActaController extends Controller
                     continue;
                 }
                 
-                if (count($row) >= 4) {
+                if (count($row) >= 5) {
                     // Limpiar y validar los datos
                     $nroActa = trim($row[0]);
                     $nombreActa = trim($row[1]);
                     $fecha = trim($row[2]);
                     $descripcion = trim($row[3]);
+                    $tipoDocumento = trim($row[4]) ?: 'Actas';
                     
                     // Verificar que los campos requeridos no estén vacíos
                     if (empty($nroActa) || empty($nombreActa) || empty($fecha) || empty($descripcion)) {
@@ -197,22 +225,28 @@ class ActaController extends Controller
                         continue;
                     }
                     
+                    // Validar tipo de documento
+                    if (!in_array($tipoDocumento, ['Correspondencia', 'Comunicado', 'Actas'])) {
+                        $tipoDocumento = 'Actas';
+                    }
+                    
                     Acta::create([
                         'nro_acta' => $nroActa,
                         'nombre_acta' => $nombreActa,
                         'fecha' => $fecha,
-                        'descripcion' => $descripcion
+                        'descripcion' => $descripcion,
+                        'tipo_documento' => $tipoDocumento
                     ]);
                     $imported++;
                 } else {
-                    $errors[] = 'Fila ' . ($index + 2) . ': Faltan columnas (se encontraron ' . count($row) . ', se requieren 4)';
+                    $errors[] = 'Fila ' . ($index + 2) . ': Faltan columnas (se encontraron ' . count($row) . ', se requieren 5)';
                 }
             } catch (\Exception $e) {
                 $errors[] = 'Error en fila ' . ($index + 2) . ': ' . $e->getMessage();
             }
         }
         
-        $message = "Se importaron $imported actas exitosamente.";
+        $message = "Se importaron $imported documentos exitosamente.";
         if ($skipped > 0) {
             $message .= " Se omitieron $skipped filas vacías.";
         }
@@ -224,19 +258,19 @@ class ActaController extends Controller
     }
 
     /**
-     * Download CSV template for actas import.
+     * Download CSV template for documentos import.
      */
     public function downloadTemplate()
     {
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="plantilla_actas.csv"'
+            'Content-Disposition' => 'attachment; filename="plantilla_documentos.csv"'
         ];
         
         $callback = function() {
             $file = fopen('php://output', 'w');
-            fputcsv($file, ['nro_acta', 'nombre_acta', 'fecha', 'descripcion']);
-            fputcsv($file, ['ACT001', 'Acta Ejemplo', '2024-01-15', 'Descripción de ejemplo']);
+            fputcsv($file, ['nro_acta', 'nombre_acta', 'fecha', 'descripcion', 'tipo_documento']);
+            fputcsv($file, ['DOC001', 'Documento Ejemplo', '2024-01-15', 'Descripción de ejemplo', 'Actas']);
             fclose($file);
         };
         

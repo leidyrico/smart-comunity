@@ -17,13 +17,13 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    // Rutas para actas
+    // Rutas para documentos
     Route::get('/actas/crear', [ActaController::class, 'create'])->name('actas.create');
     Route::post('/actas', [ActaController::class, 'store'])->name('actas.store');
     Route::get('/actas', [ActaController::class, 'index'])->name('actas.index');
     Route::get('/actas/{acta}/download', [ActaController::class, 'download'])->name('actas.download');
     
-    // Rutas para importación de actas
+    // Rutas para importación de documentos
     Route::get('/actas/import', [ActaController::class, 'showImport'])->name('actas.import');
     Route::post('/actas/import', [ActaController::class, 'import'])->name('actas.import.process');
     Route::get('/actas/template', [ActaController::class, 'downloadTemplate'])->name('actas.template');

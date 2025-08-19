@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'Residencias Alfa') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -34,18 +34,18 @@
                                     Dashboard
                                 </a>
                                 
-                                <!-- Gestión de Actas -->
+                                <!-- Gestión de Documentos -->
                                 <div class="relative inline-flex items-center px-1 pt-1">
                                     <button class="{{ request()->routeIs('actas.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" onclick="toggleDropdown('actas-dropdown')">
-                                        Gestión de Actas
+                                        Gestión de Documentos
                                         <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                         </svg>
                                     </button>
                                     <div id="actas-dropdown" class="hidden absolute top-full left-0 mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
-                                        <a href="{{ route('actas.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Crear Acta</a>
-                                        <a href="{{ route('actas.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Actas</a>
-                                        <a href="{{ route('actas.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Actas</a>
+                                        <a href="{{ route('actas.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Crear Documento</a>
+                                        <a href="{{ route('actas.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Documentos</a>
+                                        <a href="{{ route('actas.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Documentos</a>
                                     </div>
                                 </div>
 
@@ -105,12 +105,12 @@
                             Dashboard
                         </a>
                         
-                        <!-- Mobile Actas Menu -->
+                        <!-- Mobile Documentos Menu -->
                         <div class="border-l-4 border-transparent">
-                            <div class="pl-3 pr-4 py-2 text-base font-medium text-gray-600">Gestión de Actas</div>
-                            <a href="{{ route('actas.create') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Crear Acta</a>
-                            <a href="{{ route('actas.index') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Ver Actas</a>
-                            <a href="{{ route('actas.import') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Importar Actas</a>
+                            <div class="pl-3 pr-4 py-2 text-base font-medium text-gray-600">Gestión de Documentos</div>
+                            <a href="{{ route('actas.create') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Crear Documento</a>
+                            <a href="{{ route('actas.index') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Ver Documentos</a>
+                            <a href="{{ route('actas.import') }}" class="block pl-6 pr-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Importar Documentos</a>
                         </div>
                         
                         <!-- Mobile Inquilinos Menu -->

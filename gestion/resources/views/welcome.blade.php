@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Edificio Alfa</title>
+        <title>Residencias Alfa</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -35,14 +35,14 @@
                             href="{{ route('login') }}"
                             class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] text-[#1b1b18] border border-transparent hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
                         >
-                            Log in
+                            Iniciar Sesión
                         </a>
 
                         @if (Route::has('register'))
                             <a
                                 href="{{ route('register') }}"
                                 class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal">
-                                Register
+                                Registrarse
                             </a>
                         @endif
                     @endauth
@@ -52,17 +52,17 @@
         <div class="flex items-center justify-center w-full transition-opacity opacity-100 duration-750 lg:grow starting:opacity-0">
             <main class="flex max-w-[335px] w-full flex-col-reverse lg:max-w-4xl lg:flex-row">
                 <div class="flex flex-col items-center justify-center text-center w-full py-12">
-                    <!-- Logo del Edificio Alfa -->
+                    <!-- Logo de Residencias Alfa -->
                     <div class="mb-8">
-                        <img src="{{ asset('logo.png') }}" alt="Logo Edificio Alfa" class="w-48 h-48 mx-auto drop-shadow-2xl">
+                        <img src="{{ asset('logo.png') }}" alt="Logo Residencias Alfa" class="w-48 h-48 mx-auto drop-shadow-2xl">
                     </div>
                     
                     <div class="text-center space-y-4">
                         <h1 class="text-6xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent tracking-tight">
-                            EDIFICIO ALFA
+                            RESIDENCIAS ALFA
                         </h1>
                         <div class="w-32 h-1 bg-gradient-to-r from-blue-500 to-purple-600 mx-auto rounded-full"></div>
-                        <p class="text-xl text-gray-600 font-medium tracking-wide">Sistema de Gestión de Actas</p>
+                        <p class="text-xl text-gray-600 font-medium tracking-wide">Sistema de gestión</p>
                     
                     </div>
                 </div>

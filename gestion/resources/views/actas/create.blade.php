@@ -1,7 +1,7 @@
 <x-app-with-sidebar>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Crear Nueva Acta') }}
+            {{ __('Crear Nuevo Documento') }}
         </h2>
     </x-slot>
 
@@ -12,18 +12,30 @@
                     <form method="POST" action="{{ route('actas.store') }}" enctype="multipart/form-data" class="space-y-6">
                         @csrf
 
-                        <!-- Número de Acta -->
+                        <!-- Número de Documento -->
                         <div>
-                            <x-input-label for="nro_acta" :value="__('Número de Acta')" />
+                            <x-input-label for="nro_acta" :value="__('Número de Documento')" />
                             <x-text-input id="nro_acta" class="block mt-1 w-full" type="text" name="nro_acta" :value="old('nro_acta')" required autofocus />
                             <x-input-error :messages="$errors->get('nro_acta')" class="mt-2" />
                         </div>
 
-                        <!-- Nombre de Acta -->
+                        <!-- Nombre de Documento -->
                         <div>
-                            <x-input-label for="nombre_acta" :value="__('Nombre de Acta')" />
+                            <x-input-label for="nombre_acta" :value="__('Nombre de Documento')" />
                             <x-text-input id="nombre_acta" class="block mt-1 w-full" type="text" name="nombre_acta" :value="old('nombre_acta')" required />
                             <x-input-error :messages="$errors->get('nombre_acta')" class="mt-2" />
+                        </div>
+
+                        <!-- Tipo de Documento -->
+                        <div>
+                            <x-input-label for="tipo_documento" :value="__('Tipo de Documento')" />
+                            <select id="tipo_documento" name="tipo_documento" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                <option value="">Seleccione un tipo</option>
+                                <option value="Correspondencia" {{ old('tipo_documento') == 'Correspondencia' ? 'selected' : '' }}>Correspondencia</option>
+                                <option value="Comunicado" {{ old('tipo_documento') == 'Comunicado' ? 'selected' : '' }}>Comunicado</option>
+                                <option value="Actas" {{ old('tipo_documento') == 'Actas' ? 'selected' : '' }}>Actas</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('tipo_documento')" class="mt-2" />
                         </div>
 
                         <!-- Fecha -->
@@ -53,7 +65,7 @@
                                 Cancelar
                             </a>
                             <x-primary-button class="ml-4">
-                                {{ __('Crear Acta') }}
+                                {{ __('Crear Documento') }}
                             </x-primary-button>
                         </div>
                     </form>

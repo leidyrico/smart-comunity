@@ -14,10 +14,20 @@ class Acta extends Model
         'archivo_contenido',
         'archivo_nombre',
         'archivo_tipo',
-        'archivo_tamaño'
+        'archivo_tamaño',
+        'tipo_documento'
     ];
 
     protected $casts = [
         'fecha' => 'date'
     ];
+
+    public static function getTiposDocumento()
+    {
+        return [
+            'Correspondencia' => 'Correspondencia',
+            'Comunicado' => 'Comunicado',
+            'Actas' => 'Actas'
+        ];
+    }
 }

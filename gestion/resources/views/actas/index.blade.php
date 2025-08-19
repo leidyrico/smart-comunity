@@ -1,7 +1,7 @@
 <x-app-with-sidebar>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Consultar Actas') }}
+            {{ __('Consultar Documentos') }}
         </h2>
     </x-slot>
 
@@ -10,10 +10,77 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-lg font-semibold">Lista de Actas</h3>
+                        <h3 class="text-lg font-semibold">Lista de Documentos</h3>
                         <a href="{{ route('actas.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            Nueva Acta
+                            Nuevo Documento
                         </a>
+                    </div>
+
+                    <!-- Formulario de Filtros -->
+                    <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                        <form method="GET" action="{{ route('actas.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <!-- Filtro por Número de Documento -->
+                            <div>
+                                <label for="nro_documento" class="block text-sm font-medium text-gray-700 mb-1">Nro. Documento</label>
+                                <input type="text" 
+                                       id="nro_documento" 
+                                       name="nro_documento" 
+                                       value="{{ request('nro_documento') }}"
+                                       placeholder="Buscar por número..."
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
+
+                            <!-- Filtro por Tipo de Documento -->
+                            <div>
+                                <label for="tipo_documento" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
+                                <select id="tipo_documento" 
+                                        name="tipo_documento"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    <option value="">Todos los tipos</option>
+                                    <option value="Correspondencia" {{ request('tipo_documento') == 'Correspondencia' ? 'selected' : '' }}>Correspondencia</option>
+                                    <option value="Comunicado" {{ request('tipo_documento') == 'Comunicado' ? 'selected' : '' }}>Comunicado</option>
+                                    <option value="Actas" {{ request('tipo_documento') == 'Actas' ? 'selected' : '' }}>Actas</option>
+                                </select>
+                            </div>
+
+                            <!-- Filtro por Fecha Desde -->
+                            <div>
+                                <label for="fecha_desde" class="block text-sm font-medium text-gray-700 mb-1">Fecha Desde</label>
+                                <input type="date" 
+                                       id="fecha_desde" 
+                                       name="fecha_desde" 
+                                       value="{{ request('fecha_desde') }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
+
+                            <!-- Filtro por Fecha Hasta -->
+                            <div>
+                                <label for="fecha_hasta" class="block text-sm font-medium text-gray-700 mb-1">Fecha Hasta</label>
+                                <input type="date" 
+                                       id="fecha_hasta" 
+                                       name="fecha_hasta" 
+                                       value="{{ request('fecha_hasta') }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
+
+                            <!-- Botones de Acción -->
+                            <div class="lg:col-span-4 flex justify-start space-x-3 mt-2">
+                                <button type="submit" 
+                                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                    Filtrar
+                                </button>
+                                <a href="{{ route('actas.index') }}" 
+                                   class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                    Limpiar
+                                </a>
+                            </div>
+                        </form>
                     </div>
 
                     @if(session('success'))
@@ -28,10 +95,13 @@
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Nro. Acta
+                                            Nro. Documento
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Nombre
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Tipo de Documento
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Fecha
@@ -55,6 +125,11 @@
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {{ $acta->nombre_acta }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <span class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                                                    {{ $acta->tipo_documento ?? 'Actas' }}
+                                                </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {{ $acta->fecha->format('d/m/Y') }}
@@ -108,14 +183,14 @@
                             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <h3 class="mt-2 text-sm font-medium text-gray-900">No hay actas registradas</h3>
-                            <p class="mt-1 text-sm text-gray-500">Comienza creando tu primera acta.</p>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No hay documentos registrados</h3>
+            <p class="mt-1 text-sm text-gray-500">Comienza creando tu primer documento.</p>
                             <div class="mt-6">
                                 <a href="{{ route('actas.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                     <svg class="-ml-1 mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                                     </svg>
-                                    Nueva Acta
+                                    Nuevo Documento
                                 </a>
                             </div>
                         </div>
