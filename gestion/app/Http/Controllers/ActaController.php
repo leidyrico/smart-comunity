@@ -158,7 +158,16 @@ class ActaController extends Controller
 
         $file = $request->file('file');
         $path = $file->getRealPath();
-        $data = array_map('str_getcsv', file($path));
+        $content = file($path);
+        
+        // Detectar el separador (coma o punto y coma)
+        $firstLine = $content[0] ?? '';
+        $separator = (substr_count($firstLine, ';') > substr_count($firstLine, ',')) ? ';' : ',';
+        
+        // Procesar el CSV con el separador detectado
+        $data = array_map(function($line) use ($separator) {
+            return str_getcsv($line, $separator);
+        }, $content);
         
         // Remove header row
         $header = array_shift($data);
