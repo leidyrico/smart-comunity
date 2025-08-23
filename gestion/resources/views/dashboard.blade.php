@@ -35,7 +35,7 @@
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="text-sm font-medium text-blue-600 truncate">Total Actas</dt>
+                                    <dt class="text-sm font-medium text-blue-600 truncate">Total Documentos</dt>
                                     <dd class="text-lg font-medium text-blue-900">{{ $totalActas ?? 0 }}</dd>
                                 </dl>
                             </div>
@@ -53,8 +53,8 @@
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="text-sm font-medium text-green-600 truncate">Total Inquilinos</dt>
-                                    <dd class="text-lg font-medium text-green-900">{{ $totalInquilinos ?? 0 }}</dd>
+                                    <dt class="text-sm font-medium text-green-600 truncate">Total de apartamentos</dt>
+                                    <dd class="text-lg font-medium text-green-900">{{ $totalApartamentos ?? 0 }}</dd>
                                 </dl>
                             </div>
                         </div>
@@ -71,8 +71,8 @@
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="text-sm font-medium text-purple-600 truncate">Pagos Pendientes</dt>
-                                    <dd class="text-lg font-medium text-purple-900">{{ $pagosPendientes ?? 0 }}</dd>
+                                    <dt class="text-sm font-medium text-purple-600 truncate">Saldo Total Pendiente</dt>
+                                    <dd class="text-lg font-medium text-purple-900">{{ $saldoTotalPendiente ?? 0 }}</dd>
                                 </dl>
                             </div>
                         </div>
@@ -106,7 +106,7 @@
                             <span class="text-purple-800 font-medium">Registrar Deuda</span>
                         </a>
                         
-                        <a href="{{ route('inquilinos.index') }}" class="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors duration-200">
+                        <a href="{{ route('apartamentos.index') }}" class="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors duration-200">
                             <svg class="w-6 h-6 text-orange-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                             </svg>

@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\Acta;
-use App\Models\Inquilino;
+use App\Models\Apartamento;
+use App\Models\ReciboGastoComun;
 
 class DashboardController extends Controller
 {
@@ -24,8 +25,27 @@ class DashboardController extends Controller
         
         // Obtener estadísticas
         $totalActas = Acta::count();
-        $totalInquilinos = Inquilino::count();
-        $pagosPendientes = Inquilino::where('monto_deuda', '>', 0)->count();
+        $totalApartamentos = Apartamento::count();
+        
+        // Calcular saldo total pendiente
+        $saldoTotalPendiente = 0;
+        $apartamentos = Apartamento::with(['pagos'])->get();
+        $recibos = ReciboGastoComun::where('estado', 'activo')->get();
+        
+        foreach ($apartamentos as $apartamento) {
+            foreach ($recibos as $recibo) {
+                $pagosTotales = $apartamento->pagos
+                    ->where('recibo_gasto_comun_id', $recibo->id)
+                    ->where('estado', 'confirmado')
+                    ->sum('monto_pagado');
+                
+                $saldoPendiente = $recibo->total_recibo - $pagosTotales;
+                
+                if ($saldoPendiente > 0) {
+                    $saldoTotalPendiente += $saldoPendiente;
+                }
+            }
+        }
         
         // Mostrar información de debug en la vista
         $debugInfo = [
@@ -37,6 +57,6 @@ class DashboardController extends Controller
             'message' => '🎉 ¡Dashboard cargado exitosamente! El sistema está funcionando.'
         ];
         
-        return view('dashboard', compact('debugInfo', 'totalActas', 'totalInquilinos', 'pagosPendientes'));
+        return view('dashboard', compact('debugInfo', 'totalActas', 'totalApartamentos', 'saldoTotalPendiente'));
     }
 }
