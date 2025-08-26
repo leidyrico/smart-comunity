@@ -106,7 +106,7 @@
                                     @foreach($apartamento->recibos->take(10) as $recibo)
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $recibo->numero_recibo }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $recibo->fecha_facturacion->format('d/m/Y') }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $recibo->fecha_facturacion ? $recibo->fecha_facturacion->format('d/m/Y') : 'N/A' }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${{ number_format($recibo->monto_facturado, 2) }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @php

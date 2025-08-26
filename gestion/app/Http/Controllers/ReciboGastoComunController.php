@@ -5,7 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\ReciboGastoComun;
 use App\Models\Apartamento;
+use App\Models\Pago;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\RecibosImport;
+use App\Exports\RecibosExport;
 
 class ReciboGastoComunController extends Controller
 {
@@ -29,8 +33,23 @@ class ReciboGastoComunController extends Controller
             $query->where('estado', $request->estado);
         }
 
-        $recibos = $query->orderBy('fecha_emision', 'desc')->get();
-        return view('recibos.index', compact('recibos'));
+        $recibos = $query->orderBy('periodo', 'desc')->orderBy('fecha_emision', 'desc')->get();
+        
+        // Calcular estadísticas de recibos vencidos
+        $estadisticas = [
+            'total_recibos' => ReciboGastoComun::count(),
+            'recibos_activos' => ReciboGastoComun::where('estado', 'activo')->count(),
+            'recibos_vencidos' => ReciboGastoComun::where('estado', 'vencido')->count(),
+            'recibos_anulados' => ReciboGastoComun::where('estado', 'anulado')->count(),
+            'total_valor_vencidos' => ReciboGastoComun::where('estado', 'vencido')->sum('total_recibo'),
+            'total_valor_activos' => ReciboGastoComun::where('estado', 'activo')->sum('total_recibo'),
+            'recibos_vencidos_detalle' => ReciboGastoComun::where('estado', 'vencido')
+                ->orderBy('fecha_vencimiento', 'asc')
+                ->take(5)
+                ->get(['numero_recibo', 'periodo', 'fecha_vencimiento', 'total_recibo'])
+        ];
+        
+        return view('recibos.index', compact('recibos', 'estadisticas'));
     }
 
     /**
@@ -63,6 +82,11 @@ class ReciboGastoComunController extends Controller
         $recibo = new ReciboGastoComun($request->all());
         $recibo->calcularTotal();
         $recibo->save();
+
+        // Si el recibo está activo, asignarlo a todos los apartamentos
+        if ($recibo->estado === 'activo') {
+            $this->asignarReciboATodosApartamentos($recibo);
+        }
 
         return redirect()->route('recibos.index')
             ->with('success', 'Recibo de gasto común creado exitosamente.');
@@ -210,6 +234,12 @@ class ReciboGastoComunController extends Controller
 
                 $recibo->calcularTotal();
                 $recibo->save();
+                
+                // Si el recibo está activo, asignarlo a todos los apartamentos
+                if ($recibo->estado === 'activo') {
+                    $this->asignarReciboATodosApartamentos($recibo);
+                }
+                
                 $recibosCreados++;
 
             } catch (\Exception $e) {
@@ -264,5 +294,227 @@ class ReciboGastoComunController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Eliminar múltiples recibos seleccionados
+     */
+    public function destroyMultiple(Request $request)
+    {
+        $request->validate([
+            'recibo_ids' => 'required|array|min:1',
+            'recibo_ids.*' => 'exists:recibo_gasto_comuns,id'
+        ]);
+
+        try {
+            $count = ReciboGastoComun::whereIn('id', $request->recibo_ids)->delete();
+            
+            return redirect()->route('recibos.index')
+                ->with('success', "Se eliminaron {$count} recibos exitosamente.");
+        } catch (\Exception $e) {
+            return redirect()->route('recibos.index')
+                ->with('error', 'Error al eliminar los recibos: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Eliminar todos los recibos
+     */
+    public function destroyAll()
+    {
+        try {
+            $count = ReciboGastoComun::count();
+            
+            if ($count === 0) {
+                return redirect()->route('recibos.index')
+                    ->with('info', 'No hay recibos para eliminar.');
+            }
+            
+            // Eliminar todos los recibos (esto también eliminará los pagos asociados por cascada)
+            ReciboGastoComun::truncate();
+            
+            return redirect()->route('recibos.index')
+                ->with('success', "Se eliminaron todos los {$count} recibos exitosamente.");
+        } catch (\Exception $e) {
+            return redirect()->route('recibos.index')
+                ->with('error', 'Error al eliminar todos los recibos: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Asignar recibo a todos los apartamentos
+     */
+    private function asignarReciboATodosApartamentos(ReciboGastoComun $recibo)
+    {
+        $apartamentos = Apartamento::all();
+        
+        foreach ($apartamentos as $apartamento) {
+            // Determinar el estado del pago según el estatus financiero del apartamento y estado del recibo
+            $estadoPago = 'pendiente_confirmacion';
+            $observaciones = 'Recibo asignado automáticamente';
+            
+            // Si el apartamento es solvente y el recibo está vencido, crear el pago como rechazado
+            // para que no aparezca en el listado de deudas
+            if ($apartamento->estatus_financiero === 'solvente' && $recibo->estado === 'vencido') {
+                $estadoPago = 'rechazado';
+                $observaciones = 'Recibo asignado automáticamente - Apartamento solvente con recibo vencido';
+            } elseif ($apartamento->estatus_financiero === 'solvente') {
+                // Para apartamentos solventes con recibos activos, mantener pendiente
+                $observaciones = 'Recibo asignado automáticamente - Apartamento solvente';
+            }
+            
+            // Crear registro de pago para cada apartamento
+            Pago::create([
+                'recibo_gasto_comun_id' => $recibo->id,
+                'apartamento_id' => $apartamento->id,
+                'monto_pagado' => 0,
+                'fecha_pago' => null,
+                'metodo_pago' => null,
+                'numero_comprobante' => null,
+                'observaciones' => $observaciones,
+                'estado' => $estadoPago
+            ]);
+            
+            // Solo cambiar a deudor si actualmente es solvente y el pago no fue rechazado
+            // Los que ya son deudores mantienen su estatus
+            if ($apartamento->estatus_financiero === 'solvente' && $estadoPago !== 'rechazado') {
+                $apartamento->update([
+                    'estatus_financiero' => 'deudor',
+                    'fecha_cambio_estatus' => now()->toDateString()
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Mostrar vista para asignación manual de recibos vencidos
+     */
+    public function showAsignarRecibosManual()
+    {
+        // Obtener todos los recibos vencidos/activos (pueden tener asignaciones existentes)
+        $recibosDisponibles = ReciboGastoComun::whereIn('estado', ['vencido', 'activo'])
+            ->with(['pagos.apartamento']) // Cargar asignaciones existentes
+            ->orderBy('fecha_emision', 'desc')
+            ->get();
+
+        // Obtener todos los apartamentos activos
+        $apartamentos = Apartamento::where('estado', 'ocupado')
+            ->orderBy('numero')
+            ->get();
+
+        // Calcular monto total disponible
+        $totalMontoDisponible = $recibosDisponibles->sum('total_recibo');
+
+        return view('recibos.asignar-manual', compact(
+            'recibosDisponibles',
+            'apartamentos',
+            'totalMontoDisponible'
+        ));
+    }
+
+    /**
+     * Procesar asignaciones manuales de recibos a apartamentos
+     */
+    public function asignarRecibosManual(Request $request)
+    {
+        $request->validate([
+            'recibos_seleccionados' => 'required|array|min:1',
+            'recibos_seleccionados.*' => 'exists:recibo_gasto_comuns,id',
+            'apartamentos' => 'required|array',
+        ], [
+            'recibos_seleccionados.required' => 'Debe seleccionar al menos un recibo.',
+            'recibos_seleccionados.min' => 'Debe seleccionar al menos un recibo.',
+            'apartamentos.required' => 'Debe asignar apartamentos a los recibos seleccionados.',
+        ]);
+
+        try {
+            \DB::beginTransaction();
+
+            $recibosSeleccionados = $request->recibos_seleccionados;
+            $apartamentosAsignados = $request->apartamentos;
+            $asignacionesCreadas = 0;
+            $errores = [];
+
+            foreach ($recibosSeleccionados as $reciboId) {
+                // Verificar que el recibo tenga un apartamento asignado
+                if (!isset($apartamentosAsignados[$reciboId]) || empty($apartamentosAsignados[$reciboId])) {
+                    continue; // Saltar recibos sin apartamento asignado
+                }
+
+                $apartamentoId = $apartamentosAsignados[$reciboId];
+                
+                // Verificar que el recibo existe
+                $recibo = ReciboGastoComun::where('id', $reciboId)
+                    ->whereIn('estado', ['vencido', 'activo'])
+                    ->first();
+
+                if (!$recibo) {
+                    $errores[] = "El recibo ID {$reciboId} no existe o no está disponible.";
+                    continue;
+                }
+
+                // Verificar que el apartamento existe
+                $apartamento = Apartamento::find($apartamentoId);
+                if (!$apartamento) {
+                    $errores[] = "El apartamento ID {$apartamentoId} no existe.";
+                    continue;
+                }
+
+                // Verificar si ya existe una asignación para esta combinación recibo-apartamento
+                $asignacionExistente = Pago::where('recibo_gasto_comun_id', $recibo->id)
+                    ->where('apartamento_id', $apartamento->id)
+                    ->first();
+
+                if ($asignacionExistente) {
+                    $errores[] = "El recibo {$recibo->numero_recibo} ya está asignado al apartamento {$apartamento->numero}.";
+                    continue;
+                }
+
+                // Determinar estado del pago según el estatus financiero del apartamento
+                $estadoPago = 'pendiente_confirmacion';
+                $observaciones = 'Asignación manual de recibo vencido';
+
+                if ($apartamento->estatus_financiero === 'deudor') {
+                    $estadoPago = 'rechazado';
+                    $observaciones = 'Asignación manual - Apartamento ya es deudor';
+                }
+
+                // Crear el pago (asignación)
+                Pago::create([
+                    'apartamento_id' => $apartamento->id,
+                    'recibo_gasto_comun_id' => $recibo->id,
+                    'monto_pagado' => 0,
+                    'fecha_pago' => null,
+                    'metodo_pago' => 'pendiente',
+                    'estado' => $estadoPago,
+                    'observaciones' => $observaciones
+                ]);
+
+                // Actualizar estatus financiero del apartamento si es necesario
+                if (in_array($recibo->estado, ['activo', 'vencido']) && $apartamento->estatus_financiero !== 'deudor') {
+                    $apartamento->update([
+                        'estatus_financiero' => 'deudor',
+                        'fecha_cambio_estatus' => now()->toDateString()
+                    ]);
+                }
+
+                $asignacionesCreadas++;
+            }
+
+            \DB::commit();
+
+            $mensaje = "Asignación completada exitosamente. {$asignacionesCreadas} recibos asignados.";
+            if (!empty($errores)) {
+                $mensaje .= " Errores encontrados: " . implode(', ', $errores);
+            }
+
+            return redirect()->route('recibos.asignar-manual')
+                ->with('success', $mensaje);
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            return redirect()->route('recibos.asignar-manual')
+                ->with('error', 'Error durante la asignación: ' . $e->getMessage());
+        }
     }
 }

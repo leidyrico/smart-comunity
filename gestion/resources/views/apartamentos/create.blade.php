@@ -22,7 +22,7 @@
                         <!-- Piso -->
                         <div class="mb-4">
                             <x-input-label for="piso" :value="__('Piso')" />
-                            <x-text-input id="piso" class="block mt-1 w-full" type="number" name="piso" :value="old('piso')" required />
+                            <x-text-input id="piso" class="block mt-1 w-full" type="number" name="piso" :value="old('piso')" min="0" required />
                             <x-input-error :messages="$errors->get('piso')" class="mt-2" />
                         </div>
 
@@ -67,6 +67,16 @@
                                 <option value="mantenimiento" {{ old('estado') == 'mantenimiento' ? 'selected' : '' }}>En Mantenimiento</option>
                             </select>
                             <x-input-error :messages="$errors->get('estado')" class="mt-2" />
+                        </div>
+
+                        <!-- Estatus Financiero -->
+                        <div class="mb-4">
+                            <x-input-label for="estatus_financiero" :value="__('Estatus Financiero')" />
+                            <select id="estatus_financiero" name="estatus_financiero" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                <option value="solvente" {{ old('estatus_financiero') == 'solvente' ? 'selected' : '' }}>Solvente</option>
+                                <option value="deudor" {{ old('estatus_financiero') == 'deudor' ? 'selected' : '' }}>Deudor</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('estatus_financiero')" class="mt-2" />
                         </div>
 
                         <!-- Observaciones -->

@@ -123,10 +123,10 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                                            ${{ number_format($pago->monto_pagado, 0, ',', '.') }}
+                                            ${{ number_format($pago->monto_pagado, 2, ',', '.') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $pago->fecha_pago->format('d/m/Y') }}
+                                            {{ $pago->fecha_pago ? $pago->fecha_pago->format('d/m/Y') : 'N/A' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -226,7 +226,7 @@
                                     <div class="text-sm text-gray-500">Total Pagos</div>
                                 </div>
                                 <div class="bg-white p-4 rounded-lg shadow">
-                                    <div class="text-2xl font-bold text-green-600">${{ number_format($pagos->sum('monto_pagado'), 0, ',', '.') }}</div>
+                                    <div class="text-2xl font-bold text-green-600">${{ number_format($pagos->sum('monto_pagado'), 2, ',', '.') }}</div>
                                     <div class="text-sm text-gray-500">Monto Total</div>
                                 </div>
                                 <div class="bg-white p-4 rounded-lg shadow">

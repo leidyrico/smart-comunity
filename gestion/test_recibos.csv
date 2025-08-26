@@ -1,0 +1,4 @@
+numero_recibo,periodo,fecha_emision,fecha_vencimiento,valor_administracion,valor_aseo,valor_vigilancia,valor_mantenimiento,otros_conceptos,estado
+REC-601001,2025-01,01-01-2025,31-01-2025,25000,5000,8000,3000,2000,activo
+REC-601002,2025-02,01-02-2025,28-02-2025,25000,5000,8000,3000,2000,activo
+REC-601003,2025-03,01-03-2025,31-03-2025,25000,5000,8000,3000,2000,vencido

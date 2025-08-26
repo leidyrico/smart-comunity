@@ -47,36 +47,36 @@
                             <div class="space-y-2">
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Administración:</span>
-                                    <span class="font-medium">${{ number_format($recibo->valor_administracion, 0, ',', '.') }}</span>
+                                    <span class="font-medium">${{ number_format($recibo->valor_administracion, 2, ',', '.') }}</span>
                                 </div>
                                 @if($recibo->valor_aseo > 0)
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Aseo:</span>
-                                    <span class="font-medium">${{ number_format($recibo->valor_aseo, 0, ',', '.') }}</span>
+                                    <span class="font-medium">${{ number_format($recibo->valor_aseo, 2, ',', '.') }}</span>
                                 </div>
                                 @endif
                                 @if($recibo->valor_vigilancia > 0)
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Vigilancia:</span>
-                                    <span class="font-medium">${{ number_format($recibo->valor_vigilancia, 0, ',', '.') }}</span>
+                                    <span class="font-medium">${{ number_format($recibo->valor_vigilancia, 2, ',', '.') }}</span>
                                 </div>
                                 @endif
                                 @if($recibo->valor_mantenimiento > 0)
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Mantenimiento:</span>
-                                    <span class="font-medium">${{ number_format($recibo->valor_mantenimiento, 0, ',', '.') }}</span>
+                                    <span class="font-medium">${{ number_format($recibo->valor_mantenimiento, 2, ',', '.') }}</span>
                                 </div>
                                 @endif
                                 @if($recibo->otros_conceptos > 0)
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Otros Conceptos:</span>
-                                    <span class="font-medium">${{ number_format($recibo->otros_conceptos, 0, ',', '.') }}</span>
+                                    <span class="font-medium">${{ number_format($recibo->otros_conceptos, 2, ',', '.') }}</span>
                                 </div>
                                 @endif
                                 <div class="border-t pt-2 mt-2">
                                     <div class="flex justify-between text-lg font-bold">
                                         <span class="text-gray-800">Total:</span>
-                                        <span class="text-green-600">${{ number_format($recibo->total_recibo, 0, ',', '.') }}</span>
+                                        <span class="text-green-600">${{ number_format($recibo->total_recibo, 2, ',', '.') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -116,7 +116,7 @@
                                         {{ $pago->apartamento->numero ?? 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        ${{ number_format($pago->monto_pagado, 0, ',', '.') }}
+                                        ${{ number_format($pago->monto_pagado, 2, ',', '.') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ $pago->fecha_pago->format('d/m/Y') }}
@@ -141,12 +141,12 @@
                     <div class="mt-4 bg-gray-50 p-4 rounded-lg">
                         <div class="flex justify-between items-center">
                             <span class="text-gray-700 font-medium">Total Pagado:</span>
-                            <span class="text-lg font-bold text-green-600">${{ number_format($recibo->total_pagado, 0, ',', '.') }}</span>
+                            <span class="text-lg font-bold text-green-600">${{ number_format($recibo->total_pagado, 2, ',', '.') }}</span>
                         </div>
                         <div class="flex justify-between items-center mt-2">
                             <span class="text-gray-700 font-medium">Saldo Pendiente:</span>
                             <span class="text-lg font-bold {{ $recibo->saldo_pendiente > 0 ? 'text-red-600' : 'text-green-600' }}">
-                                ${{ number_format($recibo->saldo_pendiente, 0, ',', '.') }}
+                                ${{ number_format($recibo->saldo_pendiente, 2, ',', '.') }}
                             </span>
                         </div>
                     </div>
@@ -205,23 +205,35 @@
 
             <!-- Botones de Acción -->
             <div class="flex justify-between items-center">
-                <a href="{{ route('recibos.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                <a href="{{ route('recibos.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
                     {{ __('Volver a Recibos') }}
                 </a>
                 
                 <div class="space-x-2">
-                    <a href="{{ route('recibos.print', $recibo) }}" target="_blank" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                        🖨️ {{ __('Imprimir') }}
+                    <a href="{{ route('recibos.print', $recibo) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                        </svg>
+                        {{ __('Imprimir') }}
                     </a>
                     
-                    <a href="{{ route('recibos.edit', $recibo) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    <a href="{{ route('recibos.edit', $recibo) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
                         {{ __('Editar') }}
                     </a>
                     
                     <form method="POST" action="{{ route('recibos.destroy', $recibo) }}" class="inline-block" onsubmit="return confirm('¿Está seguro de que desea eliminar este recibo?')">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
                             {{ __('Eliminar') }}
                         </button>
                     </form>

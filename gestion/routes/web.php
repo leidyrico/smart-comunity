@@ -53,7 +53,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/recibos/import', [ReciboGastoComunController::class, 'importProcess'])->name('recibos.import.process');
     Route::get('/recibos/template', [ReciboGastoComunController::class, 'template'])->name('recibos.template');
     Route::get('/recibos/{recibo}/print', [ReciboGastoComunController::class, 'print'])->name('recibos.print');
+    Route::delete('/recibos/destroy-multiple', [ReciboGastoComunController::class, 'destroyMultiple'])->name('recibos.destroy-multiple');
+    Route::delete('/recibos/destroy-all', [ReciboGastoComunController::class, 'destroyAll'])->name('recibos.destroy-all');
     Route::resource('recibos', ReciboGastoComunController::class);
+    
+    // Asignación manual de recibos
+    Route::get('/recibos/asignar-manual', [ReciboGastoComunController::class, 'showAsignarRecibosManual'])->name('recibos.asignar-manual');
+    Route::post('/recibos/asignar-manual', [ReciboGastoComunController::class, 'asignarRecibosManual'])->name('recibos.asignar-manual.process');
     
     // Rutas para pagos
     Route::resource('pagos', PagoController::class);
@@ -62,8 +68,13 @@ Route::middleware('auth')->group(function () {
     Route::patch('/pagos/{pago}/rechazar', [PagoController::class, 'rechazar'])->name('pagos.rechazar');
     Route::get('/api/recibos-por-apartamento', [PagoController::class, 'getRecibosPorApartamento'])->name('api.recibos-apartamento');
     
+    // Rutas para pago global
+    Route::get('/pagos/global/create/{apartamento}', [PagoController::class, 'createGlobal'])->name('pagos.create-global');
+    Route::post('/pagos/global/store', [PagoController::class, 'storeGlobal'])->name('pagos.store-global');
+    
     // Rutas para consulta de deudas
     Route::get('/deudas', [DeudaController::class, 'index'])->name('deudas.index');
+    Route::get('/deudas/export/excel', [DeudaController::class, 'exportExcel'])->name('deudas.export.excel');
     Route::get('/api/deudas/estadisticas', [DeudaController::class, 'estadisticas'])->name('api.deudas.estadisticas');
     
     // Rutas para importación CSV de apartamentos
@@ -75,8 +86,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/deudas/import/completo', [DeudaController::class, 'showImportCompleto'])->name('deudas.import.completo');
     Route::post('/deudas/import/completo', [DeudaController::class, 'importCompleto'])->name('deudas.import.completo.process');
     Route::get('/deudas/template/completo', [DeudaController::class, 'downloadTemplateCompleto'])->name('deudas.template.completo');
+    Route::get('/deudas/import/errors', [DeudaController::class, 'showImportErrors'])->name('deudas.import.errors');
+    
+    // Rutas para importación selectiva de recibos vencidos
+    Route::get('/deudas/import/recibos-vencidos', [DeudaController::class, 'showImportRecibosVencidos'])->name('deudas.import.recibos-vencidos');
+    Route::post('/deudas/import/recibos-vencidos', [DeudaController::class, 'importRecibosVencidos'])->name('deudas.import.recibos-vencidos.process');
     
     Route::get('/deudas/{apartamento}', [DeudaController::class, 'show'])->name('deudas.show');
+    Route::patch('/deudas/recibo/{recibo}/cambiar-estado', [DeudaController::class, 'cambiarEstadoRecibo'])->name('deudas.cambiar-estado-recibo');
+    
+
+    
+    // API endpoints
+    Route::get('/api/saldo-recibo', [PagoController::class, 'getSaldoRecibo'])->name('api.saldo-recibo');
+    Route::get('/api/apartamentos', [ApartamentoController::class, 'getApartamentosApi'])->name('api.apartamentos');
 });
 
 require __DIR__.'/auth.php';

@@ -78,7 +78,7 @@
                                                     {{ $recibo->periodo }}
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {{ $recibo->fecha_emision->format('d/m/Y') }}
+                                                    {{ $recibo->fecha_emision ? $recibo->fecha_emision->format('d/m/Y') : 'N/A' }}
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     ${{ number_format($recibo->total_recibo, 2) }}
@@ -140,7 +140,7 @@
                                         @foreach($apartamento->pagos->sortByDesc('fecha_pago') as $pago)
                                             <tr class="hover:bg-gray-50">
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {{ $pago->fecha_pago->format('d/m/Y') }}
+                                                    {{ $pago->fecha_pago ? $pago->fecha_pago->format('d/m/Y') : 'N/A' }}
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {{ $pago->reciboGastoComun->numero_recibo ?? 'N/A' }}

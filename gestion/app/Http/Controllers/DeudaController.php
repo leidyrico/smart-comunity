@@ -20,6 +20,7 @@ class DeudaController extends Controller
     public function index(Request $request)
     {
         $query = Apartamento::with(['pagos', 'pagos.reciboGastoComun'])
+            ->where('estatus_financiero', '!=', 'solvente') // Excluir apartamentos solventes
             ->orderBy('numero');
 
         // Filtro por número de apartamento si se proporciona
@@ -34,10 +35,19 @@ class DeudaController extends Controller
 
         $apartamentos = $query->get();
 
-        // Obtener todos los recibos para calcular deudas
-        $recibos = ReciboGastoComun::where('estado', 'activo')
+        // Obtener solo recibos que están asignados (tienen pagos asociados)
+        $recibosActivos = ReciboGastoComun::where('estado', 'activo')
+            ->whereHas('pagos') // Solo recibos con asignaciones
             ->orderBy('fecha_emision', 'desc')
             ->get();
+            
+        $recibosVencidos = ReciboGastoComun::where('estado', 'vencido')
+            ->whereHas('pagos') // Solo recibos con asignaciones
+            ->orderBy('fecha_emision', 'asc')
+            ->get();
+            
+        // Combinar: primero activos (fijados arriba), luego vencidos ordenados ascendente
+        $recibos = $recibosActivos->concat($recibosVencidos);
 
         // Preparar datos detallados para la tabla
         $datosDeuda = [];
@@ -130,8 +140,8 @@ class DeudaController extends Controller
     {
         $apartamento = Apartamento::with(['pagos.reciboGastoComun'])->findOrFail($id);
         
-        // Obtener todos los recibos y calcular estado de pago
-        $recibos = ReciboGastoComun::where('estado', 'activo')
+        // Obtener todos los recibos y calcular estado de pago (activos y vencidos)
+        $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])
             ->orderBy('fecha_emision', 'desc')
             ->get();
         
@@ -158,6 +168,28 @@ class DeudaController extends Controller
     }
 
     /**
+     * Cambiar el estado de un recibo específico
+     */
+    public function cambiarEstadoRecibo(Request $request, $reciboId)
+    {
+        $request->validate([
+            'estado' => 'required|in:pagado,pendiente'
+        ]);
+
+        $recibo = ReciboGastoComun::findOrFail($reciboId);
+        $recibo->estado = $request->estado;
+        $recibo->save();
+
+        // Actualizar el estatus financiero de todos los apartamentos afectados
+        $apartamentos = Apartamento::all();
+        foreach ($apartamentos as $apartamento) {
+            $apartamento->actualizarEstatusFinanciero();
+        }
+
+        return redirect()->back()->with('success', 'Estado del recibo actualizado correctamente.');
+    }
+
+    /**
      * Obtener resumen estadístico de deudas
      */
     public function estadisticas()
@@ -167,7 +199,7 @@ class DeudaController extends Controller
         $deudaTotal = 0;
         
         $apartamentos = Apartamento::with(['pagos'])->get();
-        $recibos = ReciboGastoComun::where('estado', 'activo')->get();
+        $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])->get();
         
         foreach ($apartamentos as $apartamento) {
             $deudaApartamento = 0;
@@ -327,11 +359,16 @@ class DeudaController extends Controller
 
             // Si se seleccionó borrar datos, limpiar tablas
             if ($request->has('borrar_datos') && $request->borrar_datos) {
-                DB::transaction(function () {
-                    Pago::truncate();
-                    ReciboGastoComun::truncate();
-                    Apartamento::truncate();
-                });
+                // Desactivar verificaciones de claves foráneas temporalmente
+                DB::statement('SET FOREIGN_KEY_CHECKS=0');
+                
+                // Truncar en orden correcto (primero las tablas dependientes)
+                DB::table('pagos')->truncate();
+                DB::table('recibo_gasto_comuns')->truncate();
+                DB::table('apartamentos')->truncate();
+                
+                // Reactivar verificaciones de claves foráneas
+                DB::statement('SET FOREIGN_KEY_CHECKS=1');
             }
 
             DB::beginTransaction();
@@ -357,6 +394,9 @@ class DeudaController extends Controller
                 $errors = array_merge($errors, $result['errors']);
             }
 
+            // NO recalcular estatus financiero automáticamente - respetar el estatus definido en Excel
+            // $this->recalcularEstatusFinancieroTodosApartamentos();
+
             DB::commit();
 
             $message = "Importación completada: {$importedData['apartamentos']} apartamentos, {$importedData['recibos']} recibos, {$importedData['pagos']} pagos.";
@@ -364,9 +404,17 @@ class DeudaController extends Controller
                 $message .= " Se encontraron " . count($errors) . " errores.";
             }
 
+            // Si hay errores, redirigir a la página de errores detallados
+            if (!empty($errors)) {
+                return redirect()->route('deudas.import.errors')
+                    ->with('success', $message)
+                    ->with('import_errors', $errors)
+                    ->with('import_summary', $importedData);
+            }
+            
             return redirect()->route('deudas.index')
                 ->with('success', $message)
-                ->with('import_errors', $errors);
+                ->with('import_summary', $importedData);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -425,13 +473,30 @@ class DeudaController extends Controller
                     [
                         'propietario' => $rowData['propietario'] ?? '',
                         'telefono' => $rowData['telefono'] ?? '',
-                        'email' => $rowData['email'] ?? ''
+                        'email' => $rowData['email'] ?? '',
+                        'piso' => $rowData['piso'] ?? null,
+                        'torre' => $rowData['torre'] ?? null,
+                        'area_m2' => $rowData['area_m2'] ?? null,
+                        'tipo' => $rowData['tipo'] ?? 'apartamento',
+                        'estado' => $rowData['estado'] ?? 'ocupado',
+                        'estatus_financiero' => in_array(strtolower($rowData['estatus_financiero'] ?? ''), ['solvente', 'deudor']) 
+                            ? strtolower($rowData['estatus_financiero']) 
+                            : 'solvente',
+                        'observaciones' => $rowData['observaciones'] ?? ''
                     ]
                 );
                 $imported++;
             } catch (\Exception $e) {
                 $error = "Apartamento fila " . ($rowIndex + 2) . ": " . $e->getMessage();
                 $errors[] = $error;
+                
+                // Log detallado del error
+                \Log::error('Error importando apartamento', [
+                    'fila' => $rowIndex + 2,
+                    'datos' => $rowData,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
                 
                 if (!$continueOnError) {
                     break;
@@ -440,6 +505,57 @@ class DeudaController extends Controller
         }
 
         return ['imported' => $imported, 'errors' => $errors];
+    }
+
+    /**
+     * Parsear fecha desde diferentes formatos
+     */
+    private function parseFecha($fechaStr)
+    {
+        if (empty($fechaStr)) {
+            return now();
+        }
+        
+        // Intentar diferentes formatos de fecha
+        $formatos = ['d/m/Y', 'd-m-Y', 'Y-m-d', 'd/m/y', 'd-m-y'];
+        
+        foreach ($formatos as $formato) {
+            try {
+                return Carbon::createFromFormat($formato, $fechaStr);
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+        
+        // Si ningún formato funciona, intentar parse automático
+        try {
+            return Carbon::parse($fechaStr);
+        } catch (\Exception $e) {
+            \Log::warning("No se pudo parsear la fecha: {$fechaStr}");
+            return now();
+        }
+    }
+
+    /**
+     * Recalcular estatus financiero de todos los apartamentos basado en recibos activos/vencidos
+     */
+    private function recalcularEstatusFinancieroTodosApartamentos()
+    {
+        $apartamentos = Apartamento::all();
+        
+        foreach ($apartamentos as $apartamento) {
+            $apartamento->actualizarEstatusFinanciero();
+        }
+        
+        \Log::info('Estatus financiero recalculado para todos los apartamentos después de importación Excel');
+    }
+
+    /**
+     * Mostrar página de errores detallados de importación
+     */
+    public function showImportErrors()
+    {
+        return view('deudas.import-errors');
     }
 
     /**
@@ -452,7 +568,7 @@ class DeudaController extends Controller
         $imported = 0;
         $errors = [];
 
-        $requiredColumns = ['apartamento', 'concepto', 'monto'];
+        $requiredColumns = ['numero_recibo', 'periodo', 'fecha_emision', 'fecha_vencimiento', 'valor_administracion', 'valor_aseo', 'valor_vigilancia', 'valor_mantenimiento', 'otros_conceptos', 'estado'];
         $missingColumns = array_diff($requiredColumns, $header);
         
         if (!empty($missingColumns)) {
@@ -468,41 +584,44 @@ class DeudaController extends Controller
             $rowData = array_combine($header, $row);
 
             try {
-                $apartamento = Apartamento::where('numero', $rowData['apartamento'])->first();
-                
-                if (!$apartamento) {
-                    if ($validateRelations) {
-                        $error = "Recibo fila " . ($rowIndex + 2) . ": Apartamento {$rowData['apartamento']} no encontrado";
-                        $errors[] = $error;
-                        
-                        if (!$continueOnError) {
-                            break;
-                        }
-                        continue;
-                    } else {
-                        // Crear apartamento automáticamente
-                        $apartamento = Apartamento::create([
-                            'numero' => $rowData['apartamento'],
-                            'propietario' => 'Propietario por definir',
-                            'telefono' => '',
-                            'email' => ''
-                        ]);
-                    }
+                // Buscar apartamento por número de recibo si existe la columna
+                $apartamento = null;
+                if (isset($rowData['apartamento_numero'])) {
+                    $apartamento = Apartamento::where('numero', $rowData['apartamento_numero'])->first();
                 }
                 
-                Deuda::create([
-                    'apartamento_id' => $apartamento->id,
-                    'concepto' => $rowData['concepto'],
-                    'monto' => $rowData['monto'] ?? 0,
-                    'fecha_vencimiento' => isset($rowData['fecha_vencimiento']) && $rowData['fecha_vencimiento'] 
-                        ? Carbon::createFromFormat('Y-m-d', $rowData['fecha_vencimiento']) 
-                        : now(),
-                    'estado' => 'pendiente'
+                $recibo = new ReciboGastoComun([
+                    'numero_recibo' => $rowData['numero_recibo'],
+                    'periodo' => $rowData['periodo'],
+                    'fecha_emision' => $this->parseExcelDate($rowData['fecha_emision'] ?? null),
+                    'fecha_vencimiento' => $this->parseExcelDate($rowData['fecha_vencimiento'] ?? null),
+                    'valor_administracion' => $rowData['valor_administracion'] ?? 0,
+                    'valor_aseo' => $rowData['valor_aseo'] ?? 0,
+                    'valor_vigilancia' => $rowData['valor_vigilancia'] ?? 0,
+                    'valor_mantenimiento' => $rowData['valor_mantenimiento'] ?? 0,
+                    'otros_conceptos' => $rowData['otros_conceptos'] ?? 0,
+                    'estado' => $rowData['estado'] ?? 'activo'
                 ]);
+                $recibo->calcularTotal();
+                $recibo->save();
+                
+                // Si el recibo está activo, asignarlo a todos los apartamentos
+                if ($recibo->estado === 'activo') {
+                    $this->asignarReciboATodosApartamentos($recibo);
+                }
+                
                 $imported++;
             } catch (\Exception $e) {
                 $error = "Recibo fila " . ($rowIndex + 2) . ": " . $e->getMessage();
                 $errors[] = $error;
+                
+                // Log detallado del error
+                \Log::error('Error importando recibo', [
+                    'fila' => $rowIndex + 2,
+                    'datos' => $rowData,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
                 
                 if (!$continueOnError) {
                     break;
@@ -523,7 +642,7 @@ class DeudaController extends Controller
         $imported = 0;
         $errors = [];
 
-        $requiredColumns = ['apartamento', 'monto'];
+        $requiredColumns = ['apartamento_numero', 'monto_pagado'];
         $missingColumns = array_diff($requiredColumns, $header);
         
         if (!empty($missingColumns)) {
@@ -539,11 +658,11 @@ class DeudaController extends Controller
             $rowData = array_combine($header, $row);
 
             try {
-                $apartamento = Apartamento::where('numero', $rowData['apartamento'])->first();
+                $apartamento = Apartamento::where('numero', $rowData['apartamento_numero'])->first();
                 
                 if (!$apartamento) {
                     if ($validateRelations) {
-                        $error = "Pago fila " . ($rowIndex + 2) . ": Apartamento {$rowData['apartamento']} no encontrado";
+                        $error = "Pago fila " . ($rowIndex + 2) . ": Apartamento {$rowData['apartamento_numero']} no encontrado";
                         $errors[] = $error;
                         
                         if (!$continueOnError) {
@@ -553,7 +672,7 @@ class DeudaController extends Controller
                     } else {
                         // Crear apartamento automáticamente
                         $apartamento = Apartamento::create([
-                            'numero' => $rowData['apartamento'],
+                            'numero' => $rowData['apartamento_numero'],
                             'propietario' => 'Propietario por definir',
                             'telefono' => '',
                             'email' => ''
@@ -561,19 +680,36 @@ class DeudaController extends Controller
                     }
                 }
                 
+                // Buscar recibo por número si se proporciona
+                $recibo = null;
+                if (isset($rowData['recibo_numero']) && $rowData['recibo_numero']) {
+                    $recibo = ReciboGastoComun::where('numero_recibo', $rowData['recibo_numero'])->first();
+                }
+                
                 Pago::create([
                     'apartamento_id' => $apartamento->id,
-                    'monto' => $rowData['monto'] ?? 0,
+                    'recibo_gasto_comun_id' => $recibo ? $recibo->id : null,
+                    'monto_pagado' => $rowData['monto_pagado'] ?? 0,
                     'fecha_pago' => isset($rowData['fecha_pago']) && $rowData['fecha_pago'] 
-                        ? Carbon::createFromFormat('Y-m-d', $rowData['fecha_pago']) 
+                        ? $this->parseExcelDate($rowData['fecha_pago']) 
                         : now(),
                     'metodo_pago' => $rowData['metodo_pago'] ?? 'efectivo',
-                    'referencia' => $rowData['referencia'] ?? ''
+                    'numero_comprobante' => $rowData['numero_comprobante'] ?? '',
+                    'estado' => $rowData['estado'] ?? 'confirmado',
+                    'observaciones' => $rowData['observaciones'] ?? ''
                 ]);
                 $imported++;
             } catch (\Exception $e) {
                 $error = "Pago fila " . ($rowIndex + 2) . ": " . $e->getMessage();
                 $errors[] = $error;
+                
+                // Log detallado del error
+                \Log::error('Error importando pago', [
+                    'fila' => $rowIndex + 2,
+                    'datos' => $rowData,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
                 
                 if (!$continueOnError) {
                     break;
@@ -595,45 +731,109 @@ class DeudaController extends Controller
         $apartamentosSheet = $spreadsheet->getActiveSheet();
         $apartamentosSheet->setTitle('Apartamentos');
         $apartamentosSheet->setCellValue('A1', 'numero');
-        $apartamentosSheet->setCellValue('B1', 'propietario');
-        $apartamentosSheet->setCellValue('C1', 'telefono');
-        $apartamentosSheet->setCellValue('D1', 'email');
+        $apartamentosSheet->setCellValue('B1', 'piso');
+        $apartamentosSheet->setCellValue('C1', 'torre');
+        $apartamentosSheet->setCellValue('D1', 'propietario');
+        $apartamentosSheet->setCellValue('E1', 'telefono');
+        $apartamentosSheet->setCellValue('F1', 'email');
+        $apartamentosSheet->setCellValue('G1', 'area_m2');
+        $apartamentosSheet->setCellValue('H1', 'tipo');
+        $apartamentosSheet->setCellValue('I1', 'estado');
+        $apartamentosSheet->setCellValue('J1', 'estatus_financiero');
+        $apartamentosSheet->setCellValue('K1', 'observaciones');
         
         // Datos de ejemplo
         $apartamentosSheet->setCellValue('A2', '101');
-        $apartamentosSheet->setCellValue('B2', 'Juan Pérez');
-        $apartamentosSheet->setCellValue('C2', '555-1234');
-        $apartamentosSheet->setCellValue('D2', 'juan@email.com');
+        $apartamentosSheet->setCellValue('B2', '1');
+        $apartamentosSheet->setCellValue('C2', 'A');
+        $apartamentosSheet->setCellValue('D2', 'Juan Pérez García');
+        $apartamentosSheet->setCellValue('E2', '3001234567');
+        $apartamentosSheet->setCellValue('F2', 'juan.perez@email.com');
+        $apartamentosSheet->setCellValue('G2', '65.5');
+        $apartamentosSheet->setCellValue('H2', 'apartamento');
+        $apartamentosSheet->setCellValue('I2', 'ocupado');
+        $apartamentosSheet->setCellValue('J2', 'solvente');
+        $apartamentosSheet->setCellValue('K2', 'Apartamento con balcón');
+        
+        $apartamentosSheet->setCellValue('A3', '102');
+        $apartamentosSheet->setCellValue('B3', '1');
+        $apartamentosSheet->setCellValue('C3', 'A');
+        $apartamentosSheet->setCellValue('D3', 'María González López');
+        $apartamentosSheet->setCellValue('E3', '3007654321');
+        $apartamentosSheet->setCellValue('F3', 'maria.gonzalez@email.com');
+        $apartamentosSheet->setCellValue('G3', '58.2');
+        $apartamentosSheet->setCellValue('H3', 'apartamento');
+        $apartamentosSheet->setCellValue('I3', 'en_arriendo');
+        $apartamentosSheet->setCellValue('J3', 'deudor');
+        $apartamentosSheet->setCellValue('K3', 'Apartamento recién remodelado');
         
         // Hoja de Recibos
         $recibosSheet = $spreadsheet->createSheet();
         $recibosSheet->setTitle('Recibos');
-        $recibosSheet->setCellValue('A1', 'apartamento');
-        $recibosSheet->setCellValue('B1', 'concepto');
-        $recibosSheet->setCellValue('C1', 'monto');
+        $recibosSheet->setCellValue('A1', 'numero_recibo');
+        $recibosSheet->setCellValue('B1', 'periodo');
+        $recibosSheet->setCellValue('C1', 'fecha_emision');
         $recibosSheet->setCellValue('D1', 'fecha_vencimiento');
+        $recibosSheet->setCellValue('E1', 'valor_administracion');
+        $recibosSheet->setCellValue('F1', 'valor_aseo');
+        $recibosSheet->setCellValue('G1', 'valor_vigilancia');
+        $recibosSheet->setCellValue('H1', 'valor_mantenimiento');
+        $recibosSheet->setCellValue('I1', 'otros_conceptos');
+        $recibosSheet->setCellValue('J1', 'estado');
         
         // Datos de ejemplo
-        $recibosSheet->setCellValue('A2', '101');
-        $recibosSheet->setCellValue('B2', 'Administración');
-        $recibosSheet->setCellValue('C2', '150000');
-        $recibosSheet->setCellValue('D2', '2024-01-31');
+        $recibosSheet->setCellValue('A2', 'REC-2024-001');
+        $recibosSheet->setCellValue('B2', '2024-01');
+        $recibosSheet->setCellValue('C2', '01-01-2024');
+        $recibosSheet->setCellValue('D2', '31-01-2024');
+        $recibosSheet->setCellValue('E2', '120000');
+        $recibosSheet->setCellValue('F2', '15000');
+        $recibosSheet->setCellValue('G2', '25000');
+        $recibosSheet->setCellValue('H2', '10000');
+        $recibosSheet->setCellValue('I2', '5000');
+        $recibosSheet->setCellValue('J2', 'activo');
+        
+        $recibosSheet->setCellValue('A3', 'REC-2024-002');
+        $recibosSheet->setCellValue('B3', '2024-02');
+        $recibosSheet->setCellValue('C3', '01-02-2024');
+        $recibosSheet->setCellValue('D3', '29-02-2024');
+        $recibosSheet->setCellValue('E3', '120000');
+        $recibosSheet->setCellValue('F3', '15000');
+        $recibosSheet->setCellValue('G3', '25000');
+        $recibosSheet->setCellValue('H3', '10000');
+        $recibosSheet->setCellValue('I3', '0');
+        $recibosSheet->setCellValue('J3', 'activo');
         
         // Hoja de Pagos
         $pagosSheet = $spreadsheet->createSheet();
         $pagosSheet->setTitle('Pagos');
-        $pagosSheet->setCellValue('A1', 'apartamento');
-        $pagosSheet->setCellValue('B1', 'monto');
+        $pagosSheet->setCellValue('A1', 'apartamento_numero');
+        $pagosSheet->setCellValue('B1', 'recibo_numero');
         $pagosSheet->setCellValue('C1', 'fecha_pago');
-        $pagosSheet->setCellValue('D1', 'metodo_pago');
-        $pagosSheet->setCellValue('E1', 'referencia');
+        $pagosSheet->setCellValue('D1', 'monto_pagado');
+        $pagosSheet->setCellValue('E1', 'metodo_pago');
+        $pagosSheet->setCellValue('F1', 'numero_comprobante');
+        $pagosSheet->setCellValue('G1', 'estado');
+        $pagosSheet->setCellValue('H1', 'observaciones');
         
         // Datos de ejemplo
         $pagosSheet->setCellValue('A2', '101');
-        $pagosSheet->setCellValue('B2', '150000');
-        $pagosSheet->setCellValue('C2', '2024-01-15');
-        $pagosSheet->setCellValue('D2', 'transferencia');
-        $pagosSheet->setCellValue('E2', 'TRF001');
+        $pagosSheet->setCellValue('B2', 'REC-2024-001');
+        $pagosSheet->setCellValue('C2', '15-01-2024');
+        $pagosSheet->setCellValue('D2', '175000');
+        $pagosSheet->setCellValue('E2', 'transferencia');
+        $pagosSheet->setCellValue('F2', 'TRF-001-2024');
+        $pagosSheet->setCellValue('G2', 'confirmado');
+        $pagosSheet->setCellValue('H2', 'Pago completo del período');
+        
+        $pagosSheet->setCellValue('A3', '102');
+        $pagosSheet->setCellValue('B3', 'REC-2024-001');
+        $pagosSheet->setCellValue('C3', '20-01-2024');
+        $pagosSheet->setCellValue('D3', '100000');
+        $pagosSheet->setCellValue('E3', 'efectivo');
+        $pagosSheet->setCellValue('F3', 'EFE-002-2024');
+        $pagosSheet->setCellValue('G3', 'confirmado');
+        $pagosSheet->setCellValue('H3', 'Pago parcial');
         
         $writer = new Xlsx($spreadsheet);
         
@@ -643,4 +843,463 @@ class DeudaController extends Controller
         
         return response()->download($temp_file, $fileName)->deleteFileAfterSend(true);
     }
+
+    /**
+     * Parsear fechas de Excel que pueden venir en diferentes formatos
+     */
+    private function parseExcelDate($dateValue)
+    {
+        // Log del valor original para debugging
+        \Log::info('parseExcelDate - Valor original', [
+            'value' => $dateValue,
+            'type' => gettype($dateValue),
+            'is_numeric' => is_numeric($dateValue)
+        ]);
+        
+        if (empty($dateValue)) {
+            \Log::warning('parseExcelDate - Valor vacío, usando fecha actual');
+            return now();
+        }
+
+        // Si es un número (fecha serial de Excel)
+        if (is_numeric($dateValue)) {
+            try {
+                // Verificar que sea un número válido de fecha Excel (entre 1 y 2958465)
+                if ($dateValue < 1 || $dateValue > 2958465) {
+                    throw new \Exception("Número fuera del rango válido de fechas Excel: {$dateValue}");
+                }
+                
+                $result = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($dateValue);
+                \Log::info('parseExcelDate - Éxito con serial Excel', [
+                    'serial' => $dateValue,
+                    'fecha' => $result->format('d-m-Y')
+                ]);
+                return $result;
+            } catch (\Exception $e) {
+                \Log::warning('parseExcelDate - Error con serial Excel', [
+                    'serial' => $dateValue,
+                    'error' => $e->getMessage()
+                ]);
+                
+                // Si falla, intentar como timestamp solo si es un número razonable
+                if ($dateValue > 946684800 && $dateValue < 4102444800) { // Entre 2000 y 2100
+                    try {
+                        $result = Carbon::createFromTimestamp($dateValue);
+                        \Log::info('parseExcelDate - Éxito con timestamp', [
+                            'timestamp' => $dateValue,
+                            'fecha' => $result->format('d-m-Y')
+                        ]);
+                        return $result;
+                    } catch (\Exception $e2) {
+                        \Log::warning('parseExcelDate - Error con timestamp', [
+                            'timestamp' => $dateValue,
+                            'error' => $e2->getMessage()
+                        ]);
+                    }
+                }
+            }
+        }
+
+        // Si es una cadena, usar formatos con prioridad al formato d-m-Y más común
+        $formats = [
+            'd-m-Y',   // 31-07-2023 (formato más usado según usuario)
+            'Y-m-d',   // 2023-07-31 (ISO format - más confiable)
+            'm/d/Y',   // 07/31/2023 (formato US - común en Excel)
+            'm-d-Y',   // 07-31-2023
+            'd/m/Y',   // 31/07/2023 (formato europeo común - después de americano para evitar ambigüedad)
+            'Y/m/d',   // 2023/07/31
+            'd/m/y',   // 31/07/23
+            'd-m-y',   // 31-07-23
+            'm/d/y',   // 07/31/23
+            'm-d-y'    // 07-31-23
+        ];
+
+        // Detectar si es probable formato americano (m/d/Y) vs europeo (d/m/Y)
+        if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $dateValue, $matches)) {
+            $firstPart = (int)$matches[1];
+            $secondPart = (int)$matches[2];
+            
+            // Si el primer número es <= 12 y el segundo > 12, probablemente es m/d/Y
+            if ($firstPart <= 12 && $secondPart > 12) {
+                $formats = array_merge(['m/d/Y'], array_diff($formats, ['m/d/Y']));
+            }
+            // Si el primer número > 12, definitivamente es d/m/Y
+            elseif ($firstPart > 12) {
+                $formats = array_merge(['d/m/Y'], array_diff($formats, ['d/m/Y']));
+            }
+        }
+
+        // Solo usar formatos americanos - no necesitamos detección especial
+
+        foreach ($formats as $format) {
+            try {
+                $result = Carbon::createFromFormat($format, $dateValue);
+                
+                // Validar que la fecha sea razonable (entre 2020 y 2030)
+                if ($result->year < 2020 || $result->year > 2030) {
+                    \Log::warning('parseExcelDate - Fecha fuera de rango razonable', [
+                        'fecha_str' => $dateValue,
+                        'formato' => $format,
+                        'año' => $result->year
+                    ]);
+                    continue;
+                }
+                
+                // Validación adicional: verificar que el parsing fue correcto
+                // comparando la fecha original con la formateada
+                $reformatted = $result->format($format);
+                if ($reformatted !== $dateValue) {
+                    \Log::warning('parseExcelDate - Fecha no coincide al reformatear', [
+                        'fecha_str' => $dateValue,
+                        'formato' => $format,
+                        'reformateada' => $reformatted
+                    ]);
+                    continue;
+                }
+                
+                \Log::info('parseExcelDate - Éxito con formato', [
+                    'fecha_str' => $dateValue,
+                    'formato' => $format,
+                    'fecha' => $result->format('d-m-Y')
+                ]);
+                return $result;
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        // Si ningún formato funciona, intentar parse automático
+        try {
+            $result = Carbon::parse($dateValue);
+            
+            // Validar que la fecha sea razonable
+            if ($result->year < 2020 || $result->year > 2030) {
+                throw new \Exception("Fecha fuera de rango razonable: {$result->year}");
+            }
+            
+            \Log::info('parseExcelDate - Éxito con parse automático', [
+                'fecha_str' => $dateValue,
+                'fecha' => $result->format('d-m-Y')
+            ]);
+            return $result;
+        } catch (\Exception $e) {
+            \Log::error('parseExcelDate - Todos los métodos fallaron', [
+                'fecha_str' => $dateValue,
+                'error' => $e->getMessage()
+            ]);
+            
+            // Como último recurso, usar fecha actual
+            return now();
+        }
+    }
+
+    public function exportExcel(Request $request)
+    {
+        // Obtener los mismos datos que en el index
+        $query = ReciboGastoComunModel::with(['apartamento', 'pagos'])
+            ->select('recibo_gasto_comun.*')
+            ->selectRaw('(recibo_gasto_comun.monto - COALESCE(SUM(pagos.monto), 0)) as saldo_pendiente')
+            ->leftJoin('pagos', 'recibo_gasto_comun.id', '=', 'pagos.recibo_id')
+            ->groupBy('recibo_gasto_comun.id');
+
+        // Aplicar filtros si existen
+        if ($request->filled('apartamento')) {
+            $query->whereHas('apartamento', function($q) use ($request) {
+                $q->where('numero', 'like', '%' . $request->apartamento . '%');
+            });
+        }
+
+        if ($request->filled('mes')) {
+            $query->whereMonth('fecha_emision', $request->mes);
+        }
+
+        if ($request->filled('anio')) {
+            $query->whereYear('fecha_emision', $request->anio);
+        }
+
+        if ($request->filled('estado')) {
+            if ($request->estado == 'pagado') {
+                $query->havingRaw('saldo_pendiente <= 0');
+            } elseif ($request->estado == 'pendiente') {
+                $query->havingRaw('saldo_pendiente > 0');
+            }
+        }
+
+        $recibos = $query->orderBy('fecha_emision', 'desc')->get();
+
+        // Crear el archivo Excel
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Encabezados
+        $headers = [
+            'A1' => 'Apartamento',
+            'B1' => 'Propietario', 
+            'C1' => 'Estatus Financiero',
+            'D1' => 'Fecha Emisión',
+            'E1' => 'Mes',
+            'F1' => 'Año',
+            'G1' => 'Monto',
+            'H1' => 'Pagado',
+            'I1' => 'Saldo Pendiente',
+            'J1' => 'Estado'
+        ];
+
+        foreach ($headers as $cell => $value) {
+            $sheet->setCellValue($cell, $value);
+            $sheet->getStyle($cell)->getFont()->setBold(true);
+        }
+
+        // Datos
+        $row = 2;
+        foreach ($recibos as $recibo) {
+            // Actualizar estatus financiero del apartamento
+            $recibo->apartamento->actualizarEstatusFinanciero();
+            
+            $sheet->setCellValue('A' . $row, $recibo->apartamento->numero);
+            $sheet->setCellValue('B' . $row, $recibo->apartamento->propietario);
+            $sheet->setCellValue('C' . $row, ucfirst($recibo->apartamento->estatus_financiero));
+            $sheet->setCellValue('D' . $row, $recibo->fecha_emision->format('d/m/Y'));
+            $sheet->setCellValue('E' . $row, $recibo->fecha_emision->format('m'));
+            $sheet->setCellValue('F' . $row, $recibo->fecha_emision->format('Y'));
+            $sheet->setCellValue('G' . $row, $recibo->monto);
+            $sheet->setCellValue('H' . $row, $recibo->monto - $recibo->saldo_pendiente);
+            $sheet->setCellValue('I' . $row, $recibo->saldo_pendiente);
+            $sheet->setCellValue('J' . $row, $recibo->saldo_pendiente > 0 ? 'Pendiente' : 'Pagado');
+            $row++;
+        }
+
+        // Ajustar ancho de columnas
+        foreach (range('A', 'J') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        // Crear el writer y descargar
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        
+        $filename = 'deudas_' . date('Y-m-d_H-i-s') . '.xlsx';
+        
+        return response()->streamDownload(function() use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
+     * Asignar recibo a todos los apartamentos
+     */
+    private function asignarReciboATodosApartamentos(ReciboGastoComun $recibo)
+    {
+        // Si es un recibo vencido, verificar si tiene pagos asociados
+        if ($recibo->estado === 'vencido') {
+            $tienePagos = Pago::where('recibo_gasto_comun_id', $recibo->id)
+                             ->where('monto_pagado', '>', 0)
+                             ->exists();
+            
+            // Si es un recibo vencido sin pagos, no asignarlo automáticamente
+            // Esto se manejará manualmente en el módulo de asignar recibos
+            if (!$tienePagos) {
+                \Log::info('Recibo vencido sin pagos no asignado automáticamente', [
+                    'recibo_id' => $recibo->id,
+                    'numero_recibo' => $recibo->numero_recibo,
+                    'motivo' => 'Recibo vencido sin pagos - Se asignará manualmente'
+                ]);
+                return;
+            }
+            
+            // Solo asignar a apartamentos DEUDOR si es un recibo vencido con pagos
+            $apartamentos = Apartamento::where('estatus_financiero', 'deudor')->get();
+        } else {
+            // Para recibos activos, asignar a todos los apartamentos como antes
+            $apartamentos = Apartamento::all();
+        }
+        
+        foreach ($apartamentos as $apartamento) {
+            // Determinar el estado del pago según el estatus financiero del apartamento y estado del recibo
+            $estadoPago = 'pendiente_confirmacion';
+            $observaciones = 'Recibo asignado automáticamente - Importación Excel';
+            
+            // Si el apartamento es solvente y el recibo está vencido, crear el pago como rechazado
+            // para que no aparezca en el listado de deudas
+            if ($apartamento->estatus_financiero === 'solvente' && $recibo->estado === 'vencido') {
+                $estadoPago = 'rechazado';
+                $observaciones = 'Recibo asignado automáticamente - Apartamento solvente con recibo vencido - Importación Excel';
+            } elseif ($apartamento->estatus_financiero === 'solvente') {
+                // Para apartamentos solventes con recibos activos, mantener pendiente
+                $observaciones = 'Recibo asignado automáticamente - Apartamento solvente - Importación Excel';
+            } elseif ($recibo->estado === 'vencido') {
+                // Para recibos vencidos con pagos asignados a apartamentos deudor
+                $observaciones = 'Recibo vencido con pagos asignado automáticamente - Apartamento deudor - Importación Excel';
+            }
+            
+            // Crear registro de pago para cada apartamento
+            Pago::create([
+                'recibo_gasto_comun_id' => $recibo->id,
+                'apartamento_id' => $apartamento->id,
+                'monto_pagado' => 0,
+                'fecha_pago' => null,
+                'metodo_pago' => null,
+                'numero_comprobante' => null,
+                'observaciones' => $observaciones,
+                'estado' => $estadoPago
+            ]);
+            
+            // Solo cambiar a deudor si actualmente es solvente y el pago no fue rechazado
+            // Los que ya son deudores mantienen su estatus
+            if ($apartamento->estatus_financiero === 'solvente' && $estadoPago !== 'rechazado') {
+                $apartamento->update([
+                    'estatus_financiero' => 'deudor',
+                    'fecha_cambio_estatus' => now()->toDateString()
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Mostrar formulario de importación selectiva de recibos vencidos
+     */
+    public function showImportRecibosVencidos()
+    {
+        return view('deudas.import-recibos-vencidos');
+    }
+
+    /**
+     * Procesar importación selectiva de recibos vencidos
+     */
+    public function importRecibosVencidos(Request $request)
+    {
+        $request->validate([
+            'archivo_excel' => 'required|file|mimes:xlsx,xls',
+            'apartamentos_seleccionados' => 'required|array|min:1',
+            'apartamentos_seleccionados.*' => 'exists:apartamentos,id'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $file = $request->file('archivo_excel');
+            $spreadsheet = IOFactory::load($file->getPathname());
+            
+            // Verificar que existe la hoja "Recibos"
+            if (!$spreadsheet->getSheetByName('Recibos')) {
+                throw new \Exception('El archivo debe contener una hoja llamada "Recibos"');
+            }
+
+            $worksheet = $spreadsheet->getSheetByName('Recibos');
+            $data = $worksheet->toArray();
+            
+            if (empty($data)) {
+                throw new \Exception('La hoja "Recibos" está vacía');
+            }
+
+            // Procesar encabezados
+            $headers = array_map('trim', $data[0]);
+            $requiredHeaders = ['numero_recibo', 'periodo', 'fecha_emision', 'fecha_vencimiento', 'valor_administracion', 'total_recibo', 'estado'];
+            
+            foreach ($requiredHeaders as $required) {
+                if (!in_array($required, $headers)) {
+                    throw new \Exception("Falta la columna requerida: {$required}");
+                }
+            }
+
+            $apartamentosSeleccionados = $request->apartamentos_seleccionados;
+            $recibosImportados = 0;
+            $asignacionesCreadas = 0;
+            $errores = [];
+
+            // Procesar cada fila de recibos
+            for ($i = 1; $i < count($data); $i++) {
+                $row = $data[$i];
+                if (empty(array_filter($row))) continue; // Saltar filas vacías
+
+                $rowData = array_combine($headers, $row);
+                
+                try {
+                    // Verificar si el recibo ya existe
+                    $reciboExistente = ReciboGastoComun::where('numero_recibo', $rowData['numero_recibo'])->first();
+                    
+                    if ($reciboExistente) {
+                        $errores[] = "Fila " . ($i + 1) . ": El recibo {$rowData['numero_recibo']} ya existe";
+                        continue;
+                    }
+
+                    // Crear el recibo
+                    $recibo = ReciboGastoComun::create([
+                        'numero_recibo' => $rowData['numero_recibo'],
+                        'periodo' => $rowData['periodo'],
+                        'fecha_emision' => $this->parseDate($rowData['fecha_emision']),
+                        'fecha_vencimiento' => $this->parseDate($rowData['fecha_vencimiento']),
+                        'valor_administracion' => (float)($rowData['valor_administracion'] ?? 0),
+                        'valor_aseo' => (float)($rowData['valor_aseo'] ?? 0),
+                        'valor_vigilancia' => (float)($rowData['valor_vigilancia'] ?? 0),
+                        'valor_mantenimiento' => (float)($rowData['valor_mantenimiento'] ?? 0),
+                        'otros_conceptos' => (float)($rowData['otros_conceptos'] ?? 0),
+                        'total_recibo' => (float)$rowData['total_recibo'],
+                        'estado' => in_array($rowData['estado'], ['activo', 'vencido', 'anulado']) ? $rowData['estado'] : 'vencido',
+                        'observaciones' => $rowData['observaciones'] ?? 'Importado selectivamente'
+                    ]);
+
+                    $recibosImportados++;
+
+                    // Asignar solo a apartamentos seleccionados
+                    foreach ($apartamentosSeleccionados as $apartamentoId) {
+                        $apartamento = Apartamento::find($apartamentoId);
+                        
+                        if ($apartamento) {
+                            // Determinar estado del pago basado en el estatus del apartamento
+                            $estadoPago = 'pendiente_confirmacion';
+                            if ($apartamento->estatus_financiero === 'deudor') {
+                                $estadoPago = 'rechazado';
+                            }
+
+                            Pago::create([
+                                'apartamento_id' => $apartamento->id,
+                                'recibo_gasto_comun_id' => $recibo->id,
+                                'monto_pagado' => 0,
+                                'fecha_pago' => now(),
+                                'metodo_pago' => 'pendiente',
+                                'estado' => $estadoPago,
+                                'observaciones' => 'Asignación selectiva de recibo vencido'
+                            ]);
+
+                            // Actualizar estatus financiero a deudor si el recibo está activo o vencido
+                            if (in_array($recibo->estado, ['activo', 'vencido']) && $apartamento->estatus_financiero !== 'deudor') {
+                                $apartamento->update([
+                                    'estatus_financiero' => 'deudor',
+                                    'fecha_cambio_estatus' => now()->toDateString()
+                                ]);
+                            }
+
+                            $asignacionesCreadas++;
+                        }
+                    }
+
+                } catch (\Exception $e) {
+                    $errores[] = "Fila " . ($i + 1) . ": " . $e->getMessage();
+                }
+            }
+
+            DB::commit();
+
+            $mensaje = "Importación completada: {$recibosImportados} recibos importados, {$asignacionesCreadas} asignaciones creadas";
+            
+            if (!empty($errores)) {
+                $mensaje .= ". Errores encontrados: " . count($errores);
+                session(['import_errors' => $errores]);
+            }
+
+            return redirect()->route('deudas.import.recibos-vencidos')
+                ->with('success', $mensaje);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->route('deudas.import.recibos-vencidos')
+                ->with('error', 'Error durante la importación: ' . $e->getMessage());
+        }
+    }
+
+
+
+
 }

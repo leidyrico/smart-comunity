@@ -17,14 +17,19 @@
                             Recibos Emitidos
                         </h3>
                         <div class="flex flex-wrap gap-2 justify-end">
-                            <a href="{{ route('pagos.create') }}" class="inline-flex items-center px-3 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 focus:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <a href="{{ route('pagos.create') }}" class="inline-flex items-center px-3 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                 </svg>
                                 <span class="hidden sm:inline">Registrar</span> Pago
                             </a>
 
-                            <a href="{{ route('deudas.import.completo') }}" class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <button onclick="mostrarModalPagoGlobal()" class="inline-flex items-center px-3 py-2 bg-orange-400 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-500 focus:bg-orange-500 active:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 transition ease-in-out duration-150" id="btnPagoGlobal">
+                                <i class="fas fa-credit-card w-4 h-4 mr-1"></i>
+                                <span class="hidden sm:inline">Pago</span> Global
+                            </button>
+
+                            <a href="{{ route('deudas.import.completo') }}" class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
@@ -37,12 +42,6 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                                 </svg>
                                 Imprimir
-                            </button>
-                            <button onclick="exportarExcel()" class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                Excel
                             </button>
                         </div>
                     </div>
@@ -153,15 +152,15 @@
                                             {{ $dato['fecha_facturacion']->format('d/m/Y') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            ${{ number_format($dato['monto_facturado'], 0, ',', '.') }}
+                                            ${{ number_format($dato['monto_facturado'], 2, ',', '.') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             @if($dato['monto_pagado'] > 0)
                                                 <span class="font-medium text-green-600">
-                                                    ${{ number_format($dato['monto_pagado'], 0, ',', '.') }}
+                                                    ${{ number_format($dato['monto_pagado'], 2, ',', '.') }}
                                                 </span>
                                             @else
-                                                <span class="text-gray-400">$0</span>
+                                                <span class="text-gray-400">$0.00</span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -174,17 +173,19 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             @if($dato['saldo_actual'] > 0)
                                                 <span class="font-medium text-red-600">
-                                                    ${{ number_format($dato['saldo_actual'], 0, ',', '.') }}
+                                                    ${{ number_format($dato['saldo_actual'], 2, ',', '.') }}
                                                 </span>
                                             @else
-                                                <span class="font-medium text-green-600">$0</span>
+                                                <span class="font-medium text-green-600">$0.00</span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="{{ route('deudas.show', $dato['apartamento_id']) }}" class="text-blue-600 hover:text-blue-900 mr-3">Ver</a>
-                                            @if($dato['saldo_actual'] > 0)
-                                                <a href="{{ route('pagos.create', ['apartamento_id' => $dato['apartamento_id'], 'recibo_id' => $dato['recibo_id']]) }}" class="text-green-600 hover:text-green-900">Registrar Pago</a>
-                                            @endif
+                                            <div class="flex flex-col space-y-1">
+                                                <a href="{{ route('deudas.show', $dato['apartamento_id']) }}" class="text-blue-600 hover:text-blue-900">Ver</a>
+                                                @if($dato['saldo_actual'] > 0)
+                                                    <a href="{{ route('pagos.create', ['apartamento_id' => $dato['apartamento_id'], 'recibo_id' => $dato['recibo_id']]) }}" class="text-green-600 hover:text-green-900">Registrar Pago</a>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -222,7 +223,7 @@
                                 <div class="text-sm text-gray-600">Pagados</div>
                             </div>
                             <div class="bg-yellow-50 p-4 rounded-lg text-center">
-                                <div class="text-2xl font-bold text-yellow-600">${{ number_format($estadisticas['saldo_total_pendiente'], 0, ',', '.') }}</div>
+                                <div class="text-2xl font-bold text-yellow-600">${{ number_format($estadisticas['saldo_total_pendiente'], 2, ',', '.') }}</div>
                                 <div class="text-sm text-gray-600">Saldo Total Pendiente</div>
                             </div>
                         </div>
@@ -239,8 +240,132 @@
 @push('scripts')
 <script>
 function exportarExcel() {
-    // Aquí implementarías la exportación a Excel
-    alert('Exportación a Excel en desarrollo');
+    // Obtener los parámetros de filtro actuales
+    const params = new URLSearchParams();
+    
+    const apartamento = document.querySelector('input[name="apartamento"]')?.value;
+    const mes = document.querySelector('select[name="mes"]')?.value;
+    const anio = document.querySelector('select[name="anio"]')?.value;
+    const estado = document.querySelector('select[name="estado"]')?.value;
+    
+    if (apartamento) params.append('apartamento', apartamento);
+    if (mes) params.append('mes', mes);
+    if (anio) params.append('anio', anio);
+    if (estado) params.append('estado', estado);
+    
+    // Crear la URL con los parámetros
+    const url = '{{ route("deudas.export.excel") }}' + (params.toString() ? '?' + params.toString() : '');
+    
+    // Abrir la descarga en una nueva ventana
+    window.open(url, '_blank');
+}
+
+function mostrarModalPagoGlobal() {
+    console.log('Función mostrarModalPagoGlobal ejecutada');
+    alert('Botón de Pago Global clickeado - función ejecutándose correctamente');
+    
+    // Crear el modal dinámicamente
+    const modalHtml = `
+        <div id="modalPagoGlobal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3 text-center">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Seleccionar Apartamento para Pago Global</h3>
+                    <div class="mt-2 px-7 py-3">
+                        <select id="apartamentoSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="">Seleccione un apartamento...</option>
+                        </select>
+                    </div>
+                    <div class="items-center px-4 py-3">
+                        <button id="btnConfirmarPago" class="px-4 py-2 bg-orange-400 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-400" disabled>
+                            Continuar con Pago Global
+                        </button>
+                        <button id="btnCancelar" class="mt-3 px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar el modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    console.log('Modal agregado al DOM');
+    
+    // Cargar apartamentos con deudas
+    cargarApartamentosConDeudas();
+    
+    // Event listeners
+    document.getElementById('apartamentoSelect').addEventListener('change', function() {
+        const btnConfirmar = document.getElementById('btnConfirmarPago');
+        if (this.value) {
+            btnConfirmar.disabled = false;
+            btnConfirmar.onclick = function() {
+                const apartamentoId = document.getElementById('apartamentoSelect').value;
+                window.location.href = `{{ url('/pagos/global/create') }}/${apartamentoId}`;
+            };
+        } else {
+            btnConfirmar.disabled = true;
+        }
+    });
+    
+    document.getElementById('btnCancelar').onclick = function() {
+        document.getElementById('modalPagoGlobal').remove();
+    };
+    
+    // Cerrar modal al hacer clic fuera
+    document.getElementById('modalPagoGlobal').onclick = function(e) {
+        if (e.target === this) {
+            this.remove();
+        }
+    };
+}
+
+function cargarApartamentosConDeudas() {
+    console.log('Función cargarApartamentosConDeudas ejecutada');
+    const select = document.getElementById('apartamentoSelect');
+    
+    // Obtener apartamentos únicos de la tabla actual
+    const apartamentosMap = new Map();
+    const filas = document.querySelectorAll('tbody tr');
+    console.log('Filas encontradas:', filas.length);
+    
+    filas.forEach((fila, index) => {
+        const celdas = fila.querySelectorAll('td');
+        console.log(`Fila ${index}: ${celdas.length} celdas`);
+        
+        if (celdas.length >= 8) {
+            const numeroApartamento = celdas[1].textContent.trim(); // Segunda columna
+            const saldoText = celdas[7].textContent.trim(); // Octava columna (saldo actual)
+            console.log(`Apartamento: ${numeroApartamento}, Saldo texto: '${saldoText}'`);
+            
+            const saldo = parseFloat(saldoText.replace(/[^0-9.-]/g, ''));
+            console.log(`Saldo parseado: ${saldo}`);
+            
+            if (saldo > 0) {
+                // Extraer el ID del apartamento del enlace "Ver"
+                const enlaceVer = fila.querySelector('a[href*="/deudas/"]');
+                console.log('Enlace Ver encontrado:', enlaceVer ? enlaceVer.href : 'No encontrado');
+                
+                if (enlaceVer) {
+                    const apartamentoId = enlaceVer.href.split('/').pop();
+                    console.log(`Agregando apartamento ID: ${apartamentoId}, Número: ${numeroApartamento}`);
+                    apartamentosMap.set(apartamentoId, numeroApartamento);
+                }
+            }
+        }
+    });
+    
+    console.log('Total apartamentos con deudas:', apartamentosMap.size);
+    
+    // Agregar opciones al select
+    apartamentosMap.forEach((numero, id) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = `Apartamento ${numero}`;
+        select.appendChild(option);
+        console.log(`Opción agregada: ${numero} (ID: ${id})`);
+    });
 }
 </script>
 @endpush

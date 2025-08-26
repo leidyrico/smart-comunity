@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Pago;
 use App\Models\Apartamento;
 use App\Models\ReciboGastoComun;
+use App\Mail\ComprobantePago;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class PagoController extends Controller
 {
@@ -38,7 +40,7 @@ class PagoController extends Controller
             $query->where('metodo_pago', $request->metodo_pago);
         }
 
-        $pagos = $query->orderBy('fecha_pago', 'desc')->get();
+        $pagos = $query->orderBy('fecha_pago', 'desc')->paginate(15);
         $apartamentos = Apartamento::orderBy('numero')->get();
         
         return view('pagos.index', compact('pagos', 'apartamentos'));
@@ -50,7 +52,7 @@ class PagoController extends Controller
     public function create(Request $request)
     {
         $apartamentos = Apartamento::orderBy('numero')->get();
-        $recibos = ReciboGastoComun::where('estado', 'activo')->orderBy('fecha_emision', 'desc')->get();
+        $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])->orderBy('fecha_emision', 'desc')->get();
         
         // Si viene un apartamento específico desde la URL
         $apartamentoSeleccionado = $request->apartamento_id ? 
@@ -69,16 +71,32 @@ class PagoController extends Controller
             'recibo_gasto_comun_id' => 'required|exists:recibo_gasto_comuns,id',
             'monto_pagado' => 'required|numeric|min:0.01',
             'fecha_pago' => 'required|date',
-            'metodo_pago' => 'required|in:efectivo,transferencia,cheque,tarjeta_credito,tarjeta_debito',
-            'numero_comprobante' => 'nullable|string|max:100',
+            'metodo_pago' => 'required|in:efectivo,pago_movil,transferencia',
+            'numero_comprobante' => 'nullable|string|max:100|unique:pagos,numero_comprobante',
             'observaciones' => 'nullable|string|max:1000',
             'estado' => 'required|in:confirmado,pendiente_confirmacion,rechazado'
         ]);
 
         $pago = Pago::create($request->all());
+        
+        // Cargar las relaciones necesarias para el correo
+        $pago->load(['apartamento', 'reciboGastoComun']);
+        
+        // Enviar correo de confirmación si el apartamento tiene email
+        if ($pago->apartamento->email) {
+            try {
+                Mail::to($pago->apartamento->email)->send(new ComprobantePago($pago));
+                $mensaje = 'Pago registrado exitosamente y correo de confirmación enviado.';
+            } catch (\Exception $e) {
+                \Log::error('Error enviando correo de confirmación: ' . $e->getMessage());
+                $mensaje = 'Pago registrado exitosamente, pero hubo un error al enviar el correo de confirmación.';
+            }
+        } else {
+            $mensaje = 'Pago registrado exitosamente. No se pudo enviar correo (apartamento sin email registrado).';
+        }
 
         return redirect()->route('pagos.index')
-            ->with('success', 'Pago registrado exitosamente.');
+            ->with('success', $mensaje);
     }
 
     /**
@@ -96,7 +114,7 @@ class PagoController extends Controller
     public function edit(Pago $pago)
     {
         $apartamentos = Apartamento::orderBy('numero')->get();
-        $recibos = ReciboGastoComun::where('estado', 'activo')->orderBy('fecha_emision', 'desc')->get();
+        $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])->orderBy('fecha_emision', 'desc')->get();
         
         return view('pagos.edit', compact('pago', 'apartamentos', 'recibos'));
     }
@@ -111,8 +129,8 @@ class PagoController extends Controller
             'recibo_gasto_comun_id' => 'required|exists:recibo_gasto_comuns,id',
             'monto_pagado' => 'required|numeric|min:0.01',
             'fecha_pago' => 'required|date',
-            'metodo_pago' => 'required|in:efectivo,transferencia,cheque,tarjeta_credito,tarjeta_debito',
-            'numero_comprobante' => 'nullable|string|max:100',
+            'metodo_pago' => 'required|in:efectivo,pago_movil,transferencia',
+            'numero_comprobante' => 'nullable|string|max:100|unique:pagos,numero_comprobante,' . $pago->id,
             'observaciones' => 'nullable|string|max:1000',
             'estado' => 'required|in:confirmado,pendiente_confirmacion,rechazado'
         ]);
@@ -188,12 +206,199 @@ class PagoController extends Controller
             return response()->json([]);
         }
         
-        // Obtener recibos activos que no estén completamente pagados
-        $recibos = ReciboGastoComun::where('estado', 'activo')
+        // Obtener recibos activos y vencidos que no estén completamente pagados
+        $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])
             ->whereRaw('total_recibo > (SELECT COALESCE(SUM(monto_pagado), 0) FROM pagos WHERE recibo_gasto_comun_id = recibo_gasto_comuns.id AND apartamento_id = ? AND estado = "confirmado")', [$apartamentoId])
             ->orderBy('fecha_emision', 'desc')
             ->get(['id', 'numero_recibo', 'periodo', 'total_recibo', 'fecha_vencimiento']);
             
         return response()->json($recibos);
+    }
+
+    /**
+     * Obtener saldo pendiente de un recibo específico para un apartamento (AJAX)
+     */
+    public function getSaldoRecibo(Request $request)
+    {
+        $apartamentoId = $request->apartamento_id;
+        $reciboId = $request->recibo_id;
+        
+        if (!$apartamentoId || !$reciboId) {
+            return response()->json(['error' => 'Parámetros requeridos'], 400);
+        }
+        
+        $recibo = ReciboGastoComun::find($reciboId);
+        if (!$recibo) {
+            return response()->json(['error' => 'Recibo no encontrado'], 404);
+        }
+        
+        // Calcular total pagado para este recibo y apartamento
+        $totalPagado = Pago::where('apartamento_id', $apartamentoId)
+            ->where('recibo_gasto_comun_id', $reciboId)
+            ->where('estado', 'confirmado')
+            ->sum('monto_pagado');
+            
+        $saldoPendiente = $recibo->total_recibo - $totalPagado;
+        
+        return response()->json([
+            'total_recibo' => $recibo->total_recibo,
+            'total_pagado' => $totalPagado,
+            'saldo_pendiente' => max(0, $saldoPendiente)
+        ]);
+    }
+
+    /**
+     * Mostrar formulario para pago global (sin recibo específico)
+     */
+    public function createGlobal(Apartamento $apartamento)
+    {
+        // Obtener TODOS los recibos activos y vencidos del sistema
+        $todosLosRecibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])
+            ->orderBy('fecha_vencimiento', 'asc')
+            ->get();
+
+        $recibos_pendientes = collect();
+        $total_pendiente = 0;
+
+        foreach ($todosLosRecibos as $recibo) {
+            // Calcular total pagado para este recibo y apartamento específico
+            $totalPagado = Pago::where('apartamento_id', $apartamento->id)
+                ->where('recibo_gasto_comun_id', $recibo->id)
+                ->where('estado', 'confirmado')
+                ->sum('monto_pagado');
+            
+            $saldoPendiente = $recibo->total_recibo - $totalPagado;
+            
+            // Solo incluir recibos con saldo pendiente > 0
+            if ($saldoPendiente > 0) {
+                // Agregar el saldo pendiente calculado al recibo
+                $recibo->saldo_pendiente_apartamento = $saldoPendiente;
+                $recibos_pendientes->push($recibo);
+                $total_pendiente += $saldoPendiente;
+            }
+        }
+
+        return view('pagos.create-global', compact('apartamento', 'recibos_pendientes', 'total_pendiente'));
+    }
+
+    /**
+     * Procesar pago global distribuyéndolo entre el recibo activo y los recibos vencidos más antiguos
+     */
+    public function storeGlobal(Request $request)
+    {
+        $request->validate([
+            'apartamento_id' => 'required|exists:apartamentos,id',
+            'monto_total' => 'required|numeric|min:0.01',
+            'fecha_pago' => 'required|date',
+            'metodo_pago' => 'required|in:efectivo,pago_movil,transferencia',
+            'numero_comprobante' => 'nullable|string|max:100|unique:pagos,numero_comprobante',
+            'observaciones' => 'nullable|string|max:1000',
+        ]);
+
+        $apartamento = Apartamento::find($request->apartamento_id);
+        $montoRestante = $request->monto_total;
+        $pagosCreados = [];
+        
+        // Obtener el recibo activo más reciente
+        $reciboActivo = ReciboGastoComun::where('estado', 'activo')
+            ->whereHas('pagos', function($query) use ($apartamento) {
+                $query->where('apartamento_id', $apartamento->id);
+            })
+            ->with(['pagos' => function($query) use ($apartamento) {
+                $query->where('apartamento_id', $apartamento->id)
+                      ->where('estado', 'confirmado');
+            }])
+            ->orderBy('fecha_emision', 'desc')
+            ->first();
+            
+        // Obtener recibos vencidos ordenados por fecha de emisión (más antiguos primero)
+        $recibosVencidos = ReciboGastoComun::where('estado', 'vencido')
+            ->whereHas('pagos', function($query) use ($apartamento) {
+                $query->where('apartamento_id', $apartamento->id);
+            })
+            ->with(['pagos' => function($query) use ($apartamento) {
+                $query->where('apartamento_id', $apartamento->id)
+                      ->where('estado', 'confirmado');
+            }])
+            ->orderBy('fecha_emision', 'asc')
+            ->get();
+            
+        // Crear una colección ordenada: primero el recibo activo, luego los vencidos
+        $recibosParaProcesar = collect();
+        if ($reciboActivo) {
+            $recibosParaProcesar->push($reciboActivo);
+        }
+        $recibosParaProcesar = $recibosParaProcesar->merge($recibosVencidos);
+
+        foreach ($recibosParaProcesar as $recibo) {
+            if ($montoRestante <= 0) break;
+            
+            // Calcular saldo pendiente del recibo
+            $totalPagado = $recibo->pagos->sum('monto_pagado');
+            $saldoPendiente = $recibo->total_recibo - $totalPagado;
+            
+            if ($saldoPendiente > 0) {
+                // Determinar cuánto pagar de este recibo
+                $montoPagar = min($montoRestante, $saldoPendiente);
+                
+                // Crear el pago
+                $pago = Pago::create([
+                    'apartamento_id' => $apartamento->id,
+                    'recibo_gasto_comun_id' => $recibo->id,
+                    'monto_pagado' => $montoPagar,
+                    'fecha_pago' => $request->fecha_pago,
+                    'metodo_pago' => $request->metodo_pago,
+                    'numero_comprobante' => $request->numero_comprobante,
+                    'observaciones' => ($request->observaciones ?? '') . ' | Pago global distribuido automáticamente',
+                    'estado' => 'confirmado'
+                ]);
+                
+                $pagosCreados[] = $pago;
+                $montoRestante -= $montoPagar;
+            }
+        }
+        
+        // Si queda monto restante, crear un pago pendiente sin recibo específico
+        if ($montoRestante > 0) {
+            // Buscar el primer recibo disponible para asociar el monto restante
+            $primerRecibo = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])
+                ->whereHas('pagos', function($query) use ($apartamento) {
+                    $query->where('apartamento_id', $apartamento->id);
+                })
+                ->orderBy('fecha_emision', 'desc')
+                ->first();
+                
+            if ($primerRecibo) {
+                $pago = Pago::create([
+                    'apartamento_id' => $apartamento->id,
+                    'recibo_gasto_comun_id' => $primerRecibo->id,
+                    'monto_pagado' => $montoRestante,
+                    'fecha_pago' => $request->fecha_pago,
+                    'metodo_pago' => $request->metodo_pago,
+                    'numero_comprobante' => $request->numero_comprobante,
+                    'observaciones' => ($request->observaciones ?? '') . ' | Pago global - monto excedente',
+                    'estado' => 'confirmado'
+                ]);
+                
+                $pagosCreados[] = $pago;
+            }
+        }
+        
+        // Enviar correo de confirmación si el apartamento tiene email
+        if ($apartamento->email && !empty($pagosCreados)) {
+            try {
+                // Enviar correo con el primer pago creado como referencia
+                Mail::to($apartamento->email)->send(new ComprobantePago($pagosCreados[0]));
+                $mensaje = 'Pago global procesado exitosamente. Se distribuyó entre ' . count($pagosCreados) . ' recibo(s). Correo de confirmación enviado.';
+            } catch (\Exception $e) {
+                \Log::error('Error enviando correo de confirmación: ' . $e->getMessage());
+                $mensaje = 'Pago global procesado exitosamente. Se distribuyó entre ' . count($pagosCreados) . ' recibo(s). Error al enviar correo de confirmación.';
+            }
+        } else {
+            $mensaje = 'Pago global procesado exitosamente. Se distribuyó entre ' . count($pagosCreados) . ' recibo(s).';
+        }
+        
+        return redirect()->route('deudas.show', $apartamento)
+            ->with('success', $mensaje);
     }
 }

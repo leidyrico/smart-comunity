@@ -1,0 +1,6 @@
+numero,piso,torre,propietario,telefono,email,aream2,tipo,estado,observaciones
+401,4,A,Juan Pérez,555-0101,juan.perez@email.com,85.5,apartamento,ocupado,Apartamento con balcón
+402,4,A,María García,555-0102,maria.garcia@email.com,92.0,apartamento,ocupado,Apartamento recién remodelado
+403,4,A,Carlos López,555-0103,carlos.lopez@email.com,78.3,apartamento,desocupado,Apartamento disponible
+404,4,A,Ana Martínez,555-0104,ana.martinez@email.com,88.7,apartamento,ocupado,Apartamento con vista
+405,4,A,Luis Rodríguez,555-0105,luis.rodriguez@email.com,95.2,apartamento,en_arriendo,Apartamento en arriendo

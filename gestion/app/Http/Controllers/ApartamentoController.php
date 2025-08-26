@@ -13,7 +13,11 @@ class ApartamentoController extends Controller
      */
     public function index()
     {
-        $apartamentos = Apartamento::orderBy('numero')->get();
+        $apartamentos = Apartamento::orderBy('piso')->orderBy('numero')->get();
+        
+        // No recalcular automáticamente el estatus financiero para respetar valores importados
+        // Si necesita recálculo, usar el comando: php artisan apartamentos:actualizar-estatus
+        
         return view('apartamentos.index', compact('apartamentos'));
     }
 
@@ -32,7 +36,7 @@ class ApartamentoController extends Controller
     {
         $request->validate([
             'numero' => 'required|string|max:20|unique:apartamentos,numero',
-            'piso' => 'required|integer|min:1',
+            'piso' => 'required|integer|min:0',
             'torre' => 'nullable|string|max:10',
             'propietario' => 'required|string|max:255',
             'telefono' => 'nullable|string|max:20',
@@ -73,7 +77,7 @@ class ApartamentoController extends Controller
     {
         $request->validate([
             'numero' => 'required|string|max:20|unique:apartamentos,numero,' . $apartamento->id,
-            'piso' => 'required|integer|min:1',
+            'piso' => 'required|integer|min:0',
             'torre' => 'nullable|string|max:10',
             'propietario' => 'required|string|max:255',
             'telefono' => 'nullable|string|max:20',
@@ -243,6 +247,18 @@ class ApartamentoController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * API: Obtener lista de apartamentos para selección
+     */
+    public function getApartamentosApi()
+    {
+        $apartamentos = Apartamento::select('id', 'numero', 'propietario', 'estatus_financiero')
+            ->orderBy('numero')
+            ->get();
+            
+        return response()->json($apartamentos);
     }
 
 

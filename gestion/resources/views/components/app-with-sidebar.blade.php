@@ -10,10 +10,21 @@
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
         <!-- Scripts -->
-        <link rel="stylesheet" href="{{ asset('build/assets/app-BkuUPmZ5.css') }}">
-        <script src="{{ asset('build/assets/app-DtCVKgHt.js') }}" defer></script>
+        @if(file_exists(public_path('build/manifest.json')))
+            <!-- Compiled assets -->
+            <link rel="stylesheet" href="{{ asset('build/assets/app-DCvHFSP1.css') }}">
+            <script src="{{ asset('build/assets/app-DtCVKgHt.js') }}" defer></script>
+        @else
+            <!-- Development assets -->
+            <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+            <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+            <script src="{{ asset('js/app.js') }}" defer></script>
+        @endif
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
@@ -62,6 +73,7 @@
                                         <div id="receipts-nav-dropdown" class="hidden absolute left-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
                                             <a href="{{ route('recibos.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Recibos</a>
                                             <a href="{{ route('recibos.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Crear Recibo</a>
+                                            <a href="{{ route('recibos.asignar-manual') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Asignar Recibos Manual</a>
                                         </div>
                                     </div>
                                     
@@ -75,6 +87,7 @@
                                         </button>
                                         <div id="debts-nav-dropdown" class="hidden absolute left-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
                                             <a href="{{ route('deudas.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Detalle de deudas</a>
+                                            <a href="{{ route('recibos.asignar-manual') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Asignar Recibos Manual</a>
                                             <div class="relative group">
                                                 <button class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-between" onclick="toggleSubDropdown('deuda-general-dropdown')">
                                                     Deuda General
@@ -187,6 +200,7 @@
                             <div id="receipts-mobile-submenu" class="hidden pl-6 space-y-1">
                                 <a href="{{ route('recibos.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Ver Recibos</a>
                                 <a href="{{ route('recibos.create') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Crear Recibo</a>
+                                <a href="{{ route('recibos.asignar-manual') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Asignar Recibos Manual</a>
                             </div>
                         </div>
                         
@@ -311,5 +325,7 @@
                 });
             });
         </script>
+        
+        @stack('scripts')
     </body>
 </html>

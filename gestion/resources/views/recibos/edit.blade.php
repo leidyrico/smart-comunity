@@ -101,7 +101,7 @@
                             <div class="bg-gray-50 p-4 rounded-lg">
                                 <div class="flex justify-between items-center">
                                     <span class="text-lg font-medium text-gray-700">Total del Recibo:</span>
-                                    <span id="total_display" class="text-xl font-bold text-green-600">${{ number_format($recibo->total_recibo, 0, ',', '.') }}</span>
+                                    <span id="total_display" class="text-xl font-bold text-green-600">${{ number_format($recibo->total_recibo, 2, ',', '.') }}</span>
                                 </div>
                                 <p class="text-sm text-gray-500 mt-1">El total se calcula automáticamente al guardar</p>
                             </div>

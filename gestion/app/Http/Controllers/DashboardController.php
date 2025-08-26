@@ -30,7 +30,7 @@ class DashboardController extends Controller
         // Calcular saldo total pendiente
         $saldoTotalPendiente = 0;
         $apartamentos = Apartamento::with(['pagos'])->get();
-        $recibos = ReciboGastoComun::where('estado', 'activo')->get();
+        $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])->get();
         
         foreach ($apartamentos as $apartamento) {
             foreach ($recibos as $recibo) {

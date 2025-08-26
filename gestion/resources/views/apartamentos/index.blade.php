@@ -41,10 +41,10 @@
                                     <tr>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Piso</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Torre</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Propietario</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estatus Financiero</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo Pendiente</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                                     </tr>
@@ -59,9 +59,6 @@
                                                 {{ $apartamento->piso }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ $apartamento->torre ?? 'N/A' }}
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {{ $apartamento->propietario }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -74,15 +71,22 @@
                                                     {{ ucfirst($apartamento->estado) }}
                                                 </span>
                                             </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                                    {{ $apartamento->estatus_financiero === 'solvente' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                    {{ ucfirst($apartamento->estatus_financiero) }}
+                                                </span>
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 <span class="font-medium {{ $apartamento->saldo_pendiente > 0 ? 'text-red-600' : 'text-green-600' }}">
                                                     ${{ number_format($apartamento->saldo_pendiente, 2) }}
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                                <a href="{{ route('apartamentos.show', $apartamento) }}" class="text-blue-600 hover:text-blue-900">Ver</a>
                                                 <a href="{{ route('apartamentos.edit', $apartamento) }}" class="text-indigo-600 hover:text-indigo-900">Editar</a>
-                                                <a href="{{ route('pagos.estado-cuenta', $apartamento) }}" class="text-green-600 hover:text-green-900">Estado Cuenta</a>
+                                                @if($apartamento->estatus_financiero === 'deudor')
+                                                    <a href="{{ route('deudas.show', $apartamento) }}" class="text-orange-600 hover:text-orange-900">Ver Deudas</a>
+                                                @endif
                                                 <form action="{{ route('apartamentos.destroy', $apartamento) }}" method="POST" class="inline" onsubmit="return confirm('¿Está seguro de eliminar este apartamento?')">
                                                     @csrf
                                                     @method('DELETE')

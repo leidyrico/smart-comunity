@@ -53,7 +53,7 @@
                                     @foreach($recibos as $recibo)
                                         <option value="{{ $recibo->id }}" data-total="{{ $recibo->total_recibo }}" 
                                             {{ old('recibo_gasto_comun_id') == $recibo->id ? 'selected' : '' }}>
-                                            {{ $recibo->numero_recibo }} - {{ $recibo->periodo }} ({{ number_format($recibo->total_recibo, 0, ',', '.') }})
+                                            {{ $recibo->numero_recibo }} - {{ $recibo->periodo }} ({{ number_format($recibo->total_recibo, 2, ',', '.') }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -66,6 +66,9 @@
                             <div>
                                 <x-input-label for="monto_pagado" :value="__('Monto Pagado')" />
                                 <x-text-input id="monto_pagado" name="monto_pagado" type="number" step="0.01" min="0.01" class="mt-1 block w-full" :value="old('monto_pagado')" required />
+                                <div id="saldo-info" class="mt-1 text-sm text-gray-600" style="display: none;">
+                                    <span class="text-blue-600">Saldo pendiente: $<span id="saldo-pendiente">0.00</span></span>
+                                </div>
                                 <x-input-error :messages="$errors->get('monto_pagado')" class="mt-2" />
                             </div>
 
@@ -84,10 +87,8 @@
                                 <select id="metodo_pago" name="metodo_pago" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                                     <option value="">Seleccione método de pago</option>
                                     <option value="efectivo" {{ old('metodo_pago') == 'efectivo' ? 'selected' : '' }}>Efectivo</option>
+                                    <option value="pago_movil" {{ old('metodo_pago') == 'pago_movil' ? 'selected' : '' }}>Pago Móvil</option>
                                     <option value="transferencia" {{ old('metodo_pago') == 'transferencia' ? 'selected' : '' }}>Transferencia</option>
-                                    <option value="cheque" {{ old('metodo_pago') == 'cheque' ? 'selected' : '' }}>Cheque</option>
-                                    <option value="tarjeta_credito" {{ old('metodo_pago') == 'tarjeta_credito' ? 'selected' : '' }}>Tarjeta de Crédito</option>
-                                    <option value="tarjeta_debito" {{ old('metodo_pago') == 'tarjeta_debito' ? 'selected' : '' }}>Tarjeta de Débito</option>
                                 </select>
                                 <x-input-error :messages="$errors->get('metodo_pago')" class="mt-2" />
                             </div>
@@ -142,15 +143,23 @@
         document.addEventListener('DOMContentLoaded', function() {
             const apartamentoSelect = document.getElementById('apartamento_id');
             const reciboSelect = document.getElementById('recibo_gasto_comun_id');
+            const montoPagadoInput = document.getElementById('monto_pagado');
+            const saldoInfo = document.getElementById('saldo-info');
+            const saldoPendienteSpan = document.getElementById('saldo-pendiente');
+
             
             apartamentoSelect.addEventListener('change', function() {
                 const apartamentoId = this.value;
                 
-                // Limpiar opciones de recibo
+                // Limpiar opciones de recibo y ocultar saldo
                 reciboSelect.innerHTML = '<option value="">Cargando recibos...</option>';
+                saldoInfo.style.display = 'none';
+                montoPagadoInput.value = '';
+                
+
                 
                 if (apartamentoId) {
-                    fetch(`/pagos/recibos-por-apartamento?apartamento_id=${apartamentoId}`)
+                    fetch(`/api/recibos-por-apartamento?apartamento_id=${apartamentoId}`)
                         .then(response => response.json())
                         .then(data => {
                             reciboSelect.innerHTML = '<option value="">Seleccione un recibo</option>';
@@ -170,6 +179,45 @@
                     reciboSelect.innerHTML = '<option value="">Seleccione un recibo</option>';
                 }
             });
+            
+            // Evento para cargar saldo pendiente cuando se selecciona un recibo
+            reciboSelect.addEventListener('change', function() {
+                const apartamentoId = apartamentoSelect.value;
+                const reciboId = this.value;
+                
+                if (apartamentoId && reciboId) {
+                    fetch(`/api/saldo-recibo?apartamento_id=${apartamentoId}&recibo_id=${reciboId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                console.error('Error:', data.error);
+                                saldoInfo.style.display = 'none';
+                                return;
+                            }
+                            
+                            // Mostrar saldo pendiente
+                            saldoPendienteSpan.textContent = new Intl.NumberFormat('es-CO', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            }).format(data.saldo_pendiente);
+                            
+                            // Cargar saldo pendiente en el campo monto_pagado
+                            montoPagadoInput.value = data.saldo_pendiente.toFixed(2);
+                            
+                            // Mostrar información del saldo
+                            saldoInfo.style.display = 'block';
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            saldoInfo.style.display = 'none';
+                        });
+                } else {
+                    saldoInfo.style.display = 'none';
+                    montoPagadoInput.value = '';
+                }
+            });
+            
+
         });
     </script>
 </x-app-with-sidebar>

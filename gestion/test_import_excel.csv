@@ -1,0 +1,4 @@
+numero,piso,torre,propietario,telefono,email,area_m2,tipo,estado,estatus_financiero,observaciones
+601,6,A,Pedro Martinez,3001111111,pedro@email.com,70,apartamento,ocupado,solvente,Apartamento nuevo
+602,6,A,Ana Rodriguez,3002222222,ana@email.com,65,apartamento,ocupado,deudor,Apartamento nuevo
+603,6,A,Luis Garcia,3003333333,luis@email.com,75,apartamento,ocupado,solvente,Apartamento nuevo

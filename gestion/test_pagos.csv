@@ -1,0 +1,4 @@
+apartamento_numero,recibo_numero,fecha_pago,monto_pagado,metodo_pago,numero_comprobante,estado,observaciones
+601,REC-601001,01-08-2025,43000,pago-movil,1,confirmado,pago completo
+602,REC-601001,15-08-2025,20000,pago-movil,2,confirmado,pago parcial
+603,REC-601002,01-09-2025,43000,pago-movil,3,confirmado,pago completo

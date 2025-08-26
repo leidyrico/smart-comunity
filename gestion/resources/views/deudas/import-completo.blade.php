@@ -105,12 +105,23 @@
 
                     @if (session('import_errors'))
                         <div class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                            <strong class="font-bold">Errores durante la importación:</strong>
-                            <div class="mt-2 max-h-60 overflow-y-auto">
+                            <div class="flex items-center justify-between mb-2">
+                                <strong class="font-bold">Errores durante la importación:</strong>
+                                <a href="{{ route('deudas.import.errors') }}" class="inline-flex items-center px-3 py-1 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition-colors">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Ver Detalles
+                                </a>
+                            </div>
+                            <div class="mt-2 max-h-40 overflow-y-auto">
                                 <ul class="list-disc list-inside space-y-1">
-                                    @foreach (session('import_errors') as $error)
+                                    @foreach (array_slice(session('import_errors'), 0, 5) as $error)
                                         <li class="text-sm">{{ $error }}</li>
                                     @endforeach
+                                    @if(count(session('import_errors')) > 5)
+                                        <li class="text-sm font-medium">... y {{ count(session('import_errors')) - 5 }} errores más</li>
+                                    @endif
                                 </ul>
                             </div>
                         </div>

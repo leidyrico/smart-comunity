@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Pago Global</title>
+    <script>
+        function testPagoGlobal() {
+            console.log('Función testPagoGlobal ejecutada');
+            
+            // Verificar si la función mostrarModalPagoGlobal existe
+            if (typeof mostrarModalPagoGlobal === 'function') {
+                console.log('La función mostrarModalPagoGlobal existe');
+                mostrarModalPagoGlobal();
+            } else {
+                console.error('La función mostrarModalPagoGlobal NO existe');
+            }
+        }
+        
+        // Simular la función mostrarModalPagoGlobal para prueba
+        function mostrarModalPagoGlobal() {
+            console.log('Modal de pago global ejecutado');
+            alert('Modal de pago global funcionando!');
+        }
+    </script>
+</head>
+<body>
+    <h1>Test del Botón Pago Global</h1>
+    <button onclick="testPagoGlobal()">Test Pago Global</button>
+    
+    <p>Abrir la consola del navegador para ver los mensajes de debug.</p>
+</body>
+</html>

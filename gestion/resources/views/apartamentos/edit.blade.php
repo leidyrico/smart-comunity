@@ -68,7 +68,7 @@
                                            name="piso" 
                                            value="{{ old('piso', $apartamento->piso) }}"
                                            required
-                                           min="1"
+                                           min="0"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                 </div>
 
@@ -107,6 +107,18 @@
                                         <option value="ocupado" {{ old('estado', $apartamento->estado) == 'ocupado' ? 'selected' : '' }}>Ocupado</option>
                                         <option value="desocupado" {{ old('estado', $apartamento->estado) == 'desocupado' ? 'selected' : '' }}>Desocupado</option>
                                         <option value="en_arriendo" {{ old('estado', $apartamento->estado) == 'en_arriendo' ? 'selected' : '' }}>En Arriendo</option>
+                                    </select>
+                                </div>
+
+                                <!-- Estatus Financiero -->
+                                <div>
+                                    <label for="estatus_financiero" class="block text-sm font-medium text-gray-700 mb-1">Estatus Financiero *</label>
+                                    <select id="estatus_financiero" 
+                                            name="estatus_financiero" 
+                                            required
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                        <option value="solvente" {{ old('estatus_financiero', $apartamento->estatus_financiero) == 'solvente' ? 'selected' : '' }}>Solvente</option>
+                                        <option value="deudor" {{ old('estatus_financiero', $apartamento->estatus_financiero) == 'deudor' ? 'selected' : '' }}>Deudor</option>
                                     </select>
                                 </div>
                             </div>
