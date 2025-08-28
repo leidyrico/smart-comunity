@@ -1,6 +1,6 @@
 <?php
 /**
- * Script para configurar Gmail y enviar correo real a leidyrico12@gmail.com
+ * Script para configurar Gmail y enviar correo real a xxxx@gmail.com
  * INSTRUCCIONES:
  * 1. Genera una contraseña de aplicación en Gmail
  * 2. Ejecuta este script
@@ -77,8 +77,8 @@ try {
     // Simular relaciones
     $apartamento = new stdClass();
     $apartamento->numero = 'PRUEBA-001';
-    $apartamento->email = 'leidyrico12@gmail.com';
-    $apartamento->propietario = 'Leidy Rico';
+    $apartamento->email = 'xxxx@gmail';
+    $apartamento->propietario = 'dddddxxxxxo';
     
     $recibo = new stdClass();
     $recibo->numero_recibo = 'REC-REAL-2024-001';
@@ -87,14 +87,14 @@ try {
     $pagoTest->apartamento = $apartamento;
     $pagoTest->reciboGastoComun = $recibo;
     
-    echo "📤 Enviando correo REAL a leidyrico12@gmail.com...\n";
+    echo "📤 Enviando correo REAL a xxxx@gmail.com...\n";
     echo "⏳ Esto puede tomar unos segundos...\n\n";
     
-    Mail::to('leidyrico12@gmail.com')->send(new ComprobantePago($pagoTest));
+    Mail::to('xxx@gmail.com')->send(new ComprobantePago($pagoTest));
     
     echo "🎉 ¡CORREO REAL ENVIADO EXITOSAMENTE!\n";
     echo "\n📧 REVISA TU BANDEJA DE ENTRADA EN GMAIL\n";
-    echo "- Destinatario: leidyrico12@gmail.com\n";
+    echo "- Destinatario: xxxx@gmail.com\n";
     echo "- Asunto: Confirmación de pago recibido\n";
     echo "- Remitente: noreply@residenciasalfa.com\n";
     echo "- Puede tardar 1-2 minutos en llegar\n";
