@@ -49,37 +49,24 @@ class Apartamento extends Model
 
     /**
      * Obtener el saldo pendiente total
+     * El saldo pendiente es la suma total de todos los recibos asignados al apartamento
      */
     public function getSaldoPendienteAttribute()
     {
-        $totalDeuda = 0;
+        $totalSaldo = 0;
         
-        // Para apartamentos solventes: no tienen saldo pendiente
-        if ($this->estatus_financiero === 'solvente') {
-            return 0;
-        }
-        
-        // Para apartamentos deudores y morosos: calcular saldo basado en recibos asignados (con pagos)
-        // Solo considerar recibos que tienen pagos asociados a este apartamento
+        // Obtener todos los recibos realmente asignados (excluyendo rechazados)
         $recibosAsignados = \App\Models\ReciboGastoComun::whereHas('pagos', function($query) {
-            $query->where('apartamento_id', $this->id);
+            $query->where('apartamento_id', $this->id)
+                  ->where('estado', '!=', 'rechazado');
         })->get();
         
+        // Sumar el total de todos los recibos asignados
         foreach ($recibosAsignados as $recibo) {
-            // Calcular total pagado para este recibo por este apartamento
-            $totalPagadoRecibo = $this->pagos()
-                ->where('recibo_gasto_comun_id', $recibo->id)
-                ->where('estado', 'confirmado')
-                ->sum('monto_pagado');
-            
-            // Calcular saldo pendiente para este recibo
-            $saldo = $recibo->total_recibo - $totalPagadoRecibo;
-            if ($saldo > 0) {
-                $totalDeuda += $saldo;
-            }
+            $totalSaldo += $recibo->total_recibo;
         }
         
-        return $totalDeuda;
+        return $totalSaldo;
     }
 
     /**
@@ -99,46 +86,32 @@ class Apartamento extends Model
     }
 
     /**
-     * Actualizar el estatus financiero basado en deudas pendientes
+     * Actualizar el estatus financiero basado en recibos asignados
+     * - Solvente: sin recibos asignados
+     * - Deudor: menos de 3 recibos vencidos asignados
+     * - Moroso: 3 o más recibos vencidos asignados
      */
     public function actualizarEstatusFinanciero()
     {
-        // Calcular deuda basada en recibos activos y vencidos
-        $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])->get();
-        $totalDeuda = 0;
-        $recibosVencidosPendientes = 0;
+        // Contar recibos realmente asignados (excluyendo rechazados)
+        $recibosAsignados = $this->pagos()
+            ->where('estado', '!=', 'rechazado')
+            ->distinct('recibo_gasto_comun_id')
+            ->count();
         
-        foreach ($recibos as $recibo) {
-            // Verificar si existe un pago para este recibo y apartamento
-            $pago = $this->pagos()
-                ->where('recibo_gasto_comun_id', $recibo->id)
-                ->first();
+        // Si no tiene recibos asignados, es solvente
+        if ($recibosAsignados == 0) {
+            $nuevoEstatus = 'solvente';
+        } else {
+            // Contar recibos vencidos asignados (excluyendo rechazados)
+            $recibosVencidosAsignados = ReciboGastoComun::where('estado', 'vencido')
+                ->whereHas('pagos', function($query) {
+                    $query->where('apartamento_id', $this->id)
+                          ->where('estado', '!=', 'rechazado');
+                })->count();
             
-            if ($pago) {
-                // Si existe pago, calcular saldo basado en monto pagado
-                $montoPagado = $pago->estado === 'confirmado' ? $pago->monto_pagado : 0;
-                $saldo = $recibo->total_recibo - $montoPagado;
-                if ($saldo > 0) {
-                    $totalDeuda += $saldo;
-                    // Contar recibos vencidos con saldo pendiente
-                    if ($recibo->estado === 'vencido') {
-                        $recibosVencidosPendientes++;
-                    }
-                }
-            } else {
-                // Si no existe pago, toda la deuda está pendiente
-                $totalDeuda += $recibo->total_recibo;
-                // Contar recibos vencidos sin pago
-                if ($recibo->estado === 'vencido') {
-                    $recibosVencidosPendientes++;
-                }
-            }
-        }
-        
-        // Determinar estatus basado en deuda y número de recibos vencidos
-        $nuevoEstatus = 'solvente';
-        if ($totalDeuda > 0) {
-            if ($recibosVencidosPendientes > 3) {
+            // Determinar estatus basado en número de recibos vencidos
+            if ($recibosVencidosAsignados >= 3) {
                 $nuevoEstatus = 'moroso';
             } else {
                 $nuevoEstatus = 'deudor';

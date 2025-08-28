@@ -16,11 +16,12 @@ class DeudaController extends Controller
 {
     /**
      * Mostrar el resumen de deudas por apartamento
+     * Solo mostrar apartamentos que tengan recibos asignados y pagos asociados
      */
     public function index(Request $request)
     {
         $query = Apartamento::with(['pagos', 'pagos.reciboGastoComun'])
-            ->where('estatus_financiero', '!=', 'solvente') // Excluir apartamentos solventes
+            ->whereHas('pagos') // Solo apartamentos que tienen pagos (recibos asignados)
             ->orderBy('numero');
 
         // Filtro por número de apartamento si se proporciona (búsqueda exacta)
