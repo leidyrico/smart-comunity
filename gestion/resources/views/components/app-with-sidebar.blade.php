@@ -15,16 +15,9 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
         <!-- Scripts -->
-        @if(file_exists(public_path('build/manifest.json')))
-            <!-- Compiled assets -->
-            <link rel="stylesheet" href="{{ asset('build/assets/app-DCvHFSP1.css') }}">
-            <script src="{{ asset('build/assets/app-DtCVKgHt.js') }}" defer></script>
-        @else
-            <!-- Development assets -->
-            <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-            <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-            <script src="{{ asset('js/app.js') }}" defer></script>
-        @endif
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <script src="{{ asset('js/app.js') }}" defer></script>
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
@@ -58,7 +51,7 @@
                                         <div id="apartments-nav-dropdown" class="hidden absolute left-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
                                             <a href="{{ route('apartamentos.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Apartamentos</a>
                                             <a href="{{ route('apartamentos.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Nuevo Apartamento</a>
-                                            <a href="{{ route('apartamentos.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Apartamentos</a>
+                                            {{-- <a href="{{ route('apartamentos.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Apartamentos</a> --}}
                                         </div>
                                     </div>
                                     
@@ -185,7 +178,7 @@
                             <div id="apartments-mobile-submenu" class="hidden pl-6 space-y-1">
                                 <a href="{{ route('apartamentos.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Ver Apartamentos</a>
                                 <a href="{{ route('apartamentos.create') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Nuevo Apartamento</a>
-                                <a href="{{ route('apartamentos.import') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Importar Apartamentos</a>
+                                {{-- <a href="{{ route('apartamentos.import') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Importar Apartamentos</a> --}}
                             </div>
                         </div>
                         
@@ -327,5 +320,29 @@
         </script>
         
         @stack('scripts')
+        
+        <style>
+            @media print {
+                /* Ocultar toda la navegación durante la impresión */
+                nav.bg-white.shadow {
+                    display: none !important;
+                }
+                
+                /* Ocultar menú móvil */
+                #mobile-menu {
+                    display: none !important;
+                }
+                
+                /* Ajustar el contenido principal para que ocupe toda la página */
+                main.flex-1 {
+                    margin-top: 0 !important;
+                    padding-top: 0 !important;
+                }
+                
+                .container.mx-auto {
+                    padding-top: 0 !important;
+                }
+            }
+        </style>
     </body>
 </html>

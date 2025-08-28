@@ -42,9 +42,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/inquilinos/template', [InquilinoController::class, 'downloadTemplate'])->name('inquilinos.template');
     
     // Rutas para apartamentos
-    Route::get('/apartamentos/import/form', [ApartamentoController::class, 'showImport'])->name('apartamentos.import');
-    Route::post('/apartamentos/import', [ApartamentoController::class, 'import'])->name('apartamentos.import.process');
-    Route::get('/apartamentos/template', [ApartamentoController::class, 'downloadTemplate'])->name('apartamentos.template');
+    // Route::get('/apartamentos/import/form', [ApartamentoController::class, 'showImport'])->name('apartamentos.import');
+    // Route::post('/apartamentos/import', [ApartamentoController::class, 'import'])->name('apartamentos.import.process');
+    // Route::get('/apartamentos/template', [ApartamentoController::class, 'downloadTemplate'])->name('apartamentos.template');
 
     Route::resource('apartamentos', ApartamentoController::class);
     
@@ -52,14 +52,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/recibos/import/form', [ReciboGastoComunController::class, 'import'])->name('recibos.import');
     Route::post('/recibos/import', [ReciboGastoComunController::class, 'importProcess'])->name('recibos.import.process');
     Route::get('/recibos/template', [ReciboGastoComunController::class, 'template'])->name('recibos.template');
+    
+    // Asignación manual de recibos (DEBE IR ANTES del resource)
+    Route::get('/recibos/asignar-manual', [ReciboGastoComunController::class, 'showAsignarRecibosManual'])->name('recibos.asignar-manual');
+    Route::post('/recibos/asignar-manual', [ReciboGastoComunController::class, 'asignarRecibosManual'])->name('recibos.asignar-manual.process');
+    
     Route::get('/recibos/{recibo}/print', [ReciboGastoComunController::class, 'print'])->name('recibos.print');
     Route::delete('/recibos/destroy-multiple', [ReciboGastoComunController::class, 'destroyMultiple'])->name('recibos.destroy-multiple');
     Route::delete('/recibos/destroy-all', [ReciboGastoComunController::class, 'destroyAll'])->name('recibos.destroy-all');
     Route::resource('recibos', ReciboGastoComunController::class);
-    
-    // Asignación manual de recibos
-    Route::get('/recibos/asignar-manual', [ReciboGastoComunController::class, 'showAsignarRecibosManual'])->name('recibos.asignar-manual');
-    Route::post('/recibos/asignar-manual', [ReciboGastoComunController::class, 'asignarRecibosManual'])->name('recibos.asignar-manual.process');
     
     // Rutas para pagos
     Route::resource('pagos', PagoController::class);

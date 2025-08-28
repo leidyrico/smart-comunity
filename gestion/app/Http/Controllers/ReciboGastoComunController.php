@@ -346,22 +346,23 @@ class ReciboGastoComunController extends Controller
      */
     private function asignarReciboATodosApartamentos(ReciboGastoComun $recibo)
     {
+        // Si es un recibo vencido, NO asignarlo automáticamente
+        // Los recibos vencidos solo se asignan manualmente a través de recibos/asignar-manual
+        if ($recibo->estado === 'vencido') {
+            \Log::info('Recibo vencido no asignado automáticamente', [
+                'recibo_id' => $recibo->id,
+                'numero_recibo' => $recibo->numero_recibo,
+                'motivo' => 'Los recibos vencidos solo se asignan manualmente'
+            ]);
+            return;
+        }
+        
         $apartamentos = Apartamento::all();
         
         foreach ($apartamentos as $apartamento) {
-            // Determinar el estado del pago según el estatus financiero del apartamento y estado del recibo
+            // Solo para recibos activos - determinar el estado del pago
             $estadoPago = 'pendiente_confirmacion';
             $observaciones = 'Recibo asignado automáticamente';
-            
-            // Si el apartamento es solvente y el recibo está vencido, crear el pago como rechazado
-            // para que no aparezca en el listado de deudas
-            if ($apartamento->estatus_financiero === 'solvente' && $recibo->estado === 'vencido') {
-                $estadoPago = 'rechazado';
-                $observaciones = 'Recibo asignado automáticamente - Apartamento solvente con recibo vencido';
-            } elseif ($apartamento->estatus_financiero === 'solvente') {
-                // Para apartamentos solventes con recibos activos, mantener pendiente
-                $observaciones = 'Recibo asignado automáticamente - Apartamento solvente';
-            }
             
             // Crear registro de pago para cada apartamento
             Pago::create([
@@ -375,9 +376,9 @@ class ReciboGastoComunController extends Controller
                 'estado' => $estadoPago
             ]);
             
-            // Solo cambiar a deudor si actualmente es solvente y el pago no fue rechazado
+            // Solo cambiar a deudor si actualmente es solvente
             // Los que ya son deudores mantienen su estatus
-            if ($apartamento->estatus_financiero === 'solvente' && $estadoPago !== 'rechazado') {
+            if ($apartamento->estatus_financiero === 'solvente') {
                 $apartamento->update([
                     'estatus_financiero' => 'deudor',
                     'fecha_cambio_estatus' => now()->toDateString()

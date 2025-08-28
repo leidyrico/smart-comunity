@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test JavaScript Debug</title>
+</head>
+<body>
+    <h1>Test de JavaScript para eliminarPago</h1>
+    <p>Abrir la consola del navegador (F12) y hacer clic en el botón de prueba:</p>
+    
+    <button onclick="eliminarPago(362, 'REC-0924', 34.31)" 
+            style="background: red; color: white; padding: 10px; margin: 10px;">
+        Probar eliminarPago (ID: 362)
+    </button>
+    
+    <script>
+    function eliminarPago(pagoId, numeroRecibo, montoPago) {
+        console.log('=== DEBUG eliminarPago ===');
+        console.log('pagoId:', pagoId);
+        console.log('numeroRecibo:', numeroRecibo);
+        console.log('montoPago:', montoPago);
+        
+        alert('Función eliminarPago ejecutada. ID: ' + pagoId + ', Recibo: ' + numeroRecibo + ', Monto: ' + montoPago);
+        
+        if (confirm('¿Está seguro de que desea eliminar el pago de $' + montoPago.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' del recibo ' + numeroRecibo + '?\n\nEsta acción no se puede deshacer y el recibo volverá a tener saldo pendiente.')) {
+            console.log('Usuario confirmó eliminación');
+            
+            // Crear un formulario para enviar la petición DELETE
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/pagos/' + pagoId;
+            
+            console.log('Form action:', form.action);
+            
+            // Agregar token CSRF (simulado para prueba)
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = 'test-csrf-token';
+            form.appendChild(csrfToken);
+            
+            // Agregar método DELETE
+            const methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = '_method';
+            methodField.value = 'DELETE';
+            form.appendChild(methodField);
+            
+            console.log('Form creado:', form);
+            console.log('Campos del form:', form.innerHTML);
+            
+            // NO enviar en la prueba, solo mostrar
+            console.log('En producción aquí se enviaría el formulario');
+            alert('Formulario creado correctamente. Ver consola para detalles.');
+        } else {
+            console.log('Usuario canceló eliminación');
+        }
+    }
+    </script>
+</body>
+</html>

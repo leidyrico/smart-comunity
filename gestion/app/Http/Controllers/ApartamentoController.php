@@ -177,6 +177,7 @@ class ApartamentoController extends Controller
                     'area_m2' => !empty($data['aream2']) ? (float)$data['aream2'] : null,
                     'tipo' => in_array($data['tipo'], ['apartamento', 'local', 'parqueadero', 'deposito']) ? $data['tipo'] : 'apartamento',
                     'estado' => in_array($data['estado'], ['ocupado', 'desocupado', 'en_arriendo']) ? $data['estado'] : 'ocupado',
+                    'estatus_financiero' => 'solvente',
                     'observaciones' => $data['observaciones'] ?? null
                 ]);
                 $importedCount++;

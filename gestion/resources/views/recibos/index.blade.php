@@ -18,12 +18,6 @@
                                 </svg>
                                 Eliminar Seleccionados
                             </button>
-                            <button id="deleteAllBtn" class="inline-flex items-center px-4 py-2 bg-red-300 border border-transparent rounded-md font-semibold text-xs text-red-800 uppercase tracking-widest hover:bg-red-400 focus:bg-red-400 active:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                Eliminar Todos
-                            </button>
                             <a href="{{ route('recibos.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -224,13 +218,11 @@
         const selectAllCheckbox = document.getElementById('selectAll');
         const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
         const deleteMultipleForm = document.getElementById('deleteMultipleForm');
-        const deleteAllBtn = document.getElementById('deleteAllBtn');
         
         console.log('Elementos encontrados:', {
             selectAllCheckbox: !!selectAllCheckbox,
             deleteSelectedBtn: !!deleteSelectedBtn,
-            deleteMultipleForm: !!deleteMultipleForm,
-            deleteAllBtn: !!deleteAllBtn
+            deleteMultipleForm: !!deleteMultipleForm
         });
         
         // Función para actualizar el estado del botón eliminar seleccionados
@@ -309,55 +301,7 @@
                 }
             });
         }
-        
-        // Manejar botón "Eliminar Todos"
-        if (deleteAllBtn) {
-            deleteAllBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                console.log('Botón eliminar todos clickeado');
-                
-                const totalRecibos = {{ $estadisticas['total_recibos'] }};
-                
-                if (totalRecibos === 0) {
-                    alert('No hay recibos para eliminar.');
-                    return;
-                }
-                
-                const message = `¿Estás seguro de que deseas eliminar TODOS los ${totalRecibos} recibos?\n\n` +
-                               'Esta acción NO se puede deshacer y eliminará:\n' +
-                               `- ${totalRecibos} recibos\n` +
-                               '- Todos los pagos asociados\n\n' +
-                               'Escribe "ELIMINAR TODO" para confirmar:';
-                
-                const confirmation = prompt(message);
-                
-                if (confirmation === 'ELIMINAR TODO') {
-                    // Crear formulario para enviar la petición
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '{{ route("recibos.destroy-all") }}';
-                    
-                    // Token CSRF
-                    const csrfToken = document.createElement('input');
-                    csrfToken.type = 'hidden';
-                    csrfToken.name = '_token';
-                    csrfToken.value = '{{ csrf_token() }}';
-                    form.appendChild(csrfToken);
-                    
-                    // Método DELETE
-                    const methodField = document.createElement('input');
-                    methodField.type = 'hidden';
-                    methodField.name = '_method';
-                    methodField.value = 'DELETE';
-                    form.appendChild(methodField);
-                    
-                    document.body.appendChild(form);
-                    form.submit();
-                } else if (confirmation !== null) {
-                    alert('Confirmación incorrecta. No se eliminaron los recibos.');
-                }
-            });
-        }
+
         
         // Inicializar estado del botón
         updateDeleteButton();

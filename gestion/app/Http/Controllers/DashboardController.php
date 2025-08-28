@@ -28,22 +28,36 @@ class DashboardController extends Controller
         $totalApartamentos = Apartamento::count();
         
         // Calcular saldo total pendiente
+        // Según requisitos: todos los recibos activos + suma del monto de apartamentos con recibos vencidos
         $saldoTotalPendiente = 0;
+        
+        // 1. Sumar todos los recibos activos (sin importar pagos)
+        $recibosActivos = ReciboGastoComun::where('estado', 'activo')->get();
+        $totalRecibosActivos = $recibosActivos->sum('total_recibo');
+        $saldoTotalPendiente += $totalRecibosActivos;
+        
+        // 2. Sumar el monto de apartamentos que tienen asignado recibos vencidos
         $apartamentos = Apartamento::with(['pagos'])->get();
-        $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])->get();
+        $recibosVencidos = ReciboGastoComun::where('estado', 'vencido')->get();
         
         foreach ($apartamentos as $apartamento) {
-            foreach ($recibos as $recibo) {
-                $pagosTotales = $apartamento->pagos
-                    ->where('recibo_gasto_comun_id', $recibo->id)
-                    ->where('estado', 'confirmado')
-                    ->sum('monto_pagado');
+            $tieneRecibosVencidos = false;
+            $montoApartamentoVencidos = 0;
+            
+            foreach ($recibosVencidos as $reciboVencido) {
+                // Verificar si el apartamento tiene pagos asociados a este recibo vencido
+                $tienePagosEnRecibo = $apartamento->pagos
+                    ->where('recibo_gasto_comun_id', $reciboVencido->id)
+                    ->count() > 0;
                 
-                $saldoPendiente = $recibo->total_recibo - $pagosTotales;
-                
-                if ($saldoPendiente > 0) {
-                    $saldoTotalPendiente += $saldoPendiente;
+                if ($tienePagosEnRecibo) {
+                    $tieneRecibosVencidos = true;
+                    $montoApartamentoVencidos += $reciboVencido->total_recibo;
                 }
+            }
+            
+            if ($tieneRecibosVencidos) {
+                $saldoTotalPendiente += $montoApartamentoVencidos;
             }
         }
         

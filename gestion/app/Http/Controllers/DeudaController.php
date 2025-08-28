@@ -23,9 +23,9 @@ class DeudaController extends Controller
             ->where('estatus_financiero', '!=', 'solvente') // Excluir apartamentos solventes
             ->orderBy('numero');
 
-        // Filtro por número de apartamento si se proporciona
+        // Filtro por número de apartamento si se proporciona (búsqueda exacta)
         if ($request->filled('numero_apartamento')) {
-            $query->where('numero', 'like', '%' . $request->numero_apartamento . '%');
+            $query->where('numero', $request->numero_apartamento);
         }
 
         // Filtro por propietario si se proporciona
@@ -35,14 +35,18 @@ class DeudaController extends Controller
 
         $apartamentos = $query->get();
 
-        // Obtener solo recibos que están asignados (tienen pagos asociados)
+        // Obtener solo recibos que están asignados MANUALMENTE (no automáticamente)
         $recibosActivos = ReciboGastoComun::where('estado', 'activo')
-            ->whereHas('pagos') // Solo recibos con asignaciones
+            ->whereHas('pagos', function($query) {
+                $query->where('observaciones', 'like', '%Asignación manual%');
+            })
             ->orderBy('fecha_emision', 'desc')
             ->get();
             
         $recibosVencidos = ReciboGastoComun::where('estado', 'vencido')
-            ->whereHas('pagos') // Solo recibos con asignaciones
+            ->whereHas('pagos', function($query) {
+                $query->where('observaciones', 'like', '%Asignación manual%');
+            })
             ->orderBy('fecha_emision', 'asc')
             ->get();
             
@@ -54,10 +58,29 @@ class DeudaController extends Controller
         
         foreach ($apartamentos as $apartamento) {
             foreach ($recibos as $recibo) {
-                // Buscar pagos de este apartamento para este recibo
+                // Verificar si existe una asignación manual para este apartamento y recibo
+                $asignacionManual = $apartamento->pagos
+                    ->where('recibo_gasto_comun_id', $recibo->id)
+                    ->filter(function($pago) {
+                        return strpos($pago->observaciones, 'Asignación manual') !== false;
+                    })
+                    ->first();
+                
+                // Solo procesar si existe una asignación manual
+                if (!$asignacionManual) {
+                    continue;
+                }
+                
+                // Buscar pagos confirmados de este apartamento para este recibo (asignaciones manuales Y pagos normales)
                 $pagosRecibo = $apartamento->pagos
                     ->where('recibo_gasto_comun_id', $recibo->id)
-                    ->where('estado', 'confirmado');
+                    ->where('estado', 'confirmado')
+                    ->filter(function($pago) {
+                        // Incluir pagos con asignación manual O pagos normales (sin observaciones de asignación automática)
+                        return strpos($pago->observaciones, 'Asignación manual') !== false || 
+                               (strpos($pago->observaciones, 'Recibo asignado automáticamente') === false &&
+                                strpos($pago->observaciones, 'Pago global') === false);
+                    });
                 
                 $montoPagado = $pagosRecibo->sum('monto_pagado');
                 $saldoActual = $recibo->total_recibo - $montoPagado;
@@ -65,6 +88,16 @@ class DeudaController extends Controller
                 // Obtener la fecha del último pago para este recibo
                 $ultimoPago = $pagosRecibo->sortByDesc('fecha_pago')->first();
                 $fechaPago = $ultimoPago ? $ultimoPago->fecha_pago : null;
+                
+                // Obtener todos los pagos para poder eliminarlos individualmente
+                $pagosArray = $pagosRecibo->map(function($pago) {
+                    return [
+                        'id' => $pago->id,
+                        'monto' => $pago->monto_pagado,
+                        'fecha' => $pago->fecha_pago,
+                        'metodo' => $pago->metodo_pago
+                    ];
+                })->toArray();
                 
                 $datosDeuda[] = [
                     'apartamento_id' => $apartamento->id,
@@ -78,7 +111,8 @@ class DeudaController extends Controller
                     'fecha_pago' => $fechaPago,
                     'saldo_actual' => $saldoActual,
                     'tiene_deuda' => $saldoActual > 0,
-                    'esta_vencido' => $recibo->estaVencido() && $saldoActual > 0
+                    'esta_vencido' => $recibo->estaVencido() && $saldoActual > 0,
+                    'pagos' => $pagosArray
                 ];
             }
         }
@@ -140,8 +174,13 @@ class DeudaController extends Controller
     {
         $apartamento = Apartamento::with(['pagos.reciboGastoComun'])->findOrFail($id);
         
-        // Obtener todos los recibos y calcular estado de pago (activos y vencidos)
-        $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])
+        // Obtener solo los recibos que tienen pagos asociados a este apartamento
+        $recibosConPagos = $apartamento->pagos
+            ->pluck('recibo_gasto_comun_id')
+            ->unique();
+        
+        $recibos = ReciboGastoComun::whereIn('id', $recibosConPagos)
+            ->whereIn('estado', ['activo', 'vencido'])
             ->orderBy('fecha_emision', 'desc')
             ->get();
         
@@ -265,7 +304,8 @@ class DeudaController extends Controller
                     [
                         'propietario' => $row[1] ?? '',
                         'telefono' => $row[2] ?? '',
-                        'email' => $row[3] ?? ''
+                        'email' => $row[3] ?? '',
+                        'estatus_financiero' => 'solvente'
                     ]
                 );
                 
@@ -479,7 +519,7 @@ class DeudaController extends Controller
                         'area_m2' => $rowData['area_m2'] ?? null,
                         'tipo' => $rowData['tipo'] ?? 'apartamento',
                         'estado' => $rowData['estado'] ?? 'ocupado',
-                        'estatus_financiero' => in_array(strtolower($rowData['estatus_financiero'] ?? ''), ['solvente', 'deudor']) 
+                        'estatus_financiero' => in_array(strtolower($rowData['estatus_financiero'] ?? ''), ['solvente', 'deudor', 'moroso']) 
                             ? strtolower($rowData['estatus_financiero']) 
                             : 'solvente',
                         'observaciones' => $rowData['observaciones'] ?? ''
@@ -1091,47 +1131,24 @@ class DeudaController extends Controller
      */
     private function asignarReciboATodosApartamentos(ReciboGastoComun $recibo)
     {
-        // Si es un recibo vencido, verificar si tiene pagos asociados
+        // Si es un recibo vencido, NO asignarlo automáticamente
+        // Los recibos vencidos solo se asignan manualmente a través de recibos/asignar-manual
         if ($recibo->estado === 'vencido') {
-            $tienePagos = Pago::where('recibo_gasto_comun_id', $recibo->id)
-                             ->where('monto_pagado', '>', 0)
-                             ->exists();
-            
-            // Si es un recibo vencido sin pagos, no asignarlo automáticamente
-            // Esto se manejará manualmente en el módulo de asignar recibos
-            if (!$tienePagos) {
-                \Log::info('Recibo vencido sin pagos no asignado automáticamente', [
-                    'recibo_id' => $recibo->id,
-                    'numero_recibo' => $recibo->numero_recibo,
-                    'motivo' => 'Recibo vencido sin pagos - Se asignará manualmente'
-                ]);
-                return;
-            }
-            
-            // Solo asignar a apartamentos DEUDOR si es un recibo vencido con pagos
-            $apartamentos = Apartamento::where('estatus_financiero', 'deudor')->get();
-        } else {
-            // Para recibos activos, asignar a todos los apartamentos como antes
-            $apartamentos = Apartamento::all();
+            \Log::info('Recibo vencido no asignado automáticamente', [
+                'recibo_id' => $recibo->id,
+                'numero_recibo' => $recibo->numero_recibo,
+                'motivo' => 'Los recibos vencidos solo se asignan manualmente - Importación Excel'
+            ]);
+            return;
         }
         
+        // Para recibos activos, asignar a todos los apartamentos
+        $apartamentos = Apartamento::all();
+        
         foreach ($apartamentos as $apartamento) {
-            // Determinar el estado del pago según el estatus financiero del apartamento y estado del recibo
+            // Solo para recibos activos - determinar el estado del pago
             $estadoPago = 'pendiente_confirmacion';
             $observaciones = 'Recibo asignado automáticamente - Importación Excel';
-            
-            // Si el apartamento es solvente y el recibo está vencido, crear el pago como rechazado
-            // para que no aparezca en el listado de deudas
-            if ($apartamento->estatus_financiero === 'solvente' && $recibo->estado === 'vencido') {
-                $estadoPago = 'rechazado';
-                $observaciones = 'Recibo asignado automáticamente - Apartamento solvente con recibo vencido - Importación Excel';
-            } elseif ($apartamento->estatus_financiero === 'solvente') {
-                // Para apartamentos solventes con recibos activos, mantener pendiente
-                $observaciones = 'Recibo asignado automáticamente - Apartamento solvente - Importación Excel';
-            } elseif ($recibo->estado === 'vencido') {
-                // Para recibos vencidos con pagos asignados a apartamentos deudor
-                $observaciones = 'Recibo vencido con pagos asignado automáticamente - Apartamento deudor - Importación Excel';
-            }
             
             // Crear registro de pago para cada apartamento
             Pago::create([
@@ -1145,9 +1162,9 @@ class DeudaController extends Controller
                 'estado' => $estadoPago
             ]);
             
-            // Solo cambiar a deudor si actualmente es solvente y el pago no fue rechazado
+            // Solo cambiar a deudor si actualmente es solvente
             // Los que ya son deudores mantienen su estatus
-            if ($apartamento->estatus_financiero === 'solvente' && $estadoPago !== 'rechazado') {
+            if ($apartamento->estatus_financiero === 'solvente') {
                 $apartamento->update([
                     'estatus_financiero' => 'deudor',
                     'fecha_cambio_estatus' => now()->toDateString()

@@ -119,6 +119,7 @@
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                         <option value="solvente" {{ old('estatus_financiero', $apartamento->estatus_financiero) == 'solvente' ? 'selected' : '' }}>Solvente</option>
                                         <option value="deudor" {{ old('estatus_financiero', $apartamento->estatus_financiero) == 'deudor' ? 'selected' : '' }}>Deudor</option>
+                                        <option value="moroso" {{ old('estatus_financiero', $apartamento->estatus_financiero) == 'moroso' ? 'selected' : '' }}>Moroso</option>
                                     </select>
                                 </div>
                             </div>

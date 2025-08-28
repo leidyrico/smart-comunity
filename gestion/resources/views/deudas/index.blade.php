@@ -9,7 +9,34 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
-                    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
+                    <!-- Título para impresión (solo visible al imprimir) -->
+                    <div class="print-title" style="display: none;">
+                        Consulta de Deudas por Apartamento
+                    </div>
+                    
+                    <!-- Información de filtros para impresión (solo visible al imprimir) -->
+                    <div class="print-filters" style="display: none;">
+                        @if(request('numero_apartamento') || request('nombre_propietario') || request('estado_deuda') || request('numero_recibo'))
+                            <strong>Filtros aplicados:</strong>
+                            @if(request('numero_apartamento'))
+                                Apartamento: {{ request('numero_apartamento') }} |
+                            @endif
+                            @if(request('nombre_propietario'))
+                                Propietario: {{ request('nombre_propietario') }} |
+                            @endif
+                            @if(request('estado_deuda'))
+                                Estado: {{ request('estado_deuda') == 'pendiente' ? 'Con saldo pendiente' : 'Pagado' }} |
+                            @endif
+                            @if(request('numero_recibo'))
+                                Nro. Recibo: {{ request('numero_recibo') }}
+                            @endif
+                            <br>Fecha de impresión: {{ now()->format('d/m/Y H:i') }}
+                        @else
+                            <strong>Reporte completo</strong> - Fecha de impresión: {{ now()->format('d/m/Y H:i') }}
+                        @endif
+                    </div>
+
+                    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4 no-print">
                         <h3 class="text-lg font-medium text-gray-900">
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -47,7 +74,7 @@
                     </div>
                 
                     <!-- Filtros -->
-                    <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                    <div class="bg-gray-50 p-4 rounded-lg mb-6 no-print">
                         <form method="GET" action="{{ route('deudas.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <!-- Filtro por Apartamento -->
                             <div>
@@ -185,6 +212,26 @@
                                                 @if($dato['saldo_actual'] > 0)
                                                     <a href="{{ route('pagos.create', ['apartamento_id' => $dato['apartamento_id'], 'recibo_id' => $dato['recibo_id']]) }}" class="text-green-600 hover:text-green-900">Registrar Pago</a>
                                                 @endif
+                                                @if($dato['monto_pagado'] > 0 && !empty($dato['pagos']))
+                                                    <div class="mt-2">
+                                                        <span class="text-xs text-gray-500 font-medium">Pagos registrados:</span>
+                                                        @foreach($dato['pagos'] as $pago)
+                                                            <div class="flex items-center justify-between mt-1 p-1 bg-gray-50 rounded text-xs">
+                                                                <span class="text-gray-700">
+                                                                    ${{ number_format($pago['monto'], 2, ',', '.') }} 
+                                                                    ({{ \Carbon\Carbon::parse($pago['fecha'])->format('d/m/Y') }})
+                                                                </span>
+                                                                <button onclick="eliminarPago({{ $pago['id'] }}, '{{ $dato['numero_recibo'] }}', '{{ $pago['monto'] }}')" 
+                                                                        class="text-red-600 hover:text-red-900 ml-2" 
+                                                                        title="Eliminar pago">
+                                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -194,7 +241,7 @@
                     </div>
                     
                     <!-- Enlaces de paginación -->
-                    <div class="mt-4">
+                    <div class="mt-4 no-print">
                         {{ $datosDeuda->links() }}
                     </div>
                 @else
@@ -209,7 +256,7 @@
                 
                     <!-- Resumen estadístico -->
                     @if($estadisticas['total_registros'] > 0)
-                        <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4 no-print">
                             <div class="bg-blue-50 p-4 rounded-lg text-center">
                                 <div class="text-2xl font-bold text-blue-600">{{ $estadisticas['total_registros'] }}</div>
                                 <div class="text-sm text-gray-600">Total Registros</div>
@@ -235,9 +282,7 @@
 
 
     </div>
-</x-app-with-sidebar>
 
-@push('scripts')
 <script>
 function exportarExcel() {
     // Obtener los parámetros de filtro actuales
@@ -261,9 +306,6 @@ function exportarExcel() {
 }
 
 function mostrarModalPagoGlobal() {
-    console.log('Función mostrarModalPagoGlobal ejecutada');
-    alert('Botón de Pago Global clickeado - función ejecutándose correctamente');
-    
     // Crear el modal dinámicamente
     const modalHtml = `
         <div id="modalPagoGlobal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -290,7 +332,6 @@ function mostrarModalPagoGlobal() {
     
     // Agregar el modal al DOM
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    console.log('Modal agregado al DOM');
     
     // Cargar apartamentos con deudas
     cargarApartamentosConDeudas();
@@ -302,7 +343,7 @@ function mostrarModalPagoGlobal() {
             btnConfirmar.disabled = false;
             btnConfirmar.onclick = function() {
                 const apartamentoId = document.getElementById('apartamentoSelect').value;
-                window.location.href = `{{ url('/pagos/global/create') }}/${apartamentoId}`;
+                window.location.href = `/pagos/global/create/${apartamentoId}`;
             };
         } else {
             btnConfirmar.disabled = true;
@@ -322,53 +363,50 @@ function mostrarModalPagoGlobal() {
 }
 
 function cargarApartamentosConDeudas() {
-    console.log('Función cargarApartamentosConDeudas ejecutada');
     const select = document.getElementById('apartamentoSelect');
     
     // Obtener apartamentos únicos de la tabla actual
     const apartamentosMap = new Map();
     const filas = document.querySelectorAll('tbody tr');
-    console.log('Filas encontradas:', filas.length);
     
     filas.forEach((fila, index) => {
         const celdas = fila.querySelectorAll('td');
-        console.log(`Fila ${index}: ${celdas.length} celdas`);
         
         if (celdas.length >= 8) {
             const numeroApartamento = celdas[1].textContent.trim(); // Segunda columna
             const saldoText = celdas[7].textContent.trim(); // Octava columna (saldo actual)
-            console.log(`Apartamento: ${numeroApartamento}, Saldo texto: '${saldoText}'`);
             
             const saldo = parseFloat(saldoText.replace(/[^0-9.-]/g, ''));
-            console.log(`Saldo parseado: ${saldo}`);
             
             if (saldo > 0) {
                 // Extraer el ID del apartamento del enlace "Ver"
                 const enlaceVer = fila.querySelector('a[href*="/deudas/"]');
-                console.log('Enlace Ver encontrado:', enlaceVer ? enlaceVer.href : 'No encontrado');
                 
                 if (enlaceVer) {
                     const apartamentoId = enlaceVer.href.split('/').pop();
-                    console.log(`Agregando apartamento ID: ${apartamentoId}, Número: ${numeroApartamento}`);
-                    apartamentosMap.set(apartamentoId, numeroApartamento);
+                    // Solo agregar si no existe ya (para evitar duplicados)
+                    if (!apartamentosMap.has(apartamentoId)) {
+                        apartamentosMap.set(apartamentoId, numeroApartamento);
+                    }
                 }
             }
         }
     });
     
-    console.log('Total apartamentos con deudas:', apartamentosMap.size);
+    // Agregar opciones al select ordenadas por número de apartamento
+    const apartamentosOrdenados = Array.from(apartamentosMap.entries())
+        .sort((a, b) => a[1].localeCompare(b[1], undefined, { numeric: true }));
     
-    // Agregar opciones al select
-    apartamentosMap.forEach((numero, id) => {
+    apartamentosOrdenados.forEach(([id, numero]) => {
         const option = document.createElement('option');
         option.value = id;
         option.textContent = `Apartamento ${numero}`;
         select.appendChild(option);
-        console.log(`Opción agregada: ${numero} (ID: ${id})`);
     });
 }
 </script>
-@endpush
+
+</x-app-with-sidebar>
 
 @push('styles')
 <style>
@@ -388,17 +426,149 @@ function cargarApartamentosConDeudas() {
     font-size: 0.75rem;
 }
 
+/* Estilos para impresión */
 @media print {
-    .card-header .d-flex,
-    .card-body.border-bottom,
-    .btn-group {
+    /* Ocultar elementos con clase no-print */
+    .no-print {
         display: none !important;
     }
     
-    .table th:last-child,
-    .table td:last-child {
+    /* Ocultar específicamente el contenedor de filtros */
+    .bg-gray-50.p-4.rounded-lg.mb-6 {
         display: none !important;
+    }
+    
+    /* Ocultar el contenedor de botones de acción */
+    .flex.flex-col.lg\:flex-row {
+        display: none !important;
+    }
+    
+    /* Ocultar todos los botones */
+    button {
+        display: none !important;
+    }
+    
+    /* Ocultar todos los enlaces con clase inline-flex */
+    a.inline-flex {
+        display: none !important;
+    }
+    
+    /* Ocultar formularios */
+    form {
+        display: none !important;
+    }
+    
+    /* Ocultar divs con múltiples clases flex */
+    div[class*="flex"][class*="gap"] {
+        display: none !important;
+    }
+    
+    /* Ocultar contenedores con bg-gray-50 */
+    div[class*="bg-gray-50"] {
+        display: none !important;
+    }
+    
+    /* Ocultar columnas específicas - mostrar solo Propietario, Apartamento, Monto Pagado, Fecha Pago y Saldo Actual */
+    .min-w-full thead tr th:nth-child(3), /* Nro Recibo */
+    .min-w-full thead tr th:nth-child(4), /* Fecha Facturación */
+    .min-w-full thead tr th:nth-child(5), /* Monto Facturado */
+    .min-w-full thead tr th:nth-child(9), /* Acciones */
+    .min-w-full tbody tr td:nth-child(3), /* Nro Recibo */
+    .min-w-full tbody tr td:nth-child(4), /* Fecha Facturación */
+    .min-w-full tbody tr td:nth-child(5), /* Monto Facturado */
+    .min-w-full tbody tr td:nth-child(9) { /* Acciones */
+        display: none !important;
+    }
+    
+    /* Ajustar el diseño para impresión */
+    body {
+        font-size: 12px;
+        line-height: 1.3;
+    }
+    
+    .min-w-full {
+        width: 100% !important;
+        font-size: 11px;
+    }
+    
+    .px-6 {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    
+    .py-4 {
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+    }
+    
+    .py-3 {
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+    }
+    
+    /* Título para impresión */
+    .print-title {
+        display: block !important;
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #000;
+    }
+    
+    /* Información de filtros aplicados para impresión */
+    .print-filters {
+        display: block !important;
+        margin-bottom: 15px;
+        font-size: 12px;
+        color: #666;
+    }
+    
+    /* Remover colores de fondo en impresión */
+    .bg-yellow-50,
+    .bg-green-50,
+    .bg-gray-50 {
+        background-color: transparent !important;
+    }
+    
+    /* Mantener colores de texto importantes */
+    .text-red-600 {
+        color: #dc2626 !important;
+    }
+    
+    .text-green-600 {
+        color: #16a34a !important;
     }
 }
 </style>
-@endpush
+
+<script>
+function eliminarPago(pagoId, numeroRecibo, montoPago) {
+    alert('DEBUG: Función eliminarPago ejecutada. ID: ' + pagoId + ', Recibo: ' + numeroRecibo + ', Monto: ' + montoPago);
+    const montoNumerico = parseFloat(montoPago);
+    if (confirm('¿Está seguro de que desea eliminar el pago de $' + montoNumerico.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' del recibo ' + numeroRecibo + '?\n\nEsta acción no se puede deshacer y el recibo volverá a tener saldo pendiente.')) {
+        // Crear un formulario para enviar la petición DELETE
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/pagos/' + pagoId;
+        
+        // Agregar token CSRF
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = '_token';
+        csrfToken.value = '{{ csrf_token() }}';
+        form.appendChild(csrfToken);
+        
+        // Agregar método DELETE
+        const methodField = document.createElement('input');
+        methodField.type = 'hidden';
+        methodField.name = '_method';
+        methodField.value = 'DELETE';
+        form.appendChild(methodField);
+        
+        // Agregar al DOM y enviar
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>

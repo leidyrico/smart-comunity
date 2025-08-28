@@ -54,50 +54,28 @@ class Apartamento extends Model
     {
         $totalDeuda = 0;
         
-        // Obtener todos los pagos de este apartamento agrupados por recibo
-        $pagos = $this->pagos()->with('reciboGastoComun')->get();
+        // Para apartamentos solventes: no tienen saldo pendiente
+        if ($this->estatus_financiero === 'solvente') {
+            return 0;
+        }
         
-        // Agrupar pagos por recibo para evitar duplicaciones
-        $pagosPorRecibo = $pagos->groupBy('recibo_gasto_comun_id');
+        // Para apartamentos deudores y morosos: calcular saldo basado en recibos asignados (con pagos)
+        // Solo considerar recibos que tienen pagos asociados a este apartamento
+        $recibosAsignados = \App\Models\ReciboGastoComun::whereHas('pagos', function($query) {
+            $query->where('apartamento_id', $this->id);
+        })->get();
         
-        foreach ($pagosPorRecibo as $reciboId => $pagosDelRecibo) {
-            $recibo = $pagosDelRecibo->first()->reciboGastoComun;
+        foreach ($recibosAsignados as $recibo) {
+            // Calcular total pagado para este recibo por este apartamento
+            $totalPagadoRecibo = $this->pagos()
+                ->where('recibo_gasto_comun_id', $recibo->id)
+                ->where('estado', 'confirmado')
+                ->sum('monto_pagado');
             
-            // Determinar qué recibos considerar según el estatus financiero
-            $incluirRecibo = false;
-            
-            if ($this->estatus_financiero === 'solvente') {
-                // Para apartamentos solventes: solo recibos activos
-                $incluirRecibo = ($recibo->estado === 'activo');
-            } elseif ($this->estatus_financiero === 'deudor') {
-                // Para apartamentos deudores: verificar si cambiaron hoy
-                $cambioHoy = $this->fecha_cambio_estatus && 
-                            $this->fecha_cambio_estatus === now()->toDateString();
-                
-                if ($cambioHoy) {
-                    // Deudores que cambiaron hoy: solo recibos activos
-                    $incluirRecibo = ($recibo->estado === 'activo');
-                } else {
-                    // Deudores históricos o primera carga: recibos activos y vencidos
-                    $incluirRecibo = in_array($recibo->estado, ['activo', 'vencido']);
-                }
-            } else {
-                // Fallback: recibos activos y vencidos
-                $incluirRecibo = in_array($recibo->estado, ['activo', 'vencido']);
-            }
-            
-            if ($incluirRecibo) {
-                // Calcular total pagado para este recibo (excluyendo pagos rechazados)
-                $totalPagadoRecibo = $pagosDelRecibo
-                    ->where('estado', '!=', 'rechazado')
-                    ->where('estado', 'confirmado')
-                    ->sum('monto_pagado');
-                
-                // Calcular saldo pendiente para este recibo
-                $saldo = $recibo->total_recibo - $totalPagadoRecibo;
-                if ($saldo > 0) {
-                    $totalDeuda += $saldo;
-                }
+            // Calcular saldo pendiente para este recibo
+            $saldo = $recibo->total_recibo - $totalPagadoRecibo;
+            if ($saldo > 0) {
+                $totalDeuda += $saldo;
             }
         }
         
@@ -128,6 +106,7 @@ class Apartamento extends Model
         // Calcular deuda basada en recibos activos y vencidos
         $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])->get();
         $totalDeuda = 0;
+        $recibosVencidosPendientes = 0;
         
         foreach ($recibos as $recibo) {
             // Verificar si existe un pago para este recibo y apartamento
@@ -141,17 +120,36 @@ class Apartamento extends Model
                 $saldo = $recibo->total_recibo - $montoPagado;
                 if ($saldo > 0) {
                     $totalDeuda += $saldo;
+                    // Contar recibos vencidos con saldo pendiente
+                    if ($recibo->estado === 'vencido') {
+                        $recibosVencidosPendientes++;
+                    }
                 }
             } else {
                 // Si no existe pago, toda la deuda está pendiente
                 $totalDeuda += $recibo->total_recibo;
+                // Contar recibos vencidos sin pago
+                if ($recibo->estado === 'vencido') {
+                    $recibosVencidosPendientes++;
+                }
             }
         }
         
-        $nuevoEstatus = $totalDeuda > 0 ? 'deudor' : 'solvente';
+        // Determinar estatus basado en deuda y número de recibos vencidos
+        $nuevoEstatus = 'solvente';
+        if ($totalDeuda > 0) {
+            if ($recibosVencidosPendientes > 3) {
+                $nuevoEstatus = 'moroso';
+            } else {
+                $nuevoEstatus = 'deudor';
+            }
+        }
         
         if ($this->estatus_financiero !== $nuevoEstatus) {
-            $this->update(['estatus_financiero' => $nuevoEstatus]);
+            $this->update([
+                'estatus_financiero' => $nuevoEstatus,
+                'fecha_cambio_estatus' => now()->toDateString()
+            ]);
         }
         
         return $nuevoEstatus;
@@ -171,5 +169,21 @@ class Apartamento extends Model
     public function esDeudor()
     {
         return $this->estatus_financiero === 'deudor';
+    }
+
+    /**
+     * Verificar si es moroso
+     */
+    public function esMoroso()
+    {
+        return $this->estatus_financiero === 'moroso';
+    }
+
+    /**
+     * Verificar si tiene deudas (deudor o moroso)
+     */
+    public function tieneDeudas()
+    {
+        return in_array($this->estatus_financiero, ['deudor', 'moroso']);
     }
 }

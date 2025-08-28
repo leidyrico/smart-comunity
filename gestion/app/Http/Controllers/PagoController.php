@@ -146,9 +146,15 @@ class PagoController extends Controller
      */
     public function destroy(Pago $pago)
     {
+        // Obtener información del pago antes de eliminarlo para el mensaje
+        $numeroRecibo = $pago->reciboGastoComun->numero_recibo;
+        $numeroApartamento = $pago->apartamento->numero;
+        $montoPagado = $pago->monto_pagado;
+        
         $pago->delete();
-        return redirect()->route('pagos.index')
-            ->with('success', 'Pago eliminado exitosamente.');
+        
+        return redirect()->route('deudas.index')
+            ->with('success', "Pago de $" . number_format($montoPagado, 2, ',', '.') . " eliminado exitosamente. El recibo {$numeroRecibo} del apartamento {$numeroApartamento} ahora tiene saldo pendiente.");
     }
 
     /**

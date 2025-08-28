@@ -159,22 +159,18 @@
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     @if($recibo->pagos->count() > 0)
-                                                        <div class="text-xs text-gray-600">
-                                                            <div class="font-medium text-gray-900 mb-1">Asignado a:</div>
-                                                            @foreach($recibo->pagos as $pago)
-                                                                <div class="flex items-center space-x-1 mb-1">
-                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                                        Apt. {{ $pago->apartamento->numero }}
-                                                                    </span>
-                                                                    <span class="text-xs text-gray-500">
-                                                                        ({{ ucfirst($pago->apartamento->estatus_financiero) }})
-                                                                    </span>
-                                                                </div>
-                                                            @endforeach
-                                                        </div>
-                                                    @else
-                                                        <span class="text-xs text-gray-400 italic">Sin asignaciones</span>
-                                                    @endif
+                                        <button type="button" 
+                                                class="inline-flex items-center px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-sm font-medium rounded-full transition-colors duration-200"
+                                                onclick="openAssignmentModal('{{ $recibo->id }}')">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                            Ver {{ $recibo->pagos->count() }} asignación{{ $recibo->pagos->count() > 1 ? 'es' : '' }}
+                                        </button>
+                                    @else
+                                        <span class="text-xs text-gray-400 italic">Sin asignaciones</span>
+                                    @endif
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <select name="apartamentos[{{ $recibo->id }}]" class="border-gray-300 rounded-md shadow-sm text-sm apartamento-select" data-recibo-id="{{ $recibo->id }}">
@@ -224,8 +220,96 @@
         </div>
     </div>
 
+    <!-- Modal para mostrar todas las asignaciones -->
+    <div id="assignmentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-10 mx-auto p-6 border max-w-4xl w-full mx-4 shadow-lg rounded-lg bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Todas las Asignaciones</h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-600" onclick="closeAssignmentModal()">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="modalContent" class="space-y-2">
+                    <!-- El contenido se llenará dinámicamente -->
+                </div>
+                <div class="mt-4">
+                    <button type="button" 
+                            class="w-full px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                            onclick="closeAssignmentModal()">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript para funcionalidad interactiva -->
     <script>
+        // Preparar datos de recibos para el modal
+        const recibosData = @json($recibosDisponibles);
+
+        function openAssignmentModal(reciboId) {
+            const recibo = recibosData.find(r => r.id == reciboId);
+            if (!recibo) return;
+
+            const modalContent = document.getElementById('modalContent');
+            
+            if (!recibo.pagos || recibo.pagos.length === 0) {
+                modalContent.innerHTML = '<p class="text-gray-500 text-center py-8">No hay asignaciones para este recibo.</p>';
+            } else {
+                let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
+                recibo.pagos.forEach(pago => {
+                    const statusColor = pago.apartamento.estatus_financiero === 'solvente' ? 'bg-green-100 text-green-800' : 
+                                       pago.apartamento.estatus_financiero === 'deudor' ? 'bg-red-100 text-red-800' : 
+                                       pago.apartamento.estatus_financiero === 'parcial' ? 'bg-yellow-100 text-yellow-800' :
+                                       'bg-gray-100 text-gray-800';
+                    
+                    html += `
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-10 w-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-lg font-semibold text-gray-900">Apt. ${pago.apartamento.numero}</p>
+                                        <p class="text-sm text-gray-600 truncate">${pago.apartamento.propietario || 'Sin propietario'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColor}">
+                                    ${pago.apartamento.estatus_financiero.charAt(0).toUpperCase() + pago.apartamento.estatus_financiero.slice(1)}
+                                </span>
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-500">Estado financiero</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                modalContent.innerHTML = html;
+            }
+
+            document.getElementById('assignmentModal').classList.remove('hidden');
+        }
+
+        function closeAssignmentModal() {
+            document.getElementById('assignmentModal').classList.add('hidden');
+        }
+
+        // Cerrar modal al hacer clic fuera de él
+        document.getElementById('assignmentModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAssignmentModal();
+            }
+        });
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔧 DEBUG: Iniciando JavaScript de asignación manual');
             

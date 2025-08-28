@@ -207,9 +207,11 @@
                                         ${apartamento.propietario || 'Sin propietario'}
                                     </div>
                                     <div class="text-xs ${
-                                        apartamento.estatus_financiero === 'deudor' ? 'text-red-600' : 'text-green-600'
+                                        apartamento.estatus_financiero === 'moroso' ? 'text-red-600' : 
+                                        (apartamento.estatus_financiero === 'deudor' ? 'text-yellow-600' : 'text-green-600')
                                     }">
-                                        ${apartamento.estatus_financiero === 'deudor' ? 'Deudor' : 'Solvente'}
+                                        ${apartamento.estatus_financiero === 'moroso' ? 'Moroso' : 
+                                        (apartamento.estatus_financiero === 'deudor' ? 'Deudor' : 'Solvente')}
                                     </div>
                                 </label>
                             </div>
