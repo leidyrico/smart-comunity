@@ -1,0 +1,45 @@
+{
+    "pago_global_original": {
+        "id": 82,
+        "monto_pagado": "100.00",
+        "observaciones": "[CONVERTIDO A GLOBAL] Pago de $100.00 convertido de pagos espec\u00edficos (REC-0922, REC-1022) a pago global para apartamento 13"
+    },
+    "distribucion": [
+        {
+            "recibo": {
+                "id": 265,
+                "numero_recibo": "REC-0725",
+                "fecha_vencimiento": "2025-08-08",
+                "total_recibo": "20.90",
+                "estado": "vencido",
+                "total_pagado": "0.00"
+            },
+            "monto": 20.9,
+            "tipo": "actual"
+        },
+        {
+            "recibo": {
+                "id": 234,
+                "numero_recibo": "REC-0922",
+                "fecha_vencimiento": "2022-10-10",
+                "total_recibo": "46.78",
+                "estado": "vencido",
+                "total_pagado": "0.00"
+            },
+            "monto": 46.78,
+            "tipo": "antiguo"
+        },
+        {
+            "recibo": {
+                "id": 235,
+                "numero_recibo": "REC-1022",
+                "fecha_vencimiento": "2022-11-02",
+                "total_recibo": "96.00",
+                "estado": "vencido",
+                "total_pagado": "0.00"
+            },
+            "monto": 32.31999999999999,
+            "tipo": "antiguo"
+        }
+    ]
+}

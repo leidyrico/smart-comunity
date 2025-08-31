@@ -1,0 +1,41 @@
+[
+    {
+        "id": 83,
+        "apartamento_id": 91,
+        "recibo_gasto_comun_id": 265,
+        "recibo_numero": "REC-0725",
+        "monto_pagado": "20.90",
+        "fecha_pago": "2025-08-30T04:00:00.000000Z",
+        "numero_comprobante": "672832207870",
+        "estado": "confirmado",
+        "observaciones": "[DISTRIBUIDO] Cr\u00e9dito global distribuido - Recibo actual - Monto: $20.90",
+        "created_at": "2025-08-30T04:58:06.000000Z",
+        "updated_at": "2025-08-30T04:58:06.000000Z"
+    },
+    {
+        "id": 84,
+        "apartamento_id": 91,
+        "recibo_gasto_comun_id": 234,
+        "recibo_numero": "REC-0922",
+        "monto_pagado": "46.78",
+        "fecha_pago": "2025-08-30T04:00:00.000000Z",
+        "numero_comprobante": "672832207870",
+        "estado": "confirmado",
+        "observaciones": "[DISTRIBUIDO] Cr\u00e9dito global distribuido - Recibo antiguo - Monto: $46.78",
+        "created_at": "2025-08-30T04:58:06.000000Z",
+        "updated_at": "2025-08-30T04:58:06.000000Z"
+    },
+    {
+        "id": 85,
+        "apartamento_id": 91,
+        "recibo_gasto_comun_id": 235,
+        "recibo_numero": "REC-1022",
+        "monto_pagado": "32.32",
+        "fecha_pago": "2025-08-30T04:00:00.000000Z",
+        "numero_comprobante": "672832207870",
+        "estado": "confirmado",
+        "observaciones": "[DISTRIBUIDO] Cr\u00e9dito global distribuido - Recibo antiguo - Monto: $32.32",
+        "created_at": "2025-08-30T04:58:06.000000Z",
+        "updated_at": "2025-08-30T04:58:06.000000Z"
+    }
+]

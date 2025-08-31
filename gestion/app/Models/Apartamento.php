@@ -49,7 +49,7 @@ class Apartamento extends Model
 
     /**
      * Obtener el saldo pendiente total
-     * El saldo pendiente es la suma total de todos los recibos asignados al apartamento
+     * El saldo pendiente es la suma total de todos los recibos asignados menos los pagos confirmados
      */
     public function getSaldoPendienteAttribute()
     {
@@ -61,9 +61,17 @@ class Apartamento extends Model
                   ->where('estado', '!=', 'rechazado');
         })->get();
         
-        // Sumar el total de todos los recibos asignados
+        // Calcular el saldo pendiente para cada recibo
         foreach ($recibosAsignados as $recibo) {
-            $totalSaldo += $recibo->total_recibo;
+            // Obtener el total pagado para este recibo específico
+            $totalPagado = $this->pagos()
+                ->where('recibo_gasto_comun_id', $recibo->id)
+                ->where('estado', 'confirmado')
+                ->sum('monto_pagado');
+            
+            // Calcular saldo pendiente del recibo (no puede ser negativo)
+            $saldoRecibo = max(0, $recibo->total_recibo - $totalPagado);
+            $totalSaldo += $saldoRecibo;
         }
         
         return $totalSaldo;
@@ -87,35 +95,25 @@ class Apartamento extends Model
 
     /**
      * Actualizar el estatus financiero basado en recibos asignados
-     * - Solvente: sin recibos asignados
-     * - Deudor: menos de 3 recibos vencidos asignados
-     * - Moroso: 3 o más recibos vencidos asignados
+     * - Solvente: sin recibos asignados (0 recibos)
+     * - Deudor: 1-3 recibos activos/vencidos asignados
+     * - Moroso: más de 3 recibos activos/vencidos asignados
      */
     public function actualizarEstatusFinanciero()
     {
-        // Contar recibos realmente asignados (excluyendo rechazados)
-        $recibosAsignados = $this->pagos()
-            ->where('estado', '!=', 'rechazado')
-            ->distinct('recibo_gasto_comun_id')
-            ->count();
+        // Contar recibos activos o vencidos asignados (incluyendo rechazados)
+        $recibosActivosVencidos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])
+            ->whereHas('pagos', function($query) {
+                $query->where('apartamento_id', $this->id);
+            })->count();
         
-        // Si no tiene recibos asignados, es solvente
-        if ($recibosAsignados == 0) {
+        // Determinar nuevo estatus según nuevos criterios
+        if ($recibosActivosVencidos == 0) {
             $nuevoEstatus = 'solvente';
+        } elseif ($recibosActivosVencidos > 3) {
+            $nuevoEstatus = 'moroso';
         } else {
-            // Contar recibos vencidos asignados (excluyendo rechazados)
-            $recibosVencidosAsignados = ReciboGastoComun::where('estado', 'vencido')
-                ->whereHas('pagos', function($query) {
-                    $query->where('apartamento_id', $this->id)
-                          ->where('estado', '!=', 'rechazado');
-                })->count();
-            
-            // Determinar estatus basado en número de recibos vencidos
-            if ($recibosVencidosAsignados >= 3) {
-                $nuevoEstatus = 'moroso';
-            } else {
-                $nuevoEstatus = 'deudor';
-            }
+            $nuevoEstatus = 'deudor';
         }
         
         if ($this->estatus_financiero !== $nuevoEstatus) {

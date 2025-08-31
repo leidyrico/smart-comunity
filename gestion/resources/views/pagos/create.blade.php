@@ -11,9 +11,39 @@
                 <div class="p-6 text-gray-900">
                     
                     @if (session('success'))
-                        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+                        <div id="success-message" class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
                             <span class="block sm:inline">{{ session('success') }}</span>
+                            <div class="mt-2 text-sm">
+                                <span id="redirect-countdown">Redirigiendo a la página de deudas en <strong>10</strong> segundos...</span>
+                                <button type="button" onclick="cancelRedirect()" class="ml-4 underline hover:no-underline">Cancelar</button>
+                            </div>
                         </div>
+                        
+                        <script>
+                            let redirectTimer;
+                            let countdown = 10;
+                            
+                            function updateCountdown() {
+                                document.getElementById('redirect-countdown').innerHTML = 
+                                    `Redirigiendo a la página de deudas en <strong>${countdown}</strong> segundos...`;
+                                
+                                if (countdown <= 0) {
+                                    window.location.href = '{{ route("deudas.index") }}';
+                                    return;
+                                }
+                                
+                                countdown--;
+                                redirectTimer = setTimeout(updateCountdown, 1000);
+                            }
+                            
+                            function cancelRedirect() {
+                                clearTimeout(redirectTimer);
+                                document.getElementById('success-message').style.display = 'none';
+                            }
+                            
+                            // Iniciar el countdown
+                            updateCountdown();
+                        </script>
                     @endif
 
                     @if ($errors->any())
@@ -52,7 +82,7 @@
                                     <option value="">Seleccione un recibo</option>
                                     @foreach($recibos as $recibo)
                                         <option value="{{ $recibo->id }}" data-total="{{ $recibo->total_recibo }}" 
-                                            {{ old('recibo_gasto_comun_id') == $recibo->id ? 'selected' : '' }}>
+                                            {{ (old('recibo_gasto_comun_id') == $recibo->id || (isset($reciboSeleccionado) && $reciboSeleccionado->id == $recibo->id)) ? 'selected' : '' }}>
                                             {{ $recibo->numero_recibo }} - {{ $recibo->periodo }} ({{ number_format($recibo->total_recibo, 2, ',', '.') }})
                                         </option>
                                     @endforeach
@@ -124,7 +154,7 @@
                             </a>
                             
                             <div class="flex space-x-4">
-                                <a href="{{ route('pagos.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-600 focus:bg-gray-600 active:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                <a href="#" id="ver-historial-btn" class="inline-flex items-center px-4 py-2 bg-gray-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-600 focus:bg-gray-600 active:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150" onclick="verHistorialApartamento()">
                                     {{ __('Ver Historial') }}
                                 </a>
                                 
@@ -147,77 +177,113 @@
             const saldoInfo = document.getElementById('saldo-info');
             const saldoPendienteSpan = document.getElementById('saldo-pendiente');
 
-            
-            apartamentoSelect.addEventListener('change', function() {
-                const apartamentoId = this.value;
+            // Función para cargar recibos de un apartamento
+            function cargarRecibosPorApartamento(apartamentoId, reciboIdSeleccionado = null) {
+                if (!apartamentoId) {
+                    reciboSelect.innerHTML = '<option value="">Seleccione un recibo</option>';
+                    return;
+                }
                 
-                // Limpiar opciones de recibo y ocultar saldo
                 reciboSelect.innerHTML = '<option value="">Cargando recibos...</option>';
                 saldoInfo.style.display = 'none';
                 montoPagadoInput.value = '';
                 
-
-                
-                if (apartamentoId) {
-                    fetch(`/api/recibos-por-apartamento?apartamento_id=${apartamentoId}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            reciboSelect.innerHTML = '<option value="">Seleccione un recibo</option>';
-                            data.forEach(recibo => {
-                                const option = document.createElement('option');
-                                option.value = recibo.id;
-                                option.textContent = `${recibo.numero_recibo} - ${recibo.periodo} ($${new Intl.NumberFormat('es-CO').format(recibo.total_recibo)})`;
-                                option.setAttribute('data-total', recibo.total_recibo);
-                                reciboSelect.appendChild(option);
-                            });
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            reciboSelect.innerHTML = '<option value="">Error al cargar recibos</option>';
+                fetch(`/api/recibos-por-apartamento?apartamento_id=${apartamentoId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        reciboSelect.innerHTML = '<option value="">Seleccione un recibo</option>';
+                        
+                        if (data.length === 0) {
+                            reciboSelect.innerHTML = '<option value="">No hay recibos pendientes para este apartamento</option>';
+                            return;
+                        }
+                        
+                        data.forEach(recibo => {
+                            const option = document.createElement('option');
+                            option.value = recibo.id;
+                            option.textContent = `${recibo.numero_recibo} - ${recibo.periodo} (Pendiente: $${new Intl.NumberFormat('es-CO').format(recibo.saldo_pendiente)})`;
+                            option.setAttribute('data-total', recibo.total_recibo);
+                            option.setAttribute('data-saldo-pendiente', recibo.saldo_pendiente);
+                            
+                            // Seleccionar el recibo si coincide con el ID proporcionado
+                            if (reciboIdSeleccionado && recibo.id == reciboIdSeleccionado) {
+                                option.selected = true;
+                            }
+                            
+                            reciboSelect.appendChild(option);
                         });
+                        
+                        // Si hay un recibo seleccionado, cargar su saldo
+                        if (reciboIdSeleccionado) {
+                            const selectedOption = reciboSelect.options[reciboSelect.selectedIndex];
+                            if (selectedOption && selectedOption.value) {
+                                cargarSaldoRecibo(selectedOption);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        reciboSelect.innerHTML = '<option value="">Error al cargar recibos</option>';
+                    });
+            }
+            
+            // Función para cargar saldo de un recibo
+            function cargarSaldoRecibo(selectedOption) {
+                const saldoPendiente = parseFloat(selectedOption.getAttribute('data-saldo-pendiente'));
+                
+                if (saldoPendiente && saldoPendiente > 0) {
+                    // Mostrar saldo pendiente
+                    saldoPendienteSpan.textContent = new Intl.NumberFormat('es-CO', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }).format(saldoPendiente);
+                    
+                    // Cargar saldo pendiente en el campo monto_pagado
+                    montoPagadoInput.value = saldoPendiente.toFixed(2);
+                    
+                    // Mostrar información del saldo
+                    saldoInfo.style.display = 'block';
                 } else {
-                    reciboSelect.innerHTML = '<option value="">Seleccione un recibo</option>';
+                    saldoInfo.style.display = 'none';
+                    montoPagadoInput.value = '';
                 }
+            }
+            
+            // Cargar recibos automáticamente si hay apartamento seleccionado al cargar la página
+            @if(isset($apartamentoSeleccionado) && $apartamentoSeleccionado)
+                const reciboIdSeleccionado = {{ isset($reciboSeleccionado) && $reciboSeleccionado ? $reciboSeleccionado->id : 'null' }};
+                cargarRecibosPorApartamento({{ $apartamentoSeleccionado->id }}, reciboIdSeleccionado);
+            @endif
+            
+            apartamentoSelect.addEventListener('change', function() {
+                const apartamentoId = this.value;
+                cargarRecibosPorApartamento(apartamentoId);
             });
             
             // Evento para cargar saldo pendiente cuando se selecciona un recibo
             reciboSelect.addEventListener('change', function() {
-                const apartamentoId = apartamentoSelect.value;
-                const reciboId = this.value;
+                const selectedOption = this.options[this.selectedIndex];
                 
-                if (apartamentoId && reciboId) {
-                    fetch(`/api/saldo-recibo?apartamento_id=${apartamentoId}&recibo_id=${reciboId}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.error) {
-                                console.error('Error:', data.error);
-                                saldoInfo.style.display = 'none';
-                                return;
-                            }
-                            
-                            // Mostrar saldo pendiente
-                            saldoPendienteSpan.textContent = new Intl.NumberFormat('es-CO', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                            }).format(data.saldo_pendiente);
-                            
-                            // Cargar saldo pendiente en el campo monto_pagado
-                            montoPagadoInput.value = data.saldo_pendiente.toFixed(2);
-                            
-                            // Mostrar información del saldo
-                            saldoInfo.style.display = 'block';
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            saldoInfo.style.display = 'none';
-                        });
+                if (selectedOption && selectedOption.value) {
+                    cargarSaldoRecibo(selectedOption);
                 } else {
                     saldoInfo.style.display = 'none';
                     montoPagadoInput.value = '';
                 }
             });
-            
-
         });
+        
+        function verHistorialApartamento() {
+            const apartamentoSelect = document.getElementById('apartamento_id');
+            const apartamentoId = apartamentoSelect.value;
+            
+            if (!apartamentoId) {
+                alert('Por favor, seleccione un apartamento primero para ver su historial.');
+                return;
+            }
+            
+            // Redirigir a la página de historial con el filtro del apartamento
+            window.location.href = `{{ route('pagos.index') }}?apartamento_id=${apartamentoId}`;
+        }
     </script>
 </x-app-with-sidebar>

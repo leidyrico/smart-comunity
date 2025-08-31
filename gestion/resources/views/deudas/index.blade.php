@@ -343,7 +343,7 @@ function mostrarModalPagoGlobal() {
             btnConfirmar.disabled = false;
             btnConfirmar.onclick = function() {
                 const apartamentoId = document.getElementById('apartamentoSelect').value;
-                window.location.href = `/pagos/global/create/${apartamentoId}`;
+                window.location.href = `{{ url('/') }}/pagos/global/create/${apartamentoId}`;
             };
         } else {
             btnConfirmar.disabled = true;
@@ -544,13 +544,12 @@ function cargarApartamentosConDeudas() {
 
 <script>
 function eliminarPago(pagoId, numeroRecibo, montoPago) {
-    alert('DEBUG: Función eliminarPago ejecutada. ID: ' + pagoId + ', Recibo: ' + numeroRecibo + ', Monto: ' + montoPago);
     const montoNumerico = parseFloat(montoPago);
     if (confirm('¿Está seguro de que desea eliminar el pago de $' + montoNumerico.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' del recibo ' + numeroRecibo + '?\n\nEsta acción no se puede deshacer y el recibo volverá a tener saldo pendiente.')) {
         // Crear un formulario para enviar la petición DELETE
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = '/pagos/' + pagoId;
+        form.action = '{{ url("/") }}/pagos/' + pagoId;
         
         // Agregar token CSRF
         const csrfToken = document.createElement('input');

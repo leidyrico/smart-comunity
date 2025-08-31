@@ -36,17 +36,23 @@ class DeudaController extends Controller
 
         $apartamentos = $query->get();
 
-        // Obtener solo recibos que están asignados MANUALMENTE (no automáticamente)
+        // Obtener recibos que están asignados (manual o automáticamente por pagos globales)
         $recibosActivos = ReciboGastoComun::where('estado', 'activo')
             ->whereHas('pagos', function($query) {
-                $query->where('observaciones', 'like', '%Asignación manual%');
+                $query->where(function($subQuery) {
+                    $subQuery->where('observaciones', 'like', '%Asignación manual%')
+                             ->orWhere('observaciones', 'like', '%Pago global distribuido automáticamente%');
+                });
             })
             ->orderBy('fecha_emision', 'desc')
             ->get();
             
         $recibosVencidos = ReciboGastoComun::where('estado', 'vencido')
             ->whereHas('pagos', function($query) {
-                $query->where('observaciones', 'like', '%Asignación manual%');
+                $query->where(function($subQuery) {
+                    $subQuery->where('observaciones', 'like', '%Asignación manual%')
+                             ->orWhere('observaciones', 'like', '%Pago global distribuido automáticamente%');
+                });
             })
             ->orderBy('fecha_emision', 'asc')
             ->get();
@@ -59,26 +65,28 @@ class DeudaController extends Controller
         
         foreach ($apartamentos as $apartamento) {
             foreach ($recibos as $recibo) {
-                // Verificar si existe una asignación manual para este apartamento y recibo
-                $asignacionManual = $apartamento->pagos
+                // Verificar si existe una asignación (manual o por pago global) para este apartamento y recibo
+                $asignacionExistente = $apartamento->pagos
                     ->where('recibo_gasto_comun_id', $recibo->id)
                     ->filter(function($pago) {
-                        return strpos($pago->observaciones, 'Asignación manual') !== false;
+                        return strpos($pago->observaciones, 'Asignación manual') !== false ||
+                               strpos($pago->observaciones, 'Pago global distribuido automáticamente') !== false;
                     })
                     ->first();
                 
-                // Solo procesar si existe una asignación manual
-                if (!$asignacionManual) {
+                // Solo procesar si existe una asignación
+                if (!$asignacionExistente) {
                     continue;
                 }
                 
-                // Buscar pagos confirmados de este apartamento para este recibo (asignaciones manuales Y pagos normales)
+                // Buscar pagos confirmados de este apartamento para este recibo (asignaciones manuales, pagos globales Y pagos normales)
                 $pagosRecibo = $apartamento->pagos
                     ->where('recibo_gasto_comun_id', $recibo->id)
                     ->where('estado', 'confirmado')
                     ->filter(function($pago) {
-                        // Incluir pagos con asignación manual O pagos normales (sin observaciones de asignación automática)
+                        // Incluir pagos con asignación manual, pagos globales distribuidos, O pagos normales (sin observaciones de asignación automática)
                         return strpos($pago->observaciones, 'Asignación manual') !== false || 
+                               strpos($pago->observaciones, 'Pago global distribuido automáticamente') !== false ||
                                (strpos($pago->observaciones, 'Recibo asignado automáticamente') === false &&
                                 strpos($pago->observaciones, 'Pago global') === false);
                     });
@@ -176,7 +184,9 @@ class DeudaController extends Controller
         $apartamento = Apartamento::with(['pagos.reciboGastoComun'])->findOrFail($id);
         
         // Obtener solo los recibos que tienen pagos asociados a este apartamento
+        // Excluir pagos rechazados para no mostrar recibos desasignados
         $recibosConPagos = $apartamento->pagos
+            ->where('estado', '!=', 'rechazado')
             ->pluck('recibo_gasto_comun_id')
             ->unique();
         
@@ -188,6 +198,7 @@ class DeudaController extends Controller
         $detalleRecibos = [];
         
         foreach ($recibos as $recibo) {
+            // Solo considerar pagos confirmados (excluir rechazados)
             $pagosTotales = $apartamento->pagos
                 ->where('recibo_gasto_comun_id', $recibo->id)
                 ->where('estado', 'confirmado')

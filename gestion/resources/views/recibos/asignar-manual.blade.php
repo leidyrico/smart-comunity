@@ -9,19 +9,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
-                    <!-- Información sobre la funcionalidad -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-                        <h3 class="text-lg font-medium text-blue-900 mb-3">📋 Asignación Manual de Recibos</h3>
-                        <div class="text-sm text-blue-800 space-y-2">
-                            <p><strong>Esta funcionalidad permite:</strong></p>
-                            <ul class="list-disc list-inside ml-4 space-y-1">
-                                <li>Asignar recibos vencidos existentes a apartamentos específicos</li>
-                                <li>Seleccionar manualmente qué apartamento debe cada recibo</li>
-                                <li>Los recibos asignados se sumarán al saldo pendiente del apartamento</li>
-                                <li>El estatus financiero del apartamento se actualizará automáticamente</li>
-                            </ul>
-                        </div>
-                    </div>
+
 
                     <!-- Mensajes de éxito/error -->
                     @if(session('success'))
@@ -286,8 +274,14 @@
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusColor}">
                                     ${pago.apartamento.estatus_financiero.charAt(0).toUpperCase() + pago.apartamento.estatus_financiero.slice(1)}
                                 </span>
-                                <div class="text-right">
-                                    <p class="text-xs text-gray-500">Estado financiero</p>
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="eliminarAsignacion(${recibo.id}, ${pago.apartamento.id})" 
+                                            class="inline-flex items-center px-2 py-1 border border-red-300 rounded text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                                            title="Eliminar asignación">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -465,5 +459,33 @@
             
             console.log('🔧 DEBUG: JavaScript de asignación manual completamente inicializado');
         });
+
+        // Función para eliminar asignación
+        function eliminarAsignacion(reciboId, apartamentoId) {
+            if (confirm('¿Está seguro de que desea eliminar esta asignación? Esta acción no se puede deshacer.')) {
+                fetch(`/recibos/eliminar-asignacion/${reciboId}/${apartamentoId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        // Recargar la página para actualizar la vista
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al eliminar la asignación. Por favor, inténtelo de nuevo.');
+                });
+            }
+        }
     </script>
 </x-app-with-sidebar>

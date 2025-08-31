@@ -13,10 +13,16 @@ class ApartamentoController extends Controller
      */
     public function index()
     {
-        $apartamentos = Apartamento::orderBy('piso')->orderBy('numero')->get();
+        // Cargar apartamentos con sus relaciones necesarias para calcular saldo pendiente
+        $apartamentos = Apartamento::with(['pagos.reciboGastoComun'])
+            ->orderBy('piso')
+            ->orderBy('numero')
+            ->get();
         
-        // No recalcular automáticamente el estatus financiero para respetar valores importados
-        // Si necesita recálculo, usar el comando: php artisan apartamentos:actualizar-estatus
+        // Actualizar estatus financiero para cada apartamento basado en recibos asignados
+        foreach ($apartamentos as $apartamento) {
+            $apartamento->actualizarEstatusFinanciero();
+        }
         
         return view('apartamentos.index', compact('apartamentos'));
     }

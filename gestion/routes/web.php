@@ -56,6 +56,7 @@ Route::middleware('auth')->group(function () {
     // Asignación manual de recibos (DEBE IR ANTES del resource)
     Route::get('/recibos/asignar-manual', [ReciboGastoComunController::class, 'showAsignarRecibosManual'])->name('recibos.asignar-manual');
     Route::post('/recibos/asignar-manual', [ReciboGastoComunController::class, 'asignarRecibosManual'])->name('recibos.asignar-manual.process');
+    Route::delete('/recibos/eliminar-asignacion/{recibo}/{apartamento}', [ReciboGastoComunController::class, 'eliminarAsignacion'])->name('recibos.eliminar-asignacion');
     
     Route::get('/recibos/{recibo}/print', [ReciboGastoComunController::class, 'print'])->name('recibos.print');
     Route::delete('/recibos/destroy-multiple', [ReciboGastoComunController::class, 'destroyMultiple'])->name('recibos.destroy-multiple');
@@ -67,8 +68,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/pagos/apartamento/{apartamento}/estado-cuenta', [PagoController::class, 'estadoCuenta'])->name('pagos.estado-cuenta');
     Route::patch('/pagos/{pago}/confirmar', [PagoController::class, 'confirmar'])->name('pagos.confirmar');
     Route::patch('/pagos/{pago}/rechazar', [PagoController::class, 'rechazar'])->name('pagos.rechazar');
-    Route::get('/api/recibos-por-apartamento', [PagoController::class, 'getRecibosPorApartamento'])->name('api.recibos-apartamento');
-    
     // Rutas para pago global
     Route::get('/pagos/global/create/{apartamento}', [PagoController::class, 'createGlobal'])->name('pagos.create-global');
     Route::post('/pagos/global/store', [PagoController::class, 'storeGlobal'])->name('pagos.store-global');
@@ -99,8 +98,11 @@ Route::middleware('auth')->group(function () {
 
     
     // API endpoints
-    Route::get('/api/saldo-recibo', [PagoController::class, 'getSaldoRecibo'])->name('api.saldo-recibo');
     Route::get('/api/apartamentos', [ApartamentoController::class, 'getApartamentosApi'])->name('api.apartamentos');
 });
+
+// API endpoints públicos (sin autenticación para AJAX)
+Route::get('/api/recibos-por-apartamento', [PagoController::class, 'getRecibosPorApartamento'])->name('api.recibos-apartamento');
+Route::get('/api/saldo-recibo', [PagoController::class, 'getSaldoRecibo'])->name('api.saldo-recibo');
 
 require __DIR__.'/auth.php';
