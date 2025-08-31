@@ -70,32 +70,10 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- Gestión de Deudas Dropdown -->
-                                    <div class="relative">
-                                        <button class="{{ request()->routeIs('inquilinos.*') || request()->routeIs('deudas.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200 flex items-center" onclick="toggleDropdown('debts-nav-dropdown')">
-                                            Gestión de Deudas
-                                            <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </button>
-                                        <div id="debts-nav-dropdown" class="hidden absolute left-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
-                                            <a href="{{ route('deudas.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Detalle de deudas</a>
-                                            <a href="{{ route('recibos.asignar-manual') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Asignar Recibos Manual</a>
-                                            <div class="relative group">
-                                                <button class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-between" onclick="toggleSubDropdown('deuda-general-dropdown')">
-                                                    Deuda General
-                                                    <svg class="ml-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                                    </svg>
-                                                </button>
-                                                <div id="deuda-general-dropdown" class="hidden absolute left-full top-0 ml-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
-                                                    <a href="{{ route('inquilinos.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ingresar Deuda</a>
-                                                    <a href="{{ route('inquilinos.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Resumen por Unidad</a>
-                                                    <a href="{{ route('inquilinos.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Deudas</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <!-- Gestión de Deudas -->
+                                    <a href="{{ route('deudas.index') }}" class="{{ request()->routeIs('deudas.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200">
+                                        Gestión de Deudas
+                                    </a>
                                     
                                     <!-- Gestión de Documentos Dropdown -->
                                     <div class="relative">
@@ -198,30 +176,9 @@
                         </div>
                         
                         <!-- Gestión de Deudas -->
-                        <div>
-                            <button class="{{ request()->routeIs('inquilinos.*') || request()->routeIs('deudas.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center justify-between" onclick="toggleMobileSubmenu('debts-mobile-submenu')">
-                                Gestión de Deudas
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div id="debts-mobile-submenu" class="hidden pl-6 space-y-1">
-                                <a href="{{ route('deudas.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Detalle de deudas</a>
-                                <div>
-                                    <button class="w-full text-left py-2 text-sm text-gray-600 hover:text-gray-800 flex items-center justify-between" onclick="toggleMobileSubmenu('deuda-general-mobile-submenu')">
-                                        Deuda General
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                        </svg>
-                                    </button>
-                                    <div id="deuda-general-mobile-submenu" class="hidden pl-4 space-y-1">
-                                        <a href="{{ route('inquilinos.create') }}" class="block py-2 text-xs text-gray-500 hover:text-gray-700">Ingresar Deuda</a>
-                                        <a href="{{ route('inquilinos.index') }}" class="block py-2 text-xs text-gray-500 hover:text-gray-700">Resumen por Unidad</a>
-                                        <a href="{{ route('inquilinos.import') }}" class="block py-2 text-xs text-gray-500 hover:text-gray-700">Importar Deudas</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <a href="{{ route('deudas.index') }}" class="{{ request()->routeIs('deudas.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                            Gestión de Deudas
+                        </a>
                         
                         <!-- Gestión de Documentos -->
                         <div>

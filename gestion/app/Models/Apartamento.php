@@ -94,26 +94,28 @@ class Apartamento extends Model
     }
 
     /**
-     * Actualizar el estatus financiero basado en recibos asignados
-     * - Solvente: sin recibos asignados (0 recibos)
-     * - Deudor: 1-3 recibos activos/vencidos asignados
-     * - Moroso: más de 3 recibos activos/vencidos asignados
+     * Actualizar el estatus financiero basado en saldo pendiente y recibos asignados
+     * - Solvente: saldo pendiente = 0 (sin importar recibos asignados)
+     * - Deudor: saldo pendiente > 0 y 1-3 recibos activos/vencidos asignados
+     * - Moroso: saldo pendiente > 0 y más de 3 recibos activos/vencidos asignados
      */
     public function actualizarEstatusFinanciero()
     {
-        // Contar recibos activos o vencidos asignados (incluyendo rechazados)
-        $recibosActivosVencidos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])
-            ->whereHas('pagos', function($query) {
-                $query->where('apartamento_id', $this->id);
-            })->count();
-        
-        // Determinar nuevo estatus según nuevos criterios
-        if ($recibosActivosVencidos == 0) {
+        // Primero verificar si el saldo pendiente es 0
+        if ($this->saldo_pendiente == 0) {
             $nuevoEstatus = 'solvente';
-        } elseif ($recibosActivosVencidos > 3) {
-            $nuevoEstatus = 'moroso';
         } else {
-            $nuevoEstatus = 'deudor';
+            // Si tiene saldo pendiente, determinar estatus basado en número de recibos
+            $recibosActivosVencidos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])
+                ->whereHas('pagos', function($query) {
+                    $query->where('apartamento_id', $this->id);
+                })->count();
+            
+            if ($recibosActivosVencidos > 3) {
+                $nuevoEstatus = 'moroso';
+            } else {
+                $nuevoEstatus = 'deudor';
+            }
         }
         
         if ($this->estatus_financiero !== $nuevoEstatus) {
