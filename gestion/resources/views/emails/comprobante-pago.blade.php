@@ -20,6 +20,11 @@
             border-radius: 8px;
             margin-bottom: 30px;
         }
+        .logo {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 15px;
+        }
         .content {
             background-color: #ffffff;
             padding: 30px;
@@ -47,7 +52,8 @@
 </head>
 <body>
     <div class="header">
-        <h1>JDC Residencias Alfa</h1>
+        <img src="{{ asset('logo.png') }}" alt="Residencias Alfa Logo" class="logo">
+        <h1>Administración Residencias Alfa</h1>
         <h2>Confirmación de Pago Recibido</h2>
     </div>
 
@@ -72,7 +78,7 @@
         <p>Agradecemos su puntualidad y confianza.</p>
         
         <p>Atentamente,<br>
-        <strong>JDC Residencias Alfa</strong></p>
+        <strong>Administración Residencias Alfa</strong></p>
     </div>
 
     <div class="footer">

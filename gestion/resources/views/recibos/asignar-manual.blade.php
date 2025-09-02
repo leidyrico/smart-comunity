@@ -78,6 +78,9 @@
                                         <button type="button" id="asignarMasivo" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">
                                             Aplicar
                                         </button>
+                                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm" id="btnAsignarTop" disabled>
+                                            Asignar Recibos Seleccionados
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -110,6 +113,9 @@
                                             </th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Asignar a Apartamento
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Acción
                                             </th>
                                         </tr>
                                     </thead>
@@ -170,6 +176,11 @@
                                                             </option>
                                                         @endforeach
                                                     </select>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <button type="button" onclick="asignarReciboIndividual({{ $recibo->id }})" class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-xs" id="btnAsignarIndividual_{{ $recibo->id }}" disabled>
+                                                        Asignar
+                                                    </button>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -312,6 +323,7 @@
             const apartamentoSelects = document.querySelectorAll('.apartamento-select');
             const contadorSeleccionados = document.getElementById('contadorSeleccionados');
             const btnAsignar = document.getElementById('btnAsignar');
+            const btnAsignarTop = document.getElementById('btnAsignarTop');
             const seleccionarTodos = document.getElementById('seleccionarTodos');
             const deseleccionarTodos = document.getElementById('deseleccionarTodos');
             const apartamentoMasivo = document.getElementById('apartamentoMasivo');
@@ -342,16 +354,35 @@
                 console.log('🔧 DEBUG: Puede asignar:', puedeAsignar);
                 console.log('🔧 DEBUG: Estado actual del botón (disabled):', btnAsignar.disabled);
                 
-                // Forzar el estado del botón
-                if (puedeAsignar) {
-                    btnAsignar.disabled = false;
-                    btnAsignar.classList.remove('opacity-50', 'cursor-not-allowed');
-                    btnAsignar.classList.add('hover:bg-blue-700');
-                } else {
-                    btnAsignar.disabled = true;
-                    btnAsignar.classList.add('opacity-50', 'cursor-not-allowed');
-                    btnAsignar.classList.remove('hover:bg-blue-700');
-                }
+                // Forzar el estado de ambos botones
+                [btnAsignar, btnAsignarTop].forEach(btn => {
+                    if (btn) {
+                        if (puedeAsignar) {
+                            btn.disabled = false;
+                            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                            btn.classList.add('hover:bg-blue-700');
+                        } else {
+                            btn.disabled = true;
+                            btn.classList.add('opacity-50', 'cursor-not-allowed');
+                            btn.classList.remove('hover:bg-blue-700');
+                        }
+                    }
+                });
+                
+                // Actualizar estado de botones individuales
+                apartamentoSelects.forEach(select => {
+                    const reciboId = select.dataset.reciboId;
+                    const btnIndividual = document.getElementById(`btnAsignarIndividual_${reciboId}`);
+                    if (btnIndividual) {
+                        if (select.value) {
+                            btnIndividual.disabled = false;
+                            btnIndividual.classList.remove('opacity-50', 'cursor-not-allowed');
+                        } else {
+                            btnIndividual.disabled = true;
+                            btnIndividual.classList.add('opacity-50', 'cursor-not-allowed');
+                        }
+                    }
+                });
                 
                 console.log('🔧 DEBUG: Nuevo estado del botón (disabled):', btnAsignar.disabled);
                 console.log('🔧 DEBUG: Clases del botón:', btnAsignar.className);
@@ -416,6 +447,42 @@
             apartamentoSelects.forEach(select => {
                 select.addEventListener('change', actualizarContador);
             });
+            
+            // Inicializar estado de botones individuales
+            actualizarContador();
+            
+            // Función para asignar recibo individual
+            window.asignarReciboIndividual = function(reciboId) {
+                const select = document.querySelector(`select[data-recibo-id="${reciboId}"]`);
+                if (!select || !select.value) {
+                    alert('Por favor selecciona un apartamento para este recibo.');
+                    return;
+                }
+                
+                // Crear formulario temporal para enviar la asignación individual
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route("recibos.asignar-manual.process") }}';
+                form.style.display = 'none';
+                
+                // Token CSRF
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = '_token';
+                csrfToken.value = '{{ csrf_token() }}';
+                form.appendChild(csrfToken);
+                
+                // Datos del recibo
+                const reciboInput = document.createElement('input');
+                reciboInput.type = 'hidden';
+                reciboInput.name = `recibos[${reciboId}]`;
+                reciboInput.value = select.value;
+                form.appendChild(reciboInput);
+                
+                // Agregar al DOM y enviar
+                document.body.appendChild(form);
+                form.submit();
+            };
 
             // Validación antes de enviar
             const asignacionForm = document.getElementById('asignacionForm');

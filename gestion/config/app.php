@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Administrator Password
+    |--------------------------------------------------------------------------
+    |
+    | This password is used to confirm administrative actions like deleting
+    | records. It provides an additional layer of security for sensitive
+    | operations within the application.
+    |
+    */
+
+    'admin_password' => env('ADMIN_PASSWORD', 'admin123'),
+
 ];

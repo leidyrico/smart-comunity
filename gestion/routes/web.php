@@ -74,6 +74,7 @@ Route::middleware('auth')->group(function () {
     
     // Rutas para consulta de deudas
     Route::get('/deudas', [DeudaController::class, 'index'])->name('deudas.index');
+    Route::post('/deudas/enviar-correo', [DeudaController::class, 'enviarReportePorCorreo'])->name('deudas.enviar-correo');
     Route::get('/deudas/export/excel', [DeudaController::class, 'exportExcel'])->name('deudas.export.excel');
     Route::get('/api/deudas/estadisticas', [DeudaController::class, 'estadisticas'])->name('api.deudas.estadisticas');
     

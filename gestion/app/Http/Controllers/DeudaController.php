@@ -7,6 +7,9 @@ use App\Models\ReciboGastoComun;
 use App\Models\Pago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ReporteDeudas;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -21,8 +24,7 @@ class DeudaController extends Controller
     public function index(Request $request)
     {
         $query = Apartamento::with(['pagos', 'pagos.reciboGastoComun'])
-            ->whereHas('pagos') // Solo apartamentos que tienen pagos (recibos asignados)
-            ->orderBy('numero');
+            ->whereHas('pagos'); // Solo apartamentos que tienen pagos (recibos asignados)
 
         // Filtro por número de apartamento si se proporciona (búsqueda exacta)
         if ($request->filled('numero_apartamento')) {
@@ -35,6 +37,33 @@ class DeudaController extends Controller
         }
 
         $apartamentos = $query->get();
+        
+        // Ordenamiento personalizado: PB-1 y PB-4 primero, luego resto ascendente, 144 al final
+        $apartamentos = $apartamentos->sort(function($a, $b) {
+            $numeroA = $a->numero;
+            $numeroB = $b->numero;
+            
+            // PB-1 y PB-4 van primero
+            if ($numeroA === 'PB-1') return -1;
+            if ($numeroB === 'PB-1') return 1;
+            if ($numeroA === 'PB-4') return -1;
+            if ($numeroB === 'PB-4') return 1;
+            
+            // 144 va al final
+            if ($numeroA === '144') return 1;
+            if ($numeroB === '144') return -1;
+            
+            // Para el resto, ordenar numéricamente
+            $numA = is_numeric($numeroA) ? (int)$numeroA : PHP_INT_MAX;
+            $numB = is_numeric($numeroB) ? (int)$numeroB : PHP_INT_MAX;
+            
+            return $numA <=> $numB;
+        });
+        
+        // Actualizar el estatus financiero de todos los apartamentos antes de mostrar los datos
+        foreach ($apartamentos as $apartamento) {
+            $apartamento->actualizarEstatusFinanciero();
+        }
 
         // Obtener recibos que están asignados (manual o automáticamente por pagos globales)
         $recibosActivos = ReciboGastoComun::where('estado', 'activo')
@@ -182,6 +211,9 @@ class DeudaController extends Controller
     public function show($id)
     {
         $apartamento = Apartamento::with(['pagos.reciboGastoComun'])->findOrFail($id);
+        
+        // Actualizar el estatus financiero del apartamento antes de mostrar los detalles
+        $apartamento->actualizarEstatusFinanciero();
         
         // Obtener solo los recibos que tienen pagos asociados a este apartamento
         // Excluir pagos rechazados para no mostrar recibos desasignados
@@ -1328,7 +1360,161 @@ class DeudaController extends Controller
         }
     }
 
+    /**
+     * Enviar reporte de deudas por correo
+     */
+    public function enviarReportePorCorreo(Request $request)
+    {
+        try {
+            \Log::info('=== INICIO ENVIO CORREO ===');
+            \Log::info('Request data:', $request->all());
+            
+            // Obtener los mismos datos que se muestran en la vista
+            $query = Apartamento::with(['pagos', 'pagos.reciboGastoComun'])
+                ->whereHas('pagos')
+                ->orderBy('numero');
 
+            // Aplicar filtros
+            if ($request->filled('numero_apartamento')) {
+                \Log::info('Filtro apartamento aplicado:', ['numero' => $request->numero_apartamento]);
+                $query->where('numero', $request->numero_apartamento);
+            }
 
+            if ($request->filled('nombre_propietario')) {
+                \Log::info('Filtro propietario aplicado:', ['nombre' => $request->nombre_propietario]);
+                $query->where('propietario', 'like', '%' . $request->nombre_propietario . '%');
+            }
 
+            $apartamentos = $query->get();
+            \Log::info('Apartamentos encontrados:', ['count' => $apartamentos->count()]);
+            
+            // Actualizar el estatus financiero
+            foreach ($apartamentos as $apartamento) {
+                $apartamento->actualizarEstatusFinanciero();
+            }
+
+            // Obtener recibos vencidos (eliminando filtro restrictivo de observaciones)
+            $recibosActivos = ReciboGastoComun::where('estado', 'vencido')
+                ->whereHas('pagos') // Solo verificar que tenga pagos
+                ->orderBy('fecha_emision', 'desc')
+                ->get();
+            \Log::info('Recibos vencidos encontrados:', ['count' => $recibosActivos->count()]);
+
+            $datosDeuda = [];
+
+            foreach ($apartamentos as $apartamento) {
+                foreach ($recibosActivos as $recibo) {
+                    $pagosRecibo = $apartamento->pagos
+                        ->where('recibo_gasto_comun_id', $recibo->id)
+                        ->where('estado', '!=', 'rechazado');
+                    
+                    if ($pagosRecibo->isEmpty()) {
+                        continue;
+                    }
+                    
+                    $montoPagado = $pagosRecibo->sum('monto_pagado');
+                    $saldoActual = $recibo->total_recibo - $montoPagado;
+                    
+                    $ultimoPago = $pagosRecibo->sortByDesc('fecha_pago')->first();
+                    $fechaPago = $ultimoPago ? $ultimoPago->fecha_pago : null;
+                    
+                    $datosDeuda[] = [
+                        'apartamento_id' => $apartamento->id,
+                        'recibo_id' => $recibo->id,
+                        'propietario' => $apartamento->propietario,
+                        'numero_apartamento' => $apartamento->numero,
+                        'numero_recibo' => $recibo->numero_recibo,
+                        'periodo' => $recibo->periodo,
+                        'total_recibo' => $recibo->total_recibo,
+                        'total_pagado' => $montoPagado,
+                        'fecha_pago' => $fechaPago,
+                        'saldo_actual' => $saldoActual,
+                        'tiene_deuda' => $saldoActual > 0,
+                        'esta_vencido' => $recibo->estaVencido() && $saldoActual > 0
+                    ];
+                }
+            }
+
+            \Log::info('Datos de deuda construidos:', ['count' => count($datosDeuda)]);
+            if (count($datosDeuda) > 0) {
+                \Log::info('Primer registro de deuda:', $datosDeuda[0]);
+            }
+            
+            // Aplicar filtros adicionales
+            $datosDeudaCollection = collect($datosDeuda);
+            
+            if ($request->filled('estado_deuda')) {
+                if ($request->estado_deuda === 'pendiente') {
+                    $datosDeudaCollection = $datosDeudaCollection->where('saldo_actual', '>', 0);
+                } elseif ($request->estado_deuda === 'pagado') {
+                    $datosDeudaCollection = $datosDeudaCollection->where('saldo_actual', '<=', 0);
+                }
+            }
+            
+            if ($request->filled('numero_recibo')) {
+                $datosDeudaCollection = $datosDeudaCollection->filter(function ($item) use ($request) {
+                    return stripos($item['numero_recibo'], $request->numero_recibo) !== false;
+                });
+            }
+
+            $datos = $datosDeudaCollection->toArray();
+            
+            // Debug: Log para verificar los datos
+            \Log::info('Datos de deuda para correo:', [
+                'total_apartamentos' => $apartamentos->count(),
+                'total_recibos_activos' => $recibosActivos->count(),
+                'datos_deuda_count' => count($datosDeuda),
+                'datos_filtrados_count' => count($datos),
+                'filtros' => $request->all()
+            ]);
+            
+            // Capturar filtros aplicados
+            $filtros = $request->only(['numero_apartamento', 'nombre_propietario', 'estado_deuda', 'numero_recibo']);
+            
+            // Determinar el apartamento específico si hay filtro
+            $apartamento = null;
+            if ($request->filled('numero_apartamento')) {
+                $apartamento = Apartamento::where('numero', $request->numero_apartamento)->first();
+            }
+            
+            // Determinar el email de destino
+            $emailDestino = null;
+            
+            if ($apartamento && $apartamento->email) {
+                // Si hay un apartamento específico y tiene email, enviar a ese email
+                $emailDestino = $apartamento->email;
+            } else {
+                // Si no hay apartamento específico o no tiene email, enviar al admin
+                $emailDestino = 'admin@sc.com'; // Email del administrador
+            }
+            
+            // Generar PDF
+            $pdf = PDF::loadView('pdfs.reporte-deudas', compact('datos', 'filtros', 'apartamento'))
+                ->setPaper('a4', 'landscape')
+                ->setOptions([
+                    'defaultFont' => 'Arial',
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => true
+                ]);
+            
+            // Nombre del archivo PDF
+            $nombreArchivo = 'reporte_deudas_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+            
+            // Enviar el correo con PDF adjunto
+            Mail::to($emailDestino)->send(
+                (new ReporteDeudas($datos, $filtros, $apartamento))
+                    ->attachData($pdf->output(), $nombreArchivo, [
+                        'mime' => 'application/pdf'
+                    ])
+            );
+            
+            $mensaje = 'Reporte enviado exitosamente a ' . $emailDestino . ' con PDF adjunto';
+            
+            return redirect()->back()->with('success', $mensaje);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error enviando reporte de deudas: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al enviar el reporte: ' . $e->getMessage());
+        }
+    }
 }

@@ -63,6 +63,27 @@
                                 <span class="hidden sm:inline">Importar</span> Excel
                             </a>
 
+                            <form method="POST" action="{{ route('deudas.enviar-correo') }}" class="inline-block">
+                                @csrf
+                                @if(request('numero_apartamento'))
+                                    <input type="hidden" name="numero_apartamento" value="{{ request('numero_apartamento') }}">
+                                @endif
+                                @if(request('nombre_propietario'))
+                                    <input type="hidden" name="nombre_propietario" value="{{ request('nombre_propietario') }}">
+                                @endif
+                                @if(request('estado_deuda'))
+                                    <input type="hidden" name="estado_deuda" value="{{ request('estado_deuda') }}">
+                                @endif
+                                @if(request('numero_recibo'))
+                                    <input type="hidden" name="numero_recibo" value="{{ request('numero_recibo') }}">
+                                @endif
+                                <button type="submit" class="inline-flex items-center px-3 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 focus:bg-purple-700 active:bg-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <span class="hidden sm:inline">Enviar por</span> Correo
+                                </button>
+                            </form>
 
                             <button onclick="window.print()" class="inline-flex items-center px-3 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,6 +168,12 @@
                     </div>
                 @endif
 
+                @if(session('error'))
+                    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                        <span class="block sm:inline">{{ session('error') }}</span>
+                    </div>
+                @endif
+
                 @if(count($datosDeuda) > 0)
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
@@ -208,9 +235,18 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex flex-col space-y-1">
-                                                <a href="{{ route('deudas.show', $dato['apartamento_id']) }}" class="text-blue-600 hover:text-blue-900">Ver</a>
+                                                <a href="{{ route('deudas.show', $dato['apartamento_id']) }}" class="text-blue-600 hover:text-blue-900 inline-flex items-center" title="Ver detalles">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                    </svg>
+                                                </a>
                                                 @if($dato['saldo_actual'] > 0)
-                                                    <a href="{{ route('pagos.create', ['apartamento_id' => $dato['apartamento_id'], 'recibo_id' => $dato['recibo_id']]) }}" class="text-green-600 hover:text-green-900">Registrar Pago</a>
+                                                    <a href="{{ route('pagos.create', array_merge(['apartamento_id' => $dato['apartamento_id'], 'recibo_id' => $dato['recibo_id']], request()->only(['numero_apartamento', 'nombre_propietario', 'estado_deuda', 'numero_recibo']))) }}" class="text-green-600 hover:text-green-900 inline-flex items-center" title="Registrar pago">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                        </svg>
+                                                    </a>
                                                 @endif
                                                 @if($dato['monto_pagado'] > 0 && !empty($dato['pagos']))
                                                     <div class="mt-2">
@@ -468,16 +504,25 @@ function cargarApartamentosConDeudas() {
         display: none !important;
     }
     
-    /* Ocultar columnas específicas - mostrar solo Propietario, Apartamento, Monto Pagado, Fecha Pago y Saldo Actual */
-    .min-w-full thead tr th:nth-child(3), /* Nro Recibo */
-    .min-w-full thead tr th:nth-child(4), /* Fecha Facturación */
-    .min-w-full thead tr th:nth-child(5), /* Monto Facturado */
+    /* Ocultar la columna de acciones en impresión */
     .min-w-full thead tr th:nth-child(9), /* Acciones */
-    .min-w-full tbody tr td:nth-child(3), /* Nro Recibo */
-    .min-w-full tbody tr td:nth-child(4), /* Fecha Facturación */
-    .min-w-full tbody tr td:nth-child(5), /* Monto Facturado */
     .min-w-full tbody tr td:nth-child(9) { /* Acciones */
         display: none !important;
+    }
+    
+    /* Mostrar el resumen estadístico en impresión */
+    .mt-6.grid.grid-cols-1.md\:grid-cols-4.gap-4 {
+        display: grid !important;
+        margin-top: 20px !important;
+        page-break-inside: avoid;
+    }
+    
+    /* Ajustar el diseño de las tarjetas estadísticas para impresión */
+    .mt-6.grid.grid-cols-1.md\:grid-cols-4.gap-4 > div {
+        border: 1px solid #ccc !important;
+        padding: 10px !important;
+        margin-bottom: 10px !important;
+        background-color: #f9f9f9 !important;
     }
     
     /* Ajustar el diseño para impresión */
@@ -488,22 +533,73 @@ function cargarApartamentosConDeudas() {
     
     .min-w-full {
         width: 100% !important;
-        font-size: 11px;
+        font-size: 10px;
+        table-layout: fixed !important;
+    }
+    
+    /* Ajustar anchos específicos de columnas para evitar scroll horizontal */
+    .min-w-full thead tr th:nth-child(1), /* Propietario */
+    .min-w-full tbody tr td:nth-child(1) {
+        width: 15% !important;
+        font-size: 9px !important;
+    }
+    
+    .min-w-full thead tr th:nth-child(2), /* Apartamento */
+    .min-w-full tbody tr td:nth-child(2) {
+        width: 8% !important;
+    }
+    
+    .min-w-full thead tr th:nth-child(3), /* Nro Recibo */
+    .min-w-full tbody tr td:nth-child(3) {
+        width: 10% !important;
+    }
+    
+    .min-w-full thead tr th:nth-child(4), /* Fecha Facturación */
+    .min-w-full tbody tr td:nth-child(4) {
+        width: 12% !important;
+    }
+    
+    .min-w-full thead tr th:nth-child(5), /* Monto Facturado */
+    .min-w-full tbody tr td:nth-child(5) {
+        width: 12% !important;
+    }
+    
+    .min-w-full thead tr th:nth-child(6), /* Monto Pagado */
+    .min-w-full tbody tr td:nth-child(6) {
+        width: 12% !important;
+    }
+    
+    .min-w-full thead tr th:nth-child(7), /* Fecha Pago */
+    .min-w-full tbody tr td:nth-child(7) {
+        width: 12% !important;
+    }
+    
+    .min-w-full thead tr th:nth-child(8), /* Saldo Actual */
+    .min-w-full tbody tr td:nth-child(8) {
+        width: 12% !important;
     }
     
     .px-6 {
-        padding-left: 8px !important;
-        padding-right: 8px !important;
+        padding-left: 4px !important;
+        padding-right: 4px !important;
     }
     
     .py-4 {
-        padding-top: 6px !important;
-        padding-bottom: 6px !important;
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
     }
     
     .py-3 {
-        padding-top: 4px !important;
-        padding-bottom: 4px !important;
+        padding-top: 3px !important;
+        padding-bottom: 3px !important;
+    }
+    
+    /* Ajustar texto para que no se desborde */
+    .min-w-full td,
+    .min-w-full th {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
     }
     
     /* Título para impresión */
@@ -546,6 +642,15 @@ function cargarApartamentosConDeudas() {
 function eliminarPago(pagoId, numeroRecibo, montoPago) {
     const montoNumerico = parseFloat(montoPago);
     if (confirm('¿Está seguro de que desea eliminar el pago de $' + montoNumerico.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' del recibo ' + numeroRecibo + '?\n\nEsta acción no se puede deshacer y el recibo volverá a tener saldo pendiente.')) {
+        
+        // Solicitar clave de administrador
+        const adminPassword = prompt('Por favor, ingrese la clave de administrador para confirmar la eliminación:');
+        
+        if (!adminPassword) {
+            alert('Eliminación cancelada. Se requiere la clave de administrador.');
+            return;
+        }
+        
         // Crear un formulario para enviar la petición DELETE
         const form = document.createElement('form');
         form.method = 'POST';
@@ -564,6 +669,13 @@ function eliminarPago(pagoId, numeroRecibo, montoPago) {
         methodField.name = '_method';
         methodField.value = 'DELETE';
         form.appendChild(methodField);
+        
+        // Agregar clave de administrador
+        const adminPasswordField = document.createElement('input');
+        adminPasswordField.type = 'hidden';
+        adminPasswordField.name = 'admin_password';
+        adminPasswordField.value = adminPassword;
+        form.appendChild(adminPasswordField);
         
         // Agregar al DOM y enviar
         document.body.appendChild(form);

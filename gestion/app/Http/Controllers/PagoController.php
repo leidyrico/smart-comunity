@@ -62,7 +62,10 @@ class PagoController extends Controller
         $reciboSeleccionado = $request->recibo_id ? 
             ReciboGastoComun::find($request->recibo_id) : null;
             
-        return view('pagos.create', compact('apartamentos', 'recibos', 'apartamentoSeleccionado', 'reciboSeleccionado'));
+        // Capturar los parámetros de filtro para mantenerlos
+        $filtros = $request->only(['numero_apartamento', 'nombre_propietario', 'estado_deuda', 'numero_recibo']);
+            
+        return view('pagos.create', compact('apartamentos', 'recibos', 'apartamentoSeleccionado', 'reciboSeleccionado', 'filtros'));
     }
 
     /**
@@ -86,6 +89,9 @@ class PagoController extends Controller
         // Cargar las relaciones necesarias para el correo
         $pago->load(['apartamento', 'reciboGastoComun']);
         
+        // Actualizar el estatus financiero del apartamento después de crear el pago
+        $pago->apartamento->actualizarEstatusFinanciero();
+        
         // Enviar correo de confirmación si el apartamento tiene email
         if ($pago->apartamento->email) {
             try {
@@ -99,7 +105,10 @@ class PagoController extends Controller
             $mensaje = 'Pago registrado exitosamente. No se pudo enviar correo (apartamento sin email registrado).';
         }
 
-        return redirect()->route('pagos.index')
+        // Capturar los parámetros de filtro para mantenerlos en la redirección
+        $filtros = $request->only(['numero_apartamento', 'nombre_propietario', 'estado_deuda', 'numero_recibo']);
+        
+        return redirect()->route('deudas.index', $filtros)
             ->with('success', $mensaje);
     }
 
@@ -140,6 +149,9 @@ class PagoController extends Controller
         ]);
 
         $pago->update($request->all());
+        
+        // Actualizar el estatus financiero del apartamento después de modificar el pago
+        $pago->apartamento->actualizarEstatusFinanciero();
 
         return redirect()->route('pagos.index')
             ->with('success', 'Pago actualizado exitosamente.');
@@ -148,16 +160,40 @@ class PagoController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Pago $pago)
+    public function destroy(Request $request, Pago $pago)
     {
+        // Validar clave de administrador
+        $adminPassword = $request->input('admin_password');
+        $configuredPassword = config('app.admin_password', 'admin123'); // Clave por defecto
+        
+        // Obtener los parámetros de filtro del referer para mantenerlos
+        $referer = $request->headers->get('referer');
+        $queryParams = [];
+        
+        if ($referer) {
+            $parsedUrl = parse_url($referer);
+            if (isset($parsedUrl['query'])) {
+                parse_str($parsedUrl['query'], $queryParams);
+            }
+        }
+        
+        if (!$adminPassword || $adminPassword !== $configuredPassword) {
+            return redirect()->route('deudas.index', $queryParams)
+                ->with('error', 'Clave de administrador incorrecta. No se pudo eliminar el pago.');
+        }
+        
         // Obtener información del pago antes de eliminarlo para el mensaje
         $numeroRecibo = $pago->reciboGastoComun->numero_recibo;
         $numeroApartamento = $pago->apartamento->numero;
         $montoPagado = $pago->monto_pagado;
+        $apartamento = $pago->apartamento;
         
         $pago->delete();
         
-        return redirect()->route('deudas.index')
+        // Actualizar el estatus financiero del apartamento después de eliminar el pago
+        $apartamento->actualizarEstatusFinanciero();
+        
+        return redirect()->route('deudas.index', $queryParams)
             ->with('success', "Pago de $" . number_format($montoPagado, 2, ',', '.') . " eliminado exitosamente. El recibo {$numeroRecibo} del apartamento {$numeroApartamento} ahora tiene saldo pendiente.");
     }
 

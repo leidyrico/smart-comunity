@@ -11,13 +11,19 @@ class ApartamentoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         // Cargar apartamentos con sus relaciones necesarias para calcular saldo pendiente
-        $apartamentos = Apartamento::with(['pagos.reciboGastoComun'])
+        $query = Apartamento::with(['pagos.reciboGastoComun'])
             ->orderBy('piso')
-            ->orderBy('numero')
-            ->get();
+            ->orderBy('numero');
+        
+        // Filtro por estatus financiero si se proporciona
+        if ($request->filled('estatus_financiero')) {
+            $query->where('estatus_financiero', $request->estatus_financiero);
+        }
+        
+        $apartamentos = $query->get();
         
         // Actualizar estatus financiero para cada apartamento basado en recibos asignados
         foreach ($apartamentos as $apartamento) {
@@ -103,11 +109,22 @@ class ApartamentoController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Apartamento $apartamento)
+    public function destroy(Request $request, Apartamento $apartamento)
     {
+        // Validar clave de administrador
+        $adminPassword = $request->input('admin_password');
+        $configuredPassword = config('app.admin_password', 'admin123'); // Clave por defecto
+        
+        if (!$adminPassword || $adminPassword !== $configuredPassword) {
+            return redirect()->route('apartamentos.index')
+                ->with('error', 'Clave de administrador incorrecta. No se pudo eliminar el apartamento.');
+        }
+        
+        $numeroApartamento = $apartamento->numero;
         $apartamento->delete();
+        
         return redirect()->route('apartamentos.index')
-            ->with('success', 'Apartamento eliminado exitosamente.');
+            ->with('success', "Apartamento {$numeroApartamento} eliminado exitosamente.");
     }
 
     /**

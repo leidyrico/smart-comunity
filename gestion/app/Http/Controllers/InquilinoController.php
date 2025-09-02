@@ -122,11 +122,22 @@ class InquilinoController extends Controller
     /**
      * Eliminar inquilino
      */
-    public function destroy(Inquilino $inquilino)
+    public function destroy(Request $request, Inquilino $inquilino)
     {
+        // Validar clave de administrador
+        $adminPassword = $request->input('admin_password');
+        $configuredPassword = config('app.admin_password', 'admin123'); // Clave por defecto
+        
+        if (!$adminPassword || $adminPassword !== $configuredPassword) {
+            return redirect()->route('inquilinos.index')
+                ->with('error', 'Clave de administrador incorrecta. No se pudo eliminar el propietario.');
+        }
+        
+        $nombrePropietario = $inquilino->nombre;
         $inquilino->delete();
+        
         return redirect()->route('inquilinos.index')
-            ->with('success', 'Propietario eliminado exitosamente.');
+            ->with('success', "Propietario {$nombrePropietario} eliminado exitosamente.");
     }
 
     /**

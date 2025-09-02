@@ -140,11 +140,22 @@ class ReciboGastoComunController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(ReciboGastoComun $recibo)
+    public function destroy(Request $request, ReciboGastoComun $recibo)
     {
+        // Validar clave de administrador
+        $adminPassword = $request->input('admin_password');
+        $configuredPassword = config('app.admin_password', 'admin123'); // Clave por defecto
+        
+        if (!$adminPassword || $adminPassword !== $configuredPassword) {
+            return redirect()->route('recibos.index')
+                ->with('error', 'Clave de administrador incorrecta. No se pudo eliminar el recibo.');
+        }
+        
+        $numeroRecibo = $recibo->numero_recibo;
         $recibo->delete();
+        
         return redirect()->route('recibos.index')
-            ->with('success', 'Recibo de gasto común eliminado exitosamente.');
+            ->with('success', "Recibo {$numeroRecibo} eliminado exitosamente.");
     }
 
     /**
