@@ -89,6 +89,20 @@
                         <p class="text-gray-700 bg-gray-50 p-4 rounded-lg">{{ $recibo->observaciones }}</p>
                     </div>
                     @endif
+
+                    @if($recibo->archivo_adjunto)
+                    <div class="mt-6">
+                        <h4 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3">Archivo Adjunto</h4>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <a href="{{ route('recibos.descargar-archivo', $recibo) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Descargar Archivo
+                            </a>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
 
@@ -126,9 +140,13 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                            @if($pago->estado === 'confirmado') bg-green-100 text-green-800
-                                            @elseif($pago->estado === 'pendiente_confirmacion') bg-yellow-100 text-yellow-800
-                                            @else bg-red-100 text-red-800 @endif">
+                                            @if($pago->estado === 'confirmado')
+                                                bg-green-100 text-green-800
+                                            @elseif($pago->estado === 'pendiente_confirmacion')
+                                                bg-yellow-100 text-yellow-800
+                                            @else
+                                                bg-red-100 text-red-800
+                                            @endif">
                                             {{ ucfirst(str_replace('_', ' ', $pago->estado)) }}
                                         </span>
                                     </td>

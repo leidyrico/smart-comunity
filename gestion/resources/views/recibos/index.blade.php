@@ -124,6 +124,34 @@
                         </div>
                     @endif
 
+                    @if(session('email_success'))
+                        <div class="mb-4 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative" role="alert">
+                            <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                            </svg>
+                            <span class="block sm:inline">{{ session('email_success') }}</span>
+                        </div>
+                    @endif
+
+                    @if(session('email_warning'))
+                        <div class="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">
+                            <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="block sm:inline">{{ session('email_warning') }}</span>
+                        </div>
+                    @endif
+
+                    @if(session('email_error'))
+                        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                            <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span class="block sm:inline">{{ session('email_error') }}</span>
+                        </div>
+                    @endif
+
                     @if($recibos->count() > 0)
                         <div class="overflow-x-auto">
                             <form id="deleteMultipleForm" action="{{ route('recibos.destroy-multiple') }}" method="POST">
@@ -186,15 +214,18 @@
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                     </svg>
                                                 </a>
-                                                <form action="{{ route('recibos.destroy', $recibo) }}" method="POST" class="inline" onsubmit="return confirm('¿Está seguro de eliminar este recibo?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-900 inline-flex items-center" title="Eliminar">
+                                                @if($recibo->archivo_adjunto)
+                                                    <a href="{{ route('recibos.descargar-archivo', $recibo) }}" class="text-green-600 hover:text-green-900 inline-flex items-center" title="Descargar Archivo">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                                         </svg>
-                                                    </button>
-                                                </form>
+                                                    </a>
+                                                @endif
+                                                <button onclick="deleteReciboSimple({{ $recibo->id }}, '{{ $recibo->numero_recibo }}')" class="text-red-600 hover:text-red-900 inline-flex items-center" title="Eliminar">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                </button>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -310,6 +341,25 @@
                     : '¿Estás seguro de que deseas eliminar los ' + count + ' recibos seleccionados?';
                 
                 if (confirm(message)) {
+                    // Solicitar clave de administrador
+                    const adminPassword = prompt('Por favor, ingrese la clave de administrador para confirmar la eliminación:');
+                    
+                    if (!adminPassword) {
+                        alert('Eliminación cancelada. Se requiere la clave de administrador.');
+                        return;
+                    }
+                    
+                    // Limpiar campos de contraseña previos
+                    const existingPasswordFields = deleteMultipleForm.querySelectorAll('input[name="admin_password"]');
+                    existingPasswordFields.forEach(field => field.remove());
+                    
+                    // Agregar campo de contraseña al formulario
+                    const passwordField = document.createElement('input');
+                    passwordField.type = 'hidden';
+                    passwordField.name = 'admin_password';
+                    passwordField.value = adminPassword;
+                    deleteMultipleForm.appendChild(passwordField);
+                    
                     deleteMultipleForm.submit();
                 }
             });
@@ -321,5 +371,40 @@
         
         console.log('Inicialización completada');
     });
+    
+    // Función simple para eliminar recibo individual
+    function deleteReciboSimple(reciboId, numeroRecibo) {
+        if (confirm(`¿Está seguro de que desea eliminar el recibo ${numeroRecibo}?`)) {
+            // Crear formulario para enviar la eliminación
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `{{ url('/recibos') }}/${reciboId}`;
+            form.style.display = 'none';
+            
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = '{{ csrf_token() }}';
+            form.appendChild(csrfToken);
+            
+            // Agregar método DELETE
+            const methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = '_method';
+            methodField.value = 'DELETE';
+            form.appendChild(methodField);
+            
+            // Enviar formulario
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+    </script>
+    
+
+    
+
+
+
     </script>
 </x-app-with-sidebar>

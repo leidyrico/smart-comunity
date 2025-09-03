@@ -19,11 +19,7 @@
             border-bottom: 2px solid #2563eb;
             padding-bottom: 20px;
         }
-        .logo {
-            max-width: 150px;
-            height: auto;
-            margin-bottom: 10px;
-        }
+
         .company-name {
             font-size: 24px;
             font-weight: bold;

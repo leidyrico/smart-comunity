@@ -10,9 +10,20 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\RecibosImport;
 use App\Exports\RecibosExport;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NuevoRecibo;
+use App\Services\EmailMasivoService;
+
+// Incluir configuración de timeout para evitar errores de tiempo de ejecución
+require_once __DIR__ . '/../../../config_timeout.php';
 
 class ReciboGastoComunController extends Controller
 {
+    public function __construct()
+    {
+        \Log::info('ReciboGastoComunController instanciado');
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -65,6 +76,7 @@ class ReciboGastoComunController extends Controller
      */
     public function store(Request $request)
     {
+        \Log::info('Método store ejecutado', ['request_data' => $request->all()]);
         $request->validate([
             'numero_recibo' => 'required|string|max:50|unique:recibo_gasto_comuns,numero_recibo',
             'periodo' => 'required|string|max:50',
@@ -76,17 +88,33 @@ class ReciboGastoComunController extends Controller
             'valor_mantenimiento' => 'nullable|numeric|min:0',
             'otros_conceptos' => 'nullable|numeric|min:0',
             'observaciones' => 'nullable|string|max:1000',
-            'estado' => 'required|in:activo,vencido,anulado'
+            'archivo_adjunto' => 'nullable|file|mimes:pdf,xlsx,xls|max:10240',
+            'estado' => 'required|in:activo,vencido,anulado',
+            'enviar_correo' => 'sometimes|boolean'
         ]);
 
-        $recibo = new ReciboGastoComun($request->all());
+        $data = $request->all();
+        
+        // Manejar archivo adjunto si se proporciona
+        if ($request->hasFile('archivo_adjunto')) {
+            $archivo = $request->file('archivo_adjunto');
+            $nombreArchivo = time() . '_' . $archivo->getClientOriginalName();
+            $rutaArchivo = $archivo->storeAs('recibos', $nombreArchivo, 'public');
+            $data['archivo_adjunto'] = $rutaArchivo;
+        }
+        
+        $recibo = new ReciboGastoComun($data);
         $recibo->calcularTotal();
         $recibo->save();
 
         // Si el recibo está activo, asignarlo a todos los apartamentos
         if ($recibo->estado === 'activo') {
-            $this->asignarReciboATodosApartamentos($recibo);
+            $enviarCorreo = $request->has('enviar_correo');
+            $this->asignarReciboATodosApartamentos($recibo, $enviarCorreo);
         }
+        
+        // Nota: Los correos individuales se envían automáticamente en asignarReciboATodosApartamentos()
+        // No se requiere envío masivo adicional con BCC
 
         return redirect()->route('recibos.index')
             ->with('success', 'Recibo de gasto común creado exitosamente.');
@@ -142,15 +170,6 @@ class ReciboGastoComunController extends Controller
      */
     public function destroy(Request $request, ReciboGastoComun $recibo)
     {
-        // Validar clave de administrador
-        $adminPassword = $request->input('admin_password');
-        $configuredPassword = config('app.admin_password', 'admin123'); // Clave por defecto
-        
-        if (!$adminPassword || $adminPassword !== $configuredPassword) {
-            return redirect()->route('recibos.index')
-                ->with('error', 'Clave de administrador incorrecta. No se pudo eliminar el recibo.');
-        }
-        
         $numeroRecibo = $recibo->numero_recibo;
         $recibo->delete();
         
@@ -317,6 +336,15 @@ class ReciboGastoComunController extends Controller
             'recibo_ids.*' => 'exists:recibo_gasto_comuns,id'
         ]);
 
+        // Validar clave de administrador
+        $adminPassword = $request->input('admin_password');
+        $configuredPassword = config('app.admin_password', 'admin123'); // Clave por defecto
+        
+        if (!$adminPassword || $adminPassword !== $configuredPassword) {
+            return redirect()->route('recibos.index')
+                ->with('error', 'Clave de administrador incorrecta. No se pudieron eliminar los recibos.');
+        }
+
         try {
             $count = ReciboGastoComun::whereIn('id', $request->recibo_ids)->delete();
             
@@ -355,7 +383,7 @@ class ReciboGastoComunController extends Controller
     /**
      * Asignar recibo a todos los apartamentos
      */
-    private function asignarReciboATodosApartamentos(ReciboGastoComun $recibo)
+    private function asignarReciboATodosApartamentos(ReciboGastoComun $recibo, $enviarCorreo = true)
     {
         // Si es un recibo vencido, NO asignarlo automáticamente
         // Los recibos vencidos solo se asignan manualmente a través de recibos/asignar-manual
@@ -394,6 +422,25 @@ class ReciboGastoComunController extends Controller
                     'estatus_financiero' => 'deudor',
                     'fecha_cambio_estatus' => now()->toDateString()
                 ]);
+            }
+            
+            // Enviar correo si el apartamento tiene email y está habilitado el envío
+            if ($enviarCorreo && $apartamento->email && !empty($apartamento->email)) {
+                try {
+                    Mail::to($apartamento->email)->send(new NuevoRecibo($recibo, $apartamento->propietario));
+                    \Log::info('Correo de nuevo recibo enviado', [
+                        'recibo_id' => $recibo->id,
+                        'apartamento_id' => $apartamento->id,
+                        'email' => $apartamento->email
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Error enviando correo de nuevo recibo', [
+                        'recibo_id' => $recibo->id,
+                        'apartamento_id' => $apartamento->id,
+                        'email' => $apartamento->email,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
         }
     }
@@ -606,7 +653,6 @@ class ReciboGastoComunController extends Controller
                 'success' => true,
                 'message' => 'Asignación eliminada exitosamente.'
             ]);
-
         } catch (\Exception $e) {
             \DB::rollback();
             return response()->json([
@@ -614,5 +660,45 @@ class ReciboGastoComunController extends Controller
                 'message' => 'Error al eliminar la asignación: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Descargar archivo adjunto del recibo
+     */
+    public function descargarArchivo(ReciboGastoComun $recibo)
+    {
+        if (!$recibo->archivo_adjunto) {
+            abort(404, 'No hay archivo adjunto para este recibo.');
+        }
+
+        $rutaCompleta = storage_path('app/public/' . $recibo->archivo_adjunto);
+        
+        if (!file_exists($rutaCompleta)) {
+            abort(404, 'El archivo no existe.');
+        }
+
+        return response()->download($rutaCompleta);
+    }
+    
+    /**
+     * Enviar correos de nuevo recibo a todos los apartamentos (MÉTODO DEPRECADO)
+     * 
+     * @deprecated Este método ha sido reemplazado por EmailMasivoService para evitar timeouts
+     * @see EmailMasivoService::enviarCorreoMasivo()
+     */
+    private function enviarCorreosNuevoRecibo(ReciboGastoComun $recibo)
+    {
+        \Log::warning('Método enviarCorreosNuevoRecibo está deprecado. Use EmailMasivoService en su lugar.');
+        
+        // Usar el nuevo servicio optimizado
+        $emailService = new EmailMasivoService();
+        $resultado = $emailService->enviarCorreoMasivo($recibo);
+        
+        \Log::info('Resultado envío masivo (método deprecado)', [
+            'recibo_id' => $recibo->id,
+            'success' => $resultado['success'],
+            'message' => $resultado['message'],
+            'total_emails' => $resultado['total_emails']
+        ]);
     }
 }

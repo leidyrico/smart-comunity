@@ -10,6 +10,9 @@ use App\Mail\ComprobantePago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
+// Incluir configuración de timeout para evitar errores de tiempo de ejecución
+require_once __DIR__ . '/../../../config_timeout.php';
+
 class PagoController extends Controller
 {
     /**

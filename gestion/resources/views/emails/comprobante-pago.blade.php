@@ -20,11 +20,7 @@
             border-radius: 8px;
             margin-bottom: 30px;
         }
-        .logo {
-            max-width: 150px;
-            height: auto;
-            margin-bottom: 15px;
-        }
+
         .content {
             background-color: #ffffff;
             padding: 30px;
@@ -52,7 +48,6 @@
 </head>
 <body>
     <div class="header">
-        <img src="{{ asset('logo.png') }}" alt="Residencias Alfa Logo" class="logo">
         <h1>Administración Residencias Alfa</h1>
         <h2>Confirmación de Pago Recibido</h2>
     </div>

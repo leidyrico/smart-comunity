@@ -15,6 +15,9 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
+// Incluir configuración de timeout para evitar errores de tiempo de ejecución
+require_once __DIR__ . '/../../../config_timeout.php';
+
 class DeudaController extends Controller
 {
     /**
@@ -65,12 +68,13 @@ class DeudaController extends Controller
             $apartamento->actualizarEstatusFinanciero();
         }
 
-        // Obtener recibos que están asignados (manual o automáticamente por pagos globales)
+        // Obtener recibos que están asignados (manual, automáticamente o por pagos globales)
         $recibosActivos = ReciboGastoComun::where('estado', 'activo')
             ->whereHas('pagos', function($query) {
                 $query->where(function($subQuery) {
                     $subQuery->where('observaciones', 'like', '%Asignación manual%')
-                             ->orWhere('observaciones', 'like', '%Pago global distribuido automáticamente%');
+                             ->orWhere('observaciones', 'like', '%Pago global distribuido automáticamente%')
+                             ->orWhere('observaciones', 'like', '%Recibo asignado automáticamente%');
                 });
             })
             ->orderBy('fecha_emision', 'desc')
@@ -80,7 +84,8 @@ class DeudaController extends Controller
             ->whereHas('pagos', function($query) {
                 $query->where(function($subQuery) {
                     $subQuery->where('observaciones', 'like', '%Asignación manual%')
-                             ->orWhere('observaciones', 'like', '%Pago global distribuido automáticamente%');
+                             ->orWhere('observaciones', 'like', '%Pago global distribuido automáticamente%')
+                             ->orWhere('observaciones', 'like', '%Recibo asignado automáticamente%');
                 });
             })
             ->orderBy('fecha_emision', 'asc')
@@ -94,12 +99,13 @@ class DeudaController extends Controller
         
         foreach ($apartamentos as $apartamento) {
             foreach ($recibos as $recibo) {
-                // Verificar si existe una asignación (manual o por pago global) para este apartamento y recibo
+                // Verificar si existe una asignación (manual, automática o por pago global) para este apartamento y recibo
                 $asignacionExistente = $apartamento->pagos
                     ->where('recibo_gasto_comun_id', $recibo->id)
                     ->filter(function($pago) {
                         return strpos($pago->observaciones, 'Asignación manual') !== false ||
-                               strpos($pago->observaciones, 'Pago global distribuido automáticamente') !== false;
+                               strpos($pago->observaciones, 'Pago global distribuido automáticamente') !== false ||
+                               strpos($pago->observaciones, 'Recibo asignado automáticamente') !== false;
                     })
                     ->first();
                 
@@ -108,27 +114,20 @@ class DeudaController extends Controller
                     continue;
                 }
                 
-                // Buscar pagos confirmados de este apartamento para este recibo (asignaciones manuales, pagos globales Y pagos normales)
-                $pagosRecibo = $apartamento->pagos
+                // Buscar pagos confirmados de este apartamento para este recibo (todos los tipos de pagos)
+                $pagosConfirmados = $apartamento->pagos
                     ->where('recibo_gasto_comun_id', $recibo->id)
-                    ->where('estado', 'confirmado')
-                    ->filter(function($pago) {
-                        // Incluir pagos con asignación manual, pagos globales distribuidos, O pagos normales (sin observaciones de asignación automática)
-                        return strpos($pago->observaciones, 'Asignación manual') !== false || 
-                               strpos($pago->observaciones, 'Pago global distribuido automáticamente') !== false ||
-                               (strpos($pago->observaciones, 'Recibo asignado automáticamente') === false &&
-                                strpos($pago->observaciones, 'Pago global') === false);
-                    });
+                    ->where('estado', 'confirmado');
                 
-                $montoPagado = $pagosRecibo->sum('monto_pagado');
+                $montoPagado = $pagosConfirmados->sum('monto_pagado');
                 $saldoActual = $recibo->total_recibo - $montoPagado;
                 
                 // Obtener la fecha del último pago para este recibo
-                $ultimoPago = $pagosRecibo->sortByDesc('fecha_pago')->first();
+                $ultimoPago = $pagosConfirmados->sortByDesc('fecha_pago')->first();
                 $fechaPago = $ultimoPago ? $ultimoPago->fecha_pago : null;
                 
-                // Obtener todos los pagos para poder eliminarlos individualmente
-                $pagosArray = $pagosRecibo->map(function($pago) {
+                // Obtener todos los pagos confirmados para poder eliminarlos individualmente
+                $pagosArray = $pagosConfirmados->map(function($pago) {
                     return [
                         'id' => $pago->id,
                         'monto' => $pago->monto_pagado,
@@ -137,6 +136,7 @@ class DeudaController extends Controller
                     ];
                 })->toArray();
                 
+                // Incluir todos los registros (con y sin deuda) para permitir ver historial completo
                 $datosDeuda[] = [
                     'apartamento_id' => $apartamento->id,
                     'recibo_id' => $recibo->id,
@@ -164,6 +164,14 @@ class DeudaController extends Controller
                 $datosDeudaCollection = $datosDeudaCollection->where('saldo_actual', '>', 0);
             } elseif ($request->estado_deuda === 'pagado') {
                 $datosDeudaCollection = $datosDeudaCollection->where('saldo_actual', '<=', 0);
+            }
+        } else {
+            // Si se busca un apartamento específico, mostrar todo su historial (pendiente y pagado)
+            if ($request->filled('numero_apartamento')) {
+                // No aplicar filtro adicional, mostrar todo el historial del apartamento
+            } else {
+                // Por defecto, mostrar solo apartamentos con deuda pendiente (comportamiento original)
+                $datosDeudaCollection = $datosDeudaCollection->where('saldo_actual', '>', 0);
             }
         }
         
@@ -1393,29 +1401,68 @@ class DeudaController extends Controller
                 $apartamento->actualizarEstatusFinanciero();
             }
 
-            // Obtener recibos vencidos (eliminando filtro restrictivo de observaciones)
-            $recibosActivos = ReciboGastoComun::where('estado', 'vencido')
-                ->whereHas('pagos') // Solo verificar que tenga pagos
+            // Obtener recibos que están asignados (manual, automáticamente o por pagos globales)
+            // Usar la misma lógica que en el método index()
+            $recibosActivos = ReciboGastoComun::where('estado', 'activo')
+                ->whereHas('pagos', function($query) {
+                    $query->where(function($subQuery) {
+                        $subQuery->where('observaciones', 'like', '%Asignación manual%')
+                                 ->orWhere('observaciones', 'like', '%Pago global distribuido automáticamente%')
+                                 ->orWhere('observaciones', 'like', '%Recibo asignado automáticamente%');
+                    });
+                })
                 ->orderBy('fecha_emision', 'desc')
                 ->get();
-            \Log::info('Recibos vencidos encontrados:', ['count' => $recibosActivos->count()]);
+                
+            $recibosVencidos = ReciboGastoComun::where('estado', 'vencido')
+                ->whereHas('pagos', function($query) {
+                    $query->where(function($subQuery) {
+                        $subQuery->where('observaciones', 'like', '%Asignación manual%')
+                                 ->orWhere('observaciones', 'like', '%Pago global distribuido automáticamente%')
+                                 ->orWhere('observaciones', 'like', '%Recibo asignado automáticamente%');
+                    });
+                })
+                ->orderBy('fecha_emision', 'asc')
+                ->get();
+                
+            // Combinar: primero activos, luego vencidos
+            $recibos = $recibosActivos->concat($recibosVencidos);
+            
+            \Log::info('Recibos encontrados:', [
+                'activos' => $recibosActivos->count(),
+                'vencidos' => $recibosVencidos->count(),
+                'total' => $recibos->count()
+            ]);
 
             $datosDeuda = [];
 
             foreach ($apartamentos as $apartamento) {
-                foreach ($recibosActivos as $recibo) {
-                    $pagosRecibo = $apartamento->pagos
+                foreach ($recibos as $recibo) {
+                    // Verificar si existe una asignación (manual, automática o por pago global) para este apartamento y recibo
+                    $asignacionExistente = $apartamento->pagos
                         ->where('recibo_gasto_comun_id', $recibo->id)
-                        ->where('estado', '!=', 'rechazado');
+                        ->filter(function($pago) {
+                            return strpos($pago->observaciones, 'Asignación manual') !== false ||
+                                   strpos($pago->observaciones, 'Pago global distribuido automáticamente') !== false ||
+                                   strpos($pago->observaciones, 'Recibo asignado automáticamente') !== false;
+                        })
+                        ->first();
                     
-                    if ($pagosRecibo->isEmpty()) {
+                    // Solo procesar si existe una asignación
+                    if (!$asignacionExistente) {
                         continue;
                     }
                     
-                    $montoPagado = $pagosRecibo->sum('monto_pagado');
+                    // Buscar pagos confirmados de este apartamento para este recibo
+                    $pagosConfirmados = $apartamento->pagos
+                        ->where('recibo_gasto_comun_id', $recibo->id)
+                        ->where('estado', 'confirmado');
+                    
+                    $montoPagado = $pagosConfirmados->sum('monto_pagado');
                     $saldoActual = $recibo->total_recibo - $montoPagado;
                     
-                    $ultimoPago = $pagosRecibo->sortByDesc('fecha_pago')->first();
+                    // Obtener la fecha del último pago para este recibo
+                    $ultimoPago = $pagosConfirmados->sortByDesc('fecha_pago')->first();
                     $fechaPago = $ultimoPago ? $ultimoPago->fecha_pago : null;
                     
                     $datosDeuda[] = [
@@ -1424,7 +1471,7 @@ class DeudaController extends Controller
                         'propietario' => $apartamento->propietario,
                         'numero_apartamento' => $apartamento->numero,
                         'numero_recibo' => $recibo->numero_recibo,
-                        'periodo' => $recibo->periodo,
+                        'periodo' => $recibo->fecha_emision,
                         'total_recibo' => $recibo->total_recibo,
                         'total_pagado' => $montoPagado,
                         'fecha_pago' => $fechaPago,

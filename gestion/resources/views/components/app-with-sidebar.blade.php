@@ -87,6 +87,7 @@
                                             <a href="{{ route('actas.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Crear Documento</a>
                                             <a href="{{ route('actas.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Documentos</a>
                                             <a href="{{ route('actas.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Documentos</a>
+                                            <a href="{{ route('inventario.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Inventario</a>
                                         </div>
                                     </div>
                                 </nav>
@@ -192,6 +193,7 @@
                                 <a href="{{ route('actas.create') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Crear Documento</a>
                                 <a href="{{ route('actas.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Ver Documentos</a>
                                 <a href="{{ route('actas.import') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Importar Documentos</a>
+                                <a href="{{ route('inventario.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Inventario</a>
                             </div>
                         </div>
                     </div>
@@ -267,6 +269,11 @@
 
             // Close dropdowns when clicking outside
             document.addEventListener('click', function(event) {
+                // No cerrar dropdowns si el clic es dentro de un modal
+                if (event.target.closest('#deleteReciboModal') || event.target.closest('#deleteModal') || event.target.closest('[id$="Modal"]')) {
+                    return;
+                }
+                
                 const dropdowns = document.querySelectorAll('[id$="-dropdown"]');
                 dropdowns.forEach(dropdown => {
                     if (!dropdown.closest('.relative').contains(event.target)) {

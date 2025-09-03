@@ -7,6 +7,7 @@ use App\Http\Controllers\ApartamentoController;
 use App\Http\Controllers\ReciboGastoComunController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\DeudaController;
+use App\Http\Controllers\InventarioController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InquilinoController;
 
@@ -59,9 +60,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/recibos/eliminar-asignacion/{recibo}/{apartamento}', [ReciboGastoComunController::class, 'eliminarAsignacion'])->name('recibos.eliminar-asignacion');
     
     Route::get('/recibos/{recibo}/print', [ReciboGastoComunController::class, 'print'])->name('recibos.print');
-    Route::delete('/recibos/destroy-multiple', [ReciboGastoComunController::class, 'destroyMultiple'])->name('recibos.destroy-multiple');
-    Route::delete('/recibos/destroy-all', [ReciboGastoComunController::class, 'destroyAll'])->name('recibos.destroy-all');
-    Route::resource('recibos', ReciboGastoComunController::class);
+Route::get('/recibos/{recibo}/descargar-archivo', [ReciboGastoComunController::class, 'descargarArchivo'])->name('recibos.descargar-archivo');
+Route::delete('/recibos/destroy-multiple', [ReciboGastoComunController::class, 'destroyMultiple'])->name('recibos.destroy-multiple');
+Route::delete('/recibos/destroy-all', [ReciboGastoComunController::class, 'destroyAll'])->name('recibos.destroy-all');
+Route::resource('recibos', ReciboGastoComunController::class);
     
     // Rutas para pagos
     Route::resource('pagos', PagoController::class);
@@ -97,6 +99,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/deudas/recibo/{recibo}/cambiar-estado', [DeudaController::class, 'cambiarEstadoRecibo'])->name('deudas.cambiar-estado-recibo');
     
 
+    
+    // Rutas de Inventario
+    Route::resource('inventario', InventarioController::class);
     
     // API endpoints
     Route::get('/api/apartamentos', [ApartamentoController::class, 'getApartamentosApi'])->name('api.apartamentos');

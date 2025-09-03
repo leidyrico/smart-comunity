@@ -30,7 +30,31 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('recibos.store') }}" method="POST" class="space-y-6">
+                    <!-- Barra de progreso (oculta inicialmente) -->
+                    <div id="loading-overlay" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                            <div class="mt-3 text-center">
+                                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
+                                    <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Creando Recibo</h3>
+                                <div class="mt-2 px-7 py-3">
+                                    <p class="text-sm text-gray-500">Por favor espere mientras se crea el recibo y se envían los correos electrónicos...</p>
+                                    <div class="mt-4">
+                                        <div class="bg-gray-200 rounded-full h-2">
+                                            <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                        </div>
+                                        <p id="progress-text" class="text-xs text-gray-500 mt-2">Iniciando proceso...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="recibo-form" action="{{ route('recibos.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                         @csrf
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -170,6 +194,29 @@
                             @enderror
                         </div>
 
+                        <!-- Archivo Adjunto -->
+                        <div>
+                            <label for="archivo_adjunto" class="block text-sm font-medium text-gray-700">Archivo Adjunto (Opcional)</label>
+                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                                <div class="space-y-1 text-center">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                    <div class="flex text-sm text-gray-600">
+                                        <label for="archivo_adjunto" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                            <span>Subir archivo</span>
+                                            <input id="archivo_adjunto" name="archivo_adjunto" type="file" class="sr-only" accept=".pdf,.xlsx,.xls">
+                                        </label>
+                                        <p class="pl-1">o arrastrar y soltar</p>
+                                    </div>
+                                    <p class="text-xs text-gray-500">PDF, Excel hasta 10MB</p>
+                                </div>
+                            </div>
+                            @error('archivo_adjunto')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <!-- Total (calculado automáticamente) -->
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <div class="flex justify-between items-center">
@@ -178,16 +225,33 @@
                             </div>
                         </div>
 
+                        <!-- Opción de Envío de Correo -->
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="enviar_correo" name="enviar_correo" value="1" checked 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="enviar_correo" class="ml-3 text-sm font-medium text-gray-700">
+                                    Enviar correo a los propietarios
+                                </label>
+                            </div>
+                            <p class="mt-2 text-xs text-gray-600 ml-7">
+                                <svg class="inline w-4 h-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Si está marcado, cada propietario recibirá un correo individual con el recibo correspondiente.
+                            </p>
+                        </div>
+
                         <!-- Botones -->
                         <div class="flex justify-end space-x-4 pt-6 border-t">
                             <a href="{{ route('recibos.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 Cancelar
                             </a>
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <button id="submit-btn" type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                 </svg>
-                                Crear Recibo
+                                <span id="submit-text">Crear Recibo</span>
                             </button>
                         </div>
                     </form>
@@ -201,6 +265,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             const inputs = ['valor_administracion', 'valor_mantenimiento', 'valor_aseo', 'valor_vigilancia', 'otros_conceptos'];
             const totalDisplay = document.getElementById('total-display');
+            const form = document.getElementById('recibo-form');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const submitBtn = document.getElementById('submit-btn');
+            const submitText = document.getElementById('submit-text');
 
             function calculateTotal() {
                 let total = 0;
@@ -217,6 +287,49 @@
 
             // Calcular total inicial
             calculateTotal();
+
+            // Manejar envío del formulario con barra de progreso
+            form.addEventListener('submit', function(e) {
+                // Mostrar overlay de carga
+                loadingOverlay.classList.remove('hidden');
+                
+                // Deshabilitar botón de envío
+                submitBtn.disabled = true;
+                submitText.textContent = 'Procesando...';
+                
+                // Verificar si se va a enviar correo
+                const enviarCorreo = document.getElementById('enviar_correo').checked;
+                
+                // Simular progreso
+                let progress = 0;
+                const progressSteps = enviarCorreo ? [
+                    { percent: 20, text: 'Validando datos...' },
+                    { percent: 40, text: 'Creando recibo...' },
+                    { percent: 60, text: 'Generando PDF...' },
+                    { percent: 80, text: 'Enviando correos...' },
+                    { percent: 100, text: 'Finalizando...' }
+                ] : [
+                    { percent: 25, text: 'Validando datos...' },
+                    { percent: 50, text: 'Creando recibo...' },
+                    { percent: 75, text: 'Generando PDF...' },
+                    { percent: 100, text: 'Finalizando...' }
+                ];
+                
+                let stepIndex = 0;
+                const progressInterval = setInterval(function() {
+                    if (stepIndex < progressSteps.length) {
+                        const step = progressSteps[stepIndex];
+                        progressBar.style.width = step.percent + '%';
+                        progressText.textContent = step.text;
+                        stepIndex++;
+                    } else {
+                        clearInterval(progressInterval);
+                    }
+                }, 800); // Cambiar cada 800ms
+                
+                // El formulario se enviará normalmente
+                // El overlay se ocultará cuando la página se recargue o redirija
+            });
         });
     </script>
 </x-app-with-sidebar>

@@ -22,6 +22,7 @@ class ReciboGastoComun extends Model
         'otros_conceptos',
         'total_recibo',
         'observaciones',
+        'archivo_adjunto',
         'estado'
     ];
 
