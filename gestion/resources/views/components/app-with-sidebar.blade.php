@@ -75,6 +75,11 @@
                                         Gestión de Deudas
                                     </a>
                                     
+                                    <!-- Conciliación -->
+                                    <a href="{{ route('conciliacion.index') }}" class="{{ request()->routeIs('conciliacion.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200">
+                                        Conciliación
+                                    </a>
+                                    
                                     <!-- Gestión de Documentos Dropdown -->
                                     <div class="relative">
                                         <button class="{{ request()->routeIs('actas.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200 flex items-center" onclick="toggleDropdown('docs-nav-dropdown')">
@@ -179,6 +184,11 @@
                         <!-- Gestión de Deudas -->
                         <a href="{{ route('deudas.index') }}" class="{{ request()->routeIs('deudas.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
                             Gestión de Deudas
+                        </a>
+                        
+                        <!-- Conciliación -->
+                        <a href="{{ route('conciliacion.index') }}" class="{{ request()->routeIs('conciliacion.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                            Conciliación
                         </a>
                         
                         <!-- Gestión de Documentos -->

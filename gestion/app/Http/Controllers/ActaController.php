@@ -139,9 +139,34 @@ class ActaController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, Acta $acta)
     {
-        //
+        // Validar que se proporcione la clave de administrador
+        $request->validate([
+            'admin_password' => 'required|string'
+        ], [
+            'admin_password.required' => 'La clave de administrador es obligatoria para eliminar documentos.'
+        ]);
+
+        // Verificar la clave de administrador (puedes cambiar esta clave según tus necesidades)
+        $adminPassword = 'admin123'; // Clave de administrador predefinida
+        
+        if ($request->admin_password !== $adminPassword) {
+            return redirect()->route('actas.index')
+                ->with('error', 'Clave de administrador incorrecta.');
+        }
+
+        try {
+            // Eliminar el documento
+            $nombreDocumento = $acta->nombre_doc;
+            $acta->delete();
+
+            return redirect()->route('actas.index')
+                ->with('success', "El documento '{$nombreDocumento}' ha sido eliminado exitosamente.");
+        } catch (\Exception $e) {
+            return redirect()->route('actas.index')
+                ->with('error', 'Error al eliminar el documento: ' . $e->getMessage());
+        }
     }
 
     /**

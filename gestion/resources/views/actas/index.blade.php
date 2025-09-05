@@ -89,6 +89,12 @@
                         </div>
                     @endif
 
+                    @if(session('error'))
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
                     @if($actas->count() > 0)
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
@@ -108,9 +114,6 @@
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Descripción
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Archivo
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Acciones
@@ -139,39 +142,21 @@
                                                     {{ Str::limit($acta->descripcion, 50) }}
                                                 </div>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                @if($acta->archivo_nombre)
-                                                    <span class="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                                        </svg>
-                                                        {{ Str::limit($acta->archivo_nombre, 20) }}
-                                                    </span>
-                                                @else
-                                                    <span class="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                                        </svg>
-                                                        Sin archivo
-                                                    </span>
-                                                @endif
-                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                @if($acta->archivo_nombre)
-                                                    <a href="{{ route('actas.download', $acta) }}" class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                <div class="flex space-x-2">
+                                                    @if($acta->archivo_nombre)
+                                                        <a href="{{ route('actas.download', $acta) }}" class="inline-flex items-center justify-center w-8 h-8 bg-green-600 border border-transparent rounded text-white hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-offset-1 transition ease-in-out duration-150" title="Descargar documento">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                            </svg>
+                                                        </a>
+                                                    @endif
+                                                    <button onclick="openDeleteModal({{ $acta->id }}, {{ json_encode($acta->nombre_doc) }})" class="inline-flex items-center justify-center w-8 h-8 bg-red-600 border border-transparent rounded text-white hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-1 focus:ring-red-500 focus:ring-offset-1 transition ease-in-out duration-150" title="Eliminar documento">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                         </svg>
-                                                        Descargar
-                                                    </a>
-                                                @else
-                                                    <span class="inline-flex items-center px-3 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-500 uppercase tracking-widest cursor-not-allowed">
-                                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
-                                                        </svg>
-                                                        No disponible
-                                                    </span>
-                                                @endif
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -205,4 +190,120 @@
             </div>
         </div>
     </div>
-</x-app-with-sidebar>
+
+    <!-- Modal de Confirmación para Eliminar Documento -->
+    <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">Eliminar Documento</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500 mb-4">
+                        ¿Está seguro que desea eliminar el documento <strong id="documentName"></strong>?
+                        Esta acción no se puede deshacer.
+                    </p>
+                    <div class="mb-4">
+                        <label for="adminPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                            Clave de Administrador *
+                        </label>
+                        <input type="password" 
+                               id="adminPassword" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                               placeholder="Ingrese la clave de administrador">
+                        <div id="passwordError" class="text-red-600 text-sm mt-1 hidden"></div>
+                    </div>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <div class="flex justify-center space-x-3">
+                        <button id="cancelDelete" 
+                                class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                            Cancelar
+                        </button>
+                        <button id="confirmDelete" 
+                                class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                            Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+         </div>
+     </div>
+
+     <script>
+         let documentToDelete = null;
+
+         function openDeleteModal(id, name) {
+             documentToDelete = id;
+             document.getElementById('documentName').textContent = name;
+             document.getElementById('adminPassword').value = '';
+             document.getElementById('passwordError').classList.add('hidden');
+             document.getElementById('deleteModal').classList.remove('hidden');
+         }
+
+         function closeDeleteModal() {
+             document.getElementById('deleteModal').classList.add('hidden');
+             documentToDelete = null;
+         }
+
+         // Event listeners
+         document.getElementById('cancelDelete').addEventListener('click', closeDeleteModal);
+
+         document.getElementById('confirmDelete').addEventListener('click', function() {
+             const password = document.getElementById('adminPassword').value;
+             const errorDiv = document.getElementById('passwordError');
+
+             if (!password) {
+                 errorDiv.textContent = 'La clave de administrador es requerida';
+                 errorDiv.classList.remove('hidden');
+                 return;
+             }
+
+             // Crear formulario para enviar la solicitud DELETE
+             const form = document.createElement('form');
+             form.method = 'POST';
+             form.action = `{{ url('/actas') }}/${documentToDelete}`;
+
+             // Token CSRF
+             const csrfToken = document.createElement('input');
+             csrfToken.type = 'hidden';
+             csrfToken.name = '_token';
+             csrfToken.value = '{{ csrf_token() }}';
+             form.appendChild(csrfToken);
+
+             // Método DELETE
+             const methodField = document.createElement('input');
+             methodField.type = 'hidden';
+             methodField.name = '_method';
+             methodField.value = 'DELETE';
+             form.appendChild(methodField);
+
+             // Clave de administrador
+             const passwordField = document.createElement('input');
+             passwordField.type = 'hidden';
+             passwordField.name = 'admin_password';
+             passwordField.value = password;
+             form.appendChild(passwordField);
+
+             document.body.appendChild(form);
+             form.submit();
+         });
+
+         // Cerrar modal al hacer clic fuera de él
+         document.getElementById('deleteModal').addEventListener('click', function(e) {
+             if (e.target === this) {
+                 closeDeleteModal();
+             }
+         });
+
+         // Cerrar modal con tecla Escape
+         document.addEventListener('keydown', function(e) {
+             if (e.key === 'Escape' && !document.getElementById('deleteModal').classList.contains('hidden')) {
+                 closeDeleteModal();
+             }
+         });
+     </script>
+ </x-app-with-sidebar>

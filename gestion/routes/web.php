@@ -8,6 +8,7 @@ use App\Http\Controllers\ReciboGastoComunController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\DeudaController;
 use App\Http\Controllers\InventarioController;
+use App\Http\Controllers\ConciliacionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InquilinoController;
 
@@ -27,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/actas', [ActaController::class, 'store'])->name('actas.store');
     Route::get('/actas', [ActaController::class, 'index'])->name('actas.index');
     Route::get('/actas/{acta}/download', [ActaController::class, 'download'])->name('actas.download');
+    Route::delete('/actas/{acta}', [ActaController::class, 'destroy'])->name('actas.destroy');
     
     // Rutas para importación de documentos
     Route::get('/actas/import', [ActaController::class, 'showImport'])->name('actas.import');
@@ -102,6 +104,11 @@ Route::resource('recibos', ReciboGastoComunController::class);
     
     // Rutas de Inventario
     Route::resource('inventario', InventarioController::class);
+    
+    // Rutas de Conciliación
+    Route::get('/conciliacion', [ConciliacionController::class, 'index'])->name('conciliacion.index');
+    Route::post('/conciliacion/egresos', [ConciliacionController::class, 'store'])->name('conciliacion.store');
+    Route::delete('/conciliacion/egresos/{egreso}', [ConciliacionController::class, 'destroy'])->name('conciliacion.destroy');
     
     // API endpoints
     Route::get('/api/apartamentos', [ApartamentoController::class, 'getApartamentosApi'])->name('api.apartamentos');

@@ -22,12 +22,12 @@ class DeudaController extends Controller
 {
     /**
      * Mostrar el resumen de deudas por apartamento
-     * Solo mostrar apartamentos que tengan recibos asignados y pagos asociados
+     * Solo mostrar apartamentos que tengan recibos asignados y pagos asociados (actuales o históricos)
      */
     public function index(Request $request)
     {
         $query = Apartamento::with(['pagos', 'pagos.reciboGastoComun'])
-            ->whereHas('pagos'); // Solo apartamentos que tienen pagos (recibos asignados)
+            ->whereHas('pagos'); // Solo apartamentos que tienen o han tenido pagos (recibos asignados)
 
         // Filtro por número de apartamento si se proporciona (búsqueda exacta)
         if ($request->filled('numero_apartamento')) {
@@ -68,26 +68,15 @@ class DeudaController extends Controller
             $apartamento->actualizarEstatusFinanciero();
         }
 
-        // Obtener recibos que están asignados (manual, automáticamente o por pagos globales)
+        // Obtener todos los recibos que tienen pagos asociados (asignados)
+        // Incluir recibos que han tenido pagos aunque hayan sido eliminados
         $recibosActivos = ReciboGastoComun::where('estado', 'activo')
-            ->whereHas('pagos', function($query) {
-                $query->where(function($subQuery) {
-                    $subQuery->where('observaciones', 'like', '%Asignación manual%')
-                             ->orWhere('observaciones', 'like', '%Pago global distribuido automáticamente%')
-                             ->orWhere('observaciones', 'like', '%Recibo asignado automáticamente%');
-                });
-            })
+            ->whereHas('pagos') // Cualquier recibo que tenga pagos asociados
             ->orderBy('fecha_emision', 'desc')
             ->get();
             
         $recibosVencidos = ReciboGastoComun::where('estado', 'vencido')
-            ->whereHas('pagos', function($query) {
-                $query->where(function($subQuery) {
-                    $subQuery->where('observaciones', 'like', '%Asignación manual%')
-                             ->orWhere('observaciones', 'like', '%Pago global distribuido automáticamente%')
-                             ->orWhere('observaciones', 'like', '%Recibo asignado automáticamente%');
-                });
-            })
+            ->whereHas('pagos') // Cualquier recibo que tenga pagos asociados
             ->orderBy('fecha_emision', 'asc')
             ->get();
             
@@ -99,18 +88,12 @@ class DeudaController extends Controller
         
         foreach ($apartamentos as $apartamento) {
             foreach ($recibos as $recibo) {
-                // Verificar si existe una asignación (manual, automática o por pago global) para este apartamento y recibo
-                $asignacionExistente = $apartamento->pagos
-                    ->where('recibo_gasto_comun_id', $recibo->id)
-                    ->filter(function($pago) {
-                        return strpos($pago->observaciones, 'Asignación manual') !== false ||
-                               strpos($pago->observaciones, 'Pago global distribuido automáticamente') !== false ||
-                               strpos($pago->observaciones, 'Recibo asignado automáticamente') !== false;
-                    })
-                    ->first();
+                // Verificar si hay pagos asociados a este recibo para este apartamento
+                $pagosAsociados = $apartamento->pagos
+                    ->where('recibo_gasto_comun_id', $recibo->id);
                 
-                // Solo procesar si existe una asignación
-                if (!$asignacionExistente) {
+                // Solo procesar si hay pagos asociados
+                if ($pagosAsociados->isEmpty()) {
                     continue;
                 }
                 

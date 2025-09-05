@@ -94,29 +94,49 @@ class Apartamento extends Model
     }
 
     /**
-     * Actualizar el estatus financiero basado en saldo pendiente y recibos asignados
-     * - Solvente: saldo pendiente = 0 (sin importar recibos asignados)
-     * - Deudor: saldo pendiente > 0 y 1-3 recibos activos/vencidos asignados
-     * - Moroso: saldo pendiente > 0 y más de 3 recibos activos/vencidos asignados
-     */
+      * Actualizar el estatus financiero basado en saldo pendiente y recibos con deuda real
+      * - Solvente: sin recibos con saldo pendiente
+      * - Deudor: 1 a 3 recibos con saldo pendiente
+      * - Moroso: más de 3 recibos con saldo pendiente
+      */
     public function actualizarEstatusFinanciero()
     {
-        // Primero verificar si el saldo pendiente es 0
-        if ($this->saldo_pendiente == 0) {
-            $nuevoEstatus = 'solvente';
-        } else {
-            // Si tiene saldo pendiente, determinar estatus basado en número de recibos
-            $recibosActivosVencidos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])
-                ->whereHas('pagos', function($query) {
-                    $query->where('apartamento_id', $this->id);
-                })->count();
+        $recibosConDeuda = 0;
+        $saldoPendienteTotal = 0;
+        
+        // Obtener todos los recibos asignados (excluyendo rechazados)
+        $recibosAsignados = ReciboGastoComun::whereHas('pagos', function($query) {
+            $query->where('apartamento_id', $this->id)
+                  ->where('estado', '!=', 'rechazado');
+        })->get();
+        
+        foreach ($recibosAsignados as $recibo) {
+            // Solo considerar recibos con monto > 0 (ignorar datos corruptos)
+            if ($recibo->total_recibo <= 0) {
+                continue;
+            }
             
-            if ($recibosActivosVencidos > 3) {
-                $nuevoEstatus = 'moroso';
-            } else {
-                $nuevoEstatus = 'deudor';
+            $totalPagado = $this->pagos()
+                ->where('recibo_gasto_comun_id', $recibo->id)
+                ->where('estado', 'confirmado')
+                ->sum('monto_pagado');
+            
+            $saldoRecibo = max(0, $recibo->total_recibo - $totalPagado);
+            
+            if ($saldoRecibo > 0) {
+                $recibosConDeuda++;
+                $saldoPendienteTotal += $saldoRecibo;
             }
         }
+        
+        // Determinar estatus basado en recibos con deuda real
+         if ($saldoPendienteTotal <= 0) {
+             $nuevoEstatus = 'solvente';
+         } elseif ($recibosConDeuda >= 1 && $recibosConDeuda <= 3) {
+             $nuevoEstatus = 'deudor';
+         } else {
+             $nuevoEstatus = 'moroso';
+         }
         
         if ($this->estatus_financiero !== $nuevoEstatus) {
             $this->update([

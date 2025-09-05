@@ -197,7 +197,7 @@
                 saldoInfo.style.display = 'none';
                 montoPagadoInput.value = '';
                 
-                fetch(`/api/recibos-por-apartamento?apartamento_id=${apartamentoId}`)
+                fetch(`{{ url('/api/recibos-por-apartamento') }}?apartamento_id=${apartamentoId}`)
                     .then(response => response.json())
                     .then(data => {
                         reciboSelect.innerHTML = '<option value="">Seleccione un recibo</option>';
