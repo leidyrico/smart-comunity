@@ -245,9 +245,10 @@
                         {{ __('Editar') }}
                     </a>
                     
-                    <form method="POST" action="{{ route('recibos.destroy', $recibo) }}" class="inline-block" onsubmit="return confirm('¿Está seguro de que desea eliminar este recibo?')">
+                    <form method="POST" action="{{ route('recibos.destroy', $recibo) }}" class="inline-block" onsubmit="return confirmarEliminacionRecibo(event, '{{ $recibo->numero_recibo }}')">
                         @csrf
                         @method('DELETE')
+                        <input type="hidden" name="admin_password" id="admin_password_field">
                         <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -255,6 +256,72 @@
                             {{ __('Eliminar') }}
                         </button>
                     </form>
+
+                    <!-- Modal para contraseña de administrador -->
+                    <div id="adminPasswordModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);" onclick="cancelarEliminacion()">
+                        <div style="background-color: white; margin: 15% auto; padding: 20px; border-radius: 8px; width: 400px; max-width: 90%;" onclick="event.stopPropagation()">
+                            <h3 style="margin-top: 0; color: #333;">Confirmación de Eliminación</h3>
+                            <p id="modalMessage" style="color: #666; margin-bottom: 20px;"></p>
+                            <div style="margin-bottom: 15px;">
+                                <label for="modalAdminPassword" style="display: block; margin-bottom: 5px; font-weight: bold;">Clave de Administrador:</label>
+                                <input type="password" id="modalAdminPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Ingrese la clave de administrador">
+                            </div>
+                            <div style="text-align: right;">
+                                <button onclick="cancelarEliminacion()" style="background-color: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 10px; cursor: pointer;">Cancelar</button>
+                                <button onclick="confirmarConPassword()" style="background-color: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Eliminar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        let currentForm = null;
+
+                        function confirmarEliminacionRecibo(event, numeroRecibo) {
+                            event.preventDefault();
+                            
+                            if (confirm(`¿Está seguro de que desea eliminar el recibo ${numeroRecibo}?`)) {
+                                currentForm = event.target;
+                                document.getElementById('modalMessage').textContent = `Está a punto de eliminar el recibo ${numeroRecibo}. Esta acción no se puede deshacer.`;
+                                document.getElementById('modalAdminPassword').value = '';
+                                document.getElementById('adminPasswordModal').style.display = 'block';
+                                document.getElementById('modalAdminPassword').focus();
+                            }
+                            
+                            return false;
+                        }
+
+                        function cancelarEliminacion() {
+                            document.getElementById('adminPasswordModal').style.display = 'none';
+                            currentForm = null;
+                        }
+
+                        function confirmarConPassword() {
+                            const adminPassword = document.getElementById('modalAdminPassword').value;
+                            
+                            if (!adminPassword) {
+                                alert('Se requiere la clave de administrador.');
+                                return;
+                            }
+                            
+                            // Establecer la contraseña en el campo oculto
+                            document.getElementById('admin_password_field').value = adminPassword;
+                            
+                            // Ocultar modal
+                            document.getElementById('adminPasswordModal').style.display = 'none';
+                            
+                            // Enviar el formulario
+                            currentForm.submit();
+                        }
+
+                        // Permitir envío con Enter
+                        document.addEventListener('DOMContentLoaded', function() {
+                            document.getElementById('modalAdminPassword').addEventListener('keypress', function(e) {
+                                if (e.key === 'Enter') {
+                                    confirmarConPassword();
+                                }
+                            });
+                        });
+                    </script>
                 </div>
             </div>
         </div>

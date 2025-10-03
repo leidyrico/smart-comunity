@@ -59,9 +59,29 @@ class NuevoRecibo extends Mailable
         
         // Adjuntar archivo si existe
         if ($this->recibo->archivo_adjunto && Storage::disk('public')->exists($this->recibo->archivo_adjunto)) {
-            $attachments[] = Attachment::fromStorageDisk('public', $this->recibo->archivo_adjunto)
-                ->as('Recibo_' . $this->recibo->numero_recibo . '.pdf')
-                ->withMime('application/pdf');
+            // Obtener la ruta completa del archivo
+            $rutaArchivo = $this->recibo->archivo_adjunto;
+            
+            // Extraer el nombre original del archivo (después del timestamp_)
+            $nombreArchivo = basename($rutaArchivo);
+            $partesNombre = explode('_', $nombreArchivo, 2);
+            $nombreOriginal = count($partesNombre) > 1 ? $partesNombre[1] : $nombreArchivo;
+            
+            // Determinar el tipo MIME basado en la extensión del archivo original
+            $extension = strtolower(pathinfo($nombreOriginal, PATHINFO_EXTENSION));
+            $mimeType = match($extension) {
+                'pdf' => 'application/pdf',
+                'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'xls' => 'application/vnd.ms-excel',
+                default => 'application/octet-stream'
+            };
+            
+            // Crear el nombre del archivo adjunto manteniendo la extensión original
+            $nombreAdjunto = 'Recibo_' . $this->recibo->numero_recibo . '.' . $extension;
+            
+            $attachments[] = Attachment::fromStorageDisk('public', $rutaArchivo)
+                ->as($nombreAdjunto)
+                ->withMime($mimeType);
         }
         
         return $attachments;

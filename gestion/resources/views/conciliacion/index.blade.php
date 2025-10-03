@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-with-sidebar>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Conciliación Financiera') }}
@@ -7,18 +7,54 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <!-- Filtro por mes -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-8">
+                <div class="p-6">
+                    <form method="GET" action="{{ route('conciliacion.index') }}" class="flex flex-wrap items-end gap-4">
+                        <div class="flex-1 min-w-48">
+                            <label for="mes" class="block text-sm font-medium text-gray-700 mb-2">Filtrar por mes:</label>
+                            <select name="mes" id="mes" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Todos los meses</option>
+                                @foreach($mesesDisponibles as $mes)
+                                    <option value="{{ $mes['valor'] }}" 
+                                        {{ $mesSeleccionado == $mes['valor'] ? 'selected' : '' }}>
+                                        {{ $mes['texto'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                Filtrar
+                            </button>
+                            @if($mesSeleccionado)
+                                <a href="{{ route('conciliacion.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                                    Limpiar filtro
+                                </a>
+                            @endif
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Resumen de Totales -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-green-100 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-green-800">
                         <h3 class="text-lg font-semibold mb-2">Total Ingresos</h3>
                         <p class="text-3xl font-bold">${{ number_format($totalIngresos, 2, ',', '.') }}</p>
+                        @if($mesSeleccionado)
+                            <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
+                        @endif
                     </div>
                 </div>
                 <div class="bg-red-100 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-red-800">
                         <h3 class="text-lg font-semibold mb-2">Total Egresos</h3>
                         <p class="text-3xl font-bold">${{ number_format($totalEgresos, 2, ',', '.') }}</p>
+                        @if($mesSeleccionado)
+                            <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
+                        @endif
                     </div>
                 </div>
                 <div class="bg-blue-100 overflow-hidden shadow-sm sm:rounded-lg">
@@ -27,6 +63,9 @@
                         <p class="text-3xl font-bold {{ $balance >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             ${{ number_format($balance, 2, ',', '.') }}
                         </p>
+                        @if($mesSeleccionado)
+                            <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -192,4 +231,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-app-with-sidebar>

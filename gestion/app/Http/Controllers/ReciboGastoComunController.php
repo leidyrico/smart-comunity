@@ -13,6 +13,8 @@ use App\Exports\RecibosExport;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\NuevoRecibo;
 use App\Services\EmailMasivoService;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 // Incluir configuración de timeout para evitar errores de tiempo de ejecución
 require_once __DIR__ . '/../../../config_timeout.php';
@@ -170,11 +172,88 @@ class ReciboGastoComunController extends Controller
      */
     public function destroy(Request $request, ReciboGastoComun $recibo)
     {
-        $numeroRecibo = $recibo->numero_recibo;
-        $recibo->delete();
+        // Validar clave de administrador
+        $adminPassword = $request->input('admin_password');
+        $configuredPassword = config('app.admin_password', 'admin123'); // Clave por defecto
         
-        return redirect()->route('recibos.index')
-            ->with('success', "Recibo {$numeroRecibo} eliminado exitosamente.");
+        if (!$adminPassword || $adminPassword !== $configuredPassword) {
+            return redirect()->route('recibos.index')
+                ->with('error', 'Clave de administrador incorrecta. No se pudo eliminar el recibo.');
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            $numeroRecibo = $recibo->numero_recibo;
+            
+            // Obtener todos los pagos asociados al recibo antes de eliminarlo
+            $pagosAsociados = \App\Models\Pago::where('recibo_gasto_comun_id', $recibo->id)->get();
+            
+            // Eliminar el recibo (esto también eliminará los pagos por cascada)
+            $recibo->delete();
+            
+            // Actualizar el estatus financiero de los apartamentos afectados
+            $apartamentosAfectados = $pagosAsociados->pluck('apartamento_id')->unique();
+            foreach ($apartamentosAfectados as $apartamentoId) {
+                $apartamento = \App\Models\Apartamento::find($apartamentoId);
+                if ($apartamento) {
+                    // El saldo_pendiente se recalcula automáticamente al acceder al atributo
+                    // Solo necesitamos actualizar el estatus financiero
+                    $this->actualizarEstatusFinanciero($apartamento);
+                }
+            }
+            
+            \DB::commit();
+            
+            return redirect()->route('recibos.index')
+                ->with('success', "Recibo {$numeroRecibo} eliminado exitosamente. Se actualizaron los balances de los apartamentos afectados.");
+                
+        } catch (\Exception $e) {
+            \DB::rollback();
+            return redirect()->route('recibos.index')
+                ->with('error', 'Error al eliminar el recibo: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Actualizar el estatus financiero de un apartamento
+     */
+    private function actualizarEstatusFinanciero($apartamento)
+    {
+        // Contar recibos con saldo pendiente
+        $recibosConDeuda = 0;
+        
+        $recibosAsignados = \App\Models\ReciboGastoComun::whereHas('pagos', function($query) use ($apartamento) {
+            $query->where('apartamento_id', $apartamento->id)
+                  ->where('estado', '!=', 'rechazado');
+        })->whereIn('estado', ['activo', 'vencido'])->get();
+        
+        foreach ($recibosAsignados as $recibo) {
+            $totalPagado = $apartamento->pagos()
+                ->where('recibo_gasto_comun_id', $recibo->id)
+                ->where('estado', 'confirmado')
+                ->sum('monto_pagado');
+            
+            $saldoPendiente = $recibo->total_recibo - $totalPagado;
+            if ($saldoPendiente > 0) {
+                $recibosConDeuda++;
+            }
+        }
+        
+        // Determinar nuevo estatus
+        if ($recibosConDeuda == 0) {
+            $nuevoEstatus = 'solvente';
+        } elseif ($recibosConDeuda <= 3) {
+            $nuevoEstatus = 'deudor';
+        } else {
+            $nuevoEstatus = 'moroso';
+        }
+        
+        // Actualizar solo si hay cambio
+        if ($apartamento->estatus_financiero !== $nuevoEstatus) {
+            $apartamento->estatus_financiero = $nuevoEstatus;
+            $apartamento->save();
+        }
     }
 
     /**
@@ -346,11 +425,28 @@ class ReciboGastoComunController extends Controller
         }
 
         try {
+            \DB::beginTransaction();
+
+            // Obtener todos los pagos asociados a los recibos antes de eliminarlos
+            $pagosAsociados = \App\Models\Pago::whereIn('recibo_gasto_comun_id', $request->recibo_ids)->get();
+            
             $count = ReciboGastoComun::whereIn('id', $request->recibo_ids)->delete();
             
+            // Actualizar el estatus financiero de los apartamentos afectados
+            $apartamentosAfectados = $pagosAsociados->pluck('apartamento_id')->unique();
+            foreach ($apartamentosAfectados as $apartamentoId) {
+                $apartamento = \App\Models\Apartamento::find($apartamentoId);
+                if ($apartamento) {
+                    $this->actualizarEstatusFinanciero($apartamento);
+                }
+            }
+            
+            \DB::commit();
+            
             return redirect()->route('recibos.index')
-                ->with('success', "Se eliminaron {$count} recibos exitosamente.");
+                ->with('success', "Se eliminaron {$count} recibos exitosamente. Se actualizaron los balances de los apartamentos afectados.");
         } catch (\Exception $e) {
+            \DB::rollback();
             return redirect()->route('recibos.index')
                 ->with('error', 'Error al eliminar los recibos: ' . $e->getMessage());
         }

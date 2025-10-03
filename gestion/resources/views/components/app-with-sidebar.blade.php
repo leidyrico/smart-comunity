@@ -75,10 +75,19 @@
                                         Gestión de Deudas
                                     </a>
                                     
-                                    <!-- Conciliación -->
-                                    <a href="{{ route('conciliacion.index') }}" class="{{ request()->routeIs('conciliacion.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200">
-                                        Conciliación
-                                    </a>
+                                    <!-- Conciliación Dropdown -->
+                                    <div class="relative">
+                                        <button class="{{ request()->routeIs('conciliacion.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200 flex items-center" onclick="toggleDropdown('conciliacion-nav-dropdown')">
+                                            Conciliación
+                                            <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                        <div id="conciliacion-nav-dropdown" class="hidden absolute left-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
+                                            <a href="{{ route('conciliacion.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Conciliación</a>
+                                            <a href="{{ route('conciliacion.recaudacion') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Recaudación</a>
+                                        </div>
+                                    </div>
                                     
                                     <!-- Gestión de Documentos Dropdown -->
                                     <div class="relative">
@@ -187,9 +196,18 @@
                         </a>
                         
                         <!-- Conciliación -->
-                        <a href="{{ route('conciliacion.index') }}" class="{{ request()->routeIs('conciliacion.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
-                            Conciliación
-                        </a>
+                        <div>
+                            <button class="{{ request()->routeIs('conciliacion.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center justify-between" onclick="toggleMobileSubmenu('conciliacion-mobile-submenu')">
+                                Conciliación
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="conciliacion-mobile-submenu" class="hidden pl-6 space-y-1">
+                                <a href="{{ route('conciliacion.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Conciliación</a>
+                                <a href="{{ route('conciliacion.recaudacion') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Recaudación</a>
+                            </div>
+                        </div>
                         
                         <!-- Gestión de Documentos -->
                         <div>

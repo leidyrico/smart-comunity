@@ -110,8 +110,17 @@ Route::resource('recibos', ReciboGastoComunController::class);
     Route::post('/conciliacion/egresos', [ConciliacionController::class, 'store'])->name('conciliacion.store');
     Route::delete('/conciliacion/egresos/{egreso}', [ConciliacionController::class, 'destroy'])->name('conciliacion.destroy');
     
+    // Rutas de Recaudación (submenú de Conciliación)
+    Route::get('/conciliacion/recaudacion', [ConciliacionController::class, 'recaudacion'])->name('conciliacion.recaudacion');
+    
     // API endpoints
     Route::get('/api/apartamentos', [ApartamentoController::class, 'getApartamentosApi'])->name('api.apartamentos');
+});
+
+// API endpoints con autenticación mejorada para AJAX
+Route::middleware('api.auth')->group(function () {
+    Route::get('/api/recaudacion/recibos', [ConciliacionController::class, 'getRecibosApi'])->name('api.recaudacion.recibos');
+    Route::get('/api/recaudacion/detalle/{recibo}', [ConciliacionController::class, 'detalleRecaudacion'])->name('api.recaudacion.detalle');
 });
 
 // API endpoints públicos (sin autenticación para AJAX)

@@ -9,6 +9,7 @@ use App\Models\ReciboGastoComun;
 use App\Mail\ComprobantePago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 // Incluir configuración de timeout para evitar errores de tiempo de ejecución
 require_once __DIR__ . '/../../../config_timeout.php';
@@ -412,26 +413,21 @@ class PagoController extends Controller
             }
         }
         
-        // Si no hay recibos activos asignados, buscar el recibo vencido más reciente asignado
-        if ($recibosConSaldo->where('estado', 'activo')->isEmpty()) {
-            $reciboVencidoReciente = $recibosAsignados->where('estado', 'vencido')
-                ->sortByDesc('fecha_vencimiento')
-                ->first();
-                
-            if ($reciboVencidoReciente) {
-                $totalPagado = $reciboVencidoReciente->pagos->sum('monto_pagado');
-                $saldoPendiente = $reciboVencidoReciente->total_recibo - $totalPagado;
-                
-                if ($saldoPendiente > 0) {
-                    $reciboVencidoReciente->saldo_pendiente_calculado = $saldoPendiente;
-                    // Agregar al inicio de la colección para que tenga prioridad
-                    $recibosConSaldo->prepend($reciboVencidoReciente);
-                }
-            }
-        }
+        // Nueva lógica de distribución según requerimiento:
+        // 1. Recibos más recientes con estado 'activo' (ordenados por fecha descendente)
+        // 2. Recibos más antiguos con estado 'vencido' (ordenados por fecha ascendente)
+        
+        $recibosActivos = $recibosConSaldo->where('estado', 'activo')
+            ->sortByDesc('fecha_emision'); // Más recientes primero
             
-        // Procesar los recibos con saldo pendiente
-        foreach ($recibosConSaldo as $recibo) {
+        $recibosVencidos = $recibosConSaldo->where('estado', 'vencido')
+            ->sortBy('fecha_vencimiento'); // Más antiguos primero
+            
+        // Combinar en el orden de prioridad: activos recientes + vencidos antiguos
+        $recibosOrdenados = $recibosActivos->concat($recibosVencidos);
+            
+        // Procesar los recibos con saldo pendiente en el orden de prioridad
+        foreach ($recibosOrdenados as $recibo) {
             if ($montoRestante <= 0) break;
             
             // Usar el saldo pendiente ya calculado
