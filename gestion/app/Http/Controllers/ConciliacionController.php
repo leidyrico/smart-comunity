@@ -43,8 +43,11 @@ class ConciliacionController extends Controller
 
         // Calcular totales
         $totalIngresos = $ingresos->sum('monto_pagado');
+        $totalIngresosEnBs = $ingresos->sum('monto_en_bs');
         $totalEgresos = $egresos->sum('monto');
+        $totalEgresosEnBs = $egresos->sum('monto_en_bs');
         $balance = $totalIngresos - $totalEgresos;
+        $balanceEnBs = $totalIngresosEnBs - $totalEgresosEnBs;
 
         // Obtener lista de meses disponibles para el selector
         $mesesDisponibles = $this->obtenerMesesDisponibles();
@@ -53,8 +56,11 @@ class ConciliacionController extends Controller
             'ingresos', 
             'egresos', 
             'totalIngresos', 
-            'totalEgresos', 
-            'balance', 
+            'totalIngresosEnBs',
+            'totalEgresos',
+            'totalEgresosEnBs', 
+            'balance',
+            'balanceEnBs', 
             'mesSeleccionado',
             'mesesDisponibles'
         ));
@@ -150,7 +156,7 @@ class ConciliacionController extends Controller
             $query->where('periodo', 'like', '%' . $periodoTexto . '%');
         }
 
-        $recibos = $query->orderBy('fecha_emision', 'desc')
+        $recibos = $query->orderBy('periodo', 'desc')
             ->get()
             ->map(function($recibo) {
                 // Contar apartamentos que han pagado este recibo

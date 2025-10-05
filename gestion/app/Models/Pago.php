@@ -13,6 +13,7 @@ class Pago extends Model
         'apartamento_id',
         'recibo_gasto_comun_id',
         'monto_pagado',
+        'monto_en_bs',
         'fecha_pago',
         'metodo_pago',
         'numero_comprobante',
@@ -22,7 +23,8 @@ class Pago extends Model
 
     protected $casts = [
         'fecha_pago' => 'date',
-        'monto_pagado' => 'decimal:2'
+        'monto_pagado' => 'decimal:2',
+        'monto_en_bs' => 'decimal:2'
     ];
 
     /**

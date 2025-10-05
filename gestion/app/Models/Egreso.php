@@ -13,11 +13,13 @@ class Egreso extends Model
         'fecha',
         'comprobante',
         'monto',
+        'monto_en_bs',
         'descripcion'
     ];
 
     protected $casts = [
         'fecha' => 'date',
-        'monto' => 'decimal:2'
+        'monto' => 'decimal:2',
+        'monto_en_bs' => 'decimal:2'
     ];
 }

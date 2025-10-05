@@ -19,293 +19,246 @@
         <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
         <script src="{{ asset('js/app.js') }}" defer></script>
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            <!-- Main content -->
-            <div>
-                <!-- Top navigation -->
-                <nav class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div class="flex justify-between h-16">
-                            <div class="flex items-center space-x-8">
-                                <!-- Logo and title -->
-                                <div class="flex items-center">
-                                    <img src="{{ asset('logo.png') }}" alt="Logo" class="h-8 w-auto">
-                                    <span class="ml-2 text-gray-900 font-semibold text-lg">Residencias Alfa</span>
-                                </div>
-                                
-                                <!-- Navigation Menu -->
-                                <nav class="hidden md:flex space-x-8">
-                                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200">
-                                        Dashboard
-                                    </a>
-                                    
-                                    <!-- Gestión de Apartamentos Dropdown -->
-                                    <div class="relative">
-                                        <button class="{{ request()->routeIs('apartamentos.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200 flex items-center" onclick="toggleDropdown('apartments-nav-dropdown')">
-                                            Apartamentos
-                                            <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </button>
-                                        <div id="apartments-nav-dropdown" class="hidden absolute left-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
-                                            <a href="{{ route('apartamentos.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Apartamentos</a>
-                                            <a href="{{ route('apartamentos.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Nuevo Apartamento</a>
-                                            {{-- <a href="{{ route('apartamentos.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Apartamentos</a> --}}
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Gestión de Recibos Dropdown -->
-                                    <div class="relative">
-                                        <button class="{{ request()->routeIs('recibos.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200 flex items-center" onclick="toggleDropdown('receipts-nav-dropdown')">
-                                            Recibos
-                                            <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </button>
-                                        <div id="receipts-nav-dropdown" class="hidden absolute left-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
-                                            <a href="{{ route('recibos.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Recibos</a>
-                                            <a href="{{ route('recibos.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Crear Recibo</a>
-                                            <a href="{{ route('recibos.asignar-manual') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Asignar Recibos Manual</a>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Gestión de Deudas -->
-                                    <a href="{{ route('deudas.index') }}" class="{{ request()->routeIs('deudas.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200">
-                                        Gestión de Deudas
-                                    </a>
-                                    
-                                    <!-- Conciliación Dropdown -->
-                                    <div class="relative">
-                                        <button class="{{ request()->routeIs('conciliacion.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200 flex items-center" onclick="toggleDropdown('conciliacion-nav-dropdown')">
-                                            Conciliación
-                                            <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </button>
-                                        <div id="conciliacion-nav-dropdown" class="hidden absolute left-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
-                                            <a href="{{ route('conciliacion.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Conciliación</a>
-                                            <a href="{{ route('conciliacion.recaudacion') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Recaudación</a>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Gestión de Documentos Dropdown -->
-                                    <div class="relative">
-                                        <button class="{{ request()->routeIs('actas.*') ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700' }} px-3 py-2 text-sm font-medium transition-colors duration-200 flex items-center" onclick="toggleDropdown('docs-nav-dropdown')">
-                                            Gestión de Documentos
-                                            <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </button>
-                                        <div id="docs-nav-dropdown" class="hidden absolute left-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
-                                            <a href="{{ route('actas.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Crear Documento</a>
-                                            <a href="{{ route('actas.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Ver Documentos</a>
-                                            <a href="{{ route('actas.import') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Importar Documentos</a>
-                                            <a href="{{ route('inventario.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Inventario</a>
-                                        </div>
-                                    </div>
-                                </nav>
-                            </div>
+    <body class="font-sans antialiased bg-gray-100">
+        <div class="flex h-screen">
+            <!-- Sidebar -->
+            <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
+                <!-- Logo and title -->
+                <div class="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200">
+                    <div class="flex items-center">
+                        <img src="{{ asset('logo.png') }}" alt="Logo" class="h-8 w-auto">
+                        <span class="ml-2 font-semibold text-lg text-gray-900">Residencias Alfa</span>
+                    </div>
+                    <!-- Close button for mobile -->
+                    <button id="closeSidebar" class="lg:hidden text-gray-600 hover:text-gray-900">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
 
-                            <!-- User Menu -->
-                            <div class="hidden sm:flex sm:items-center sm:ml-6">
-                                <div class="relative">
-                                    <button class="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none" onclick="toggleDropdown('user-dropdown')">
-                                        <div>{{ Auth::user()->name }}</div>
-                                        <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                        </svg>
-                                    </button>
-                                    <div id="user-dropdown" class="hidden absolute right-0 top-full mt-1 w-48 bg-white shadow-lg rounded-md py-1 z-50">
-                                        <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Perfil</a>
-                                        <form method="POST" action="{{ route('logout') }}">
-                                            @csrf
-                                            <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                Cerrar Sesión
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- Navigation Menu -->
+                <nav class="mt-6 px-3">
+                    <!-- Dashboard -->
+                    <a href="{{ route('dashboard') }}" class="flex items-center px-3 py-2 mb-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('dashboard') ? 'bg-blue-100 text-blue-700 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                        <i class="fas fa-tachometer-alt w-5 h-5 mr-3"></i>
+                        Dashboard
+                    </a>
 
-                            <!-- Mobile menu button -->
-                            <div class="md:hidden flex items-center space-x-2">
-                                <!-- Mobile menu button -->
-                                <button type="button" class="bg-white p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" onclick="toggleMobileMenu()">
-                                    <span class="sr-only">Open main menu</span>
-                                    <svg id="mobile-menu-icon" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                                    </svg>
-                                    <svg id="mobile-close-icon" class="h-6 w-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                </button>
-                                
-                                <!-- User menu button -->
-                                <button type="button" class="bg-white p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500" onclick="toggleDropdown('user-menu')">
-                                    <span class="sr-only">Open user menu</span>
-                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                    </svg>
-                                </button>
+                    <!-- Apartamentos -->
+                    <div class="mb-2">
+                        <button onclick="toggleSidebarSubmenu('apartments-submenu')" class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('apartamentos.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <div class="flex items-center">
+                                <i class="fas fa-building w-5 h-5 mr-3"></i>
+                                Apartamentos
                             </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="apartments-submenu" class="ml-6 mt-2 space-y-1 {{ request()->routeIs('apartamentos.*') ? '' : 'hidden' }}">
+                            <a href="{{ route('apartamentos.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Ver Apartamentos
+                            </a>
+                            <a href="{{ route('apartamentos.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Nuevo Apartamento
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Recibos -->
+                    <div class="mb-2">
+                        <button onclick="toggleSidebarSubmenu('receipts-submenu')" class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('recibos.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <div class="flex items-center">
+                                <i class="fas fa-receipt w-5 h-5 mr-3"></i>
+                                Recibos
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="receipts-submenu" class="ml-6 mt-2 space-y-1 {{ request()->routeIs('recibos.*') ? '' : 'hidden' }}">
+                            <a href="{{ route('recibos.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Ver Recibos
+                            </a>
+                            <a href="{{ route('recibos.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Crear Recibo
+                            </a>
+                            <a href="{{ route('recibos.asignar-manual') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Asignar Recibos Manual
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Gestión de Deudas -->
+                    <a href="{{ route('deudas.index') }}" class="flex items-center px-3 py-2 mb-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('deudas.*') ? 'bg-blue-100 text-blue-700 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                        <i class="fas fa-exclamation-triangle w-5 h-5 mr-3"></i>
+                        Gestión de Deudas
+                    </a>
+
+                    <!-- Conciliación -->
+                    <div class="mb-2">
+                        <button onclick="toggleSidebarSubmenu('conciliacion-submenu')" class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('conciliacion.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <div class="flex items-center">
+                                <i class="fas fa-balance-scale w-5 h-5 mr-3"></i>
+                                Conciliación
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="conciliacion-submenu" class="ml-6 mt-2 space-y-1 {{ request()->routeIs('conciliacion.*') ? '' : 'hidden' }}">
+                            <a href="{{ route('conciliacion.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Conciliación
+                            </a>
+                            <a href="{{ route('conciliacion.recaudacion') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Recaudación
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Gestión de Documentos -->
+                    <div class="mb-2">
+                        <button onclick="toggleSidebarSubmenu('docs-submenu')" class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('actas.*') || request()->routeIs('inventario.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <div class="flex items-center">
+                                <i class="fas fa-file-alt w-5 h-5 mr-3"></i>
+                                Gestión de Documentos
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="docs-submenu" class="ml-6 mt-2 space-y-1 {{ request()->routeIs('actas.*') || request()->routeIs('inventario.*') ? '' : 'hidden' }}">
+                            <a href="{{ route('actas.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Crear Documento
+                            </a>
+                            <a href="{{ route('actas.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Ver Documentos
+                            </a>
+                            <a href="{{ route('actas.import') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Importar Documentos
+                            </a>
+                            <a href="{{ route('inventario.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Inventario
+                            </a>
                         </div>
                     </div>
                 </nav>
 
-                <!-- Mobile menu -->
-                <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-200">
-                    <div class="px-2 pt-2 pb-3 space-y-1">
-                        <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
-                            Dashboard
-                        </a>
-                        
-                        <!-- Gestión de Apartamentos -->
-                        <div>
-                            <button class="{{ request()->routeIs('apartamentos.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center justify-between" onclick="toggleMobileSubmenu('apartments-mobile-submenu')">
-                                Apartamentos
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div id="apartments-mobile-submenu" class="hidden pl-6 space-y-1">
-                                <a href="{{ route('apartamentos.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Ver Apartamentos</a>
-                                <a href="{{ route('apartamentos.create') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Nuevo Apartamento</a>
-                                {{-- <a href="{{ route('apartamentos.import') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Importar Apartamentos</a> --}}
+                <!-- User Menu at bottom -->
+                <div class="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-200">
+                    <div class="relative">
+                        <button onclick="toggleSidebarSubmenu('user-submenu')" class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-colors duration-200">
+                            <div class="flex items-center">
+                                <i class="fas fa-user w-5 h-5 mr-3"></i>
+                                <div class="text-left">
+                                    <div class="font-medium">{{ Auth::user()->name }}</div>
+                                    <div class="text-xs text-gray-500">{{ Auth::user()->email }}</div>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <!-- Gestión de Recibos -->
-                        <div>
-                            <button class="{{ request()->routeIs('recibos.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center justify-between" onclick="toggleMobileSubmenu('receipts-mobile-submenu')">
-                                Recibos
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div id="receipts-mobile-submenu" class="hidden pl-6 space-y-1">
-                                <a href="{{ route('recibos.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Ver Recibos</a>
-                                <a href="{{ route('recibos.create') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Crear Recibo</a>
-                                <a href="{{ route('recibos.asignar-manual') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Asignar Recibos Manual</a>
-                            </div>
-                        </div>
-                        
-                        <!-- Gestión de Deudas -->
-                        <a href="{{ route('deudas.index') }}" class="{{ request()->routeIs('deudas.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
-                            Gestión de Deudas
-                        </a>
-                        
-                        <!-- Conciliación -->
-                        <div>
-                            <button class="{{ request()->routeIs('conciliacion.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center justify-between" onclick="toggleMobileSubmenu('conciliacion-mobile-submenu')">
-                                Conciliación
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div id="conciliacion-mobile-submenu" class="hidden pl-6 space-y-1">
-                                <a href="{{ route('conciliacion.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Conciliación</a>
-                                <a href="{{ route('conciliacion.recaudacion') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Recaudación</a>
-                            </div>
-                        </div>
-                        
-                        <!-- Gestión de Documentos -->
-                        <div>
-                            <button class="{{ request()->routeIs('actas.*') ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800' }} w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium flex items-center justify-between" onclick="toggleMobileSubmenu('docs-mobile-submenu')">
-                                Gestión de Documentos
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div id="docs-mobile-submenu" class="hidden pl-6 space-y-1">
-                                <a href="{{ route('actas.create') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Crear Documento</a>
-                                <a href="{{ route('actas.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Ver Documentos</a>
-                                <a href="{{ route('actas.import') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Importar Documentos</a>
-                                <a href="{{ route('inventario.index') }}" class="block py-2 text-sm text-gray-600 hover:text-gray-800">Inventario</a>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Mobile User Menu -->
-                    <div class="pt-4 pb-1 border-t border-gray-200">
-                        <div class="px-4">
-                            <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                            <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
-                        </div>
-                        <div class="mt-3 space-y-1">
-                            <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">Perfil</a>
+                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="user-submenu" class="hidden mt-2 space-y-1">
+                            <a href="{{ route('profile.edit') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                <i class="fas fa-cog w-4 h-4 mr-2"></i>
+                                Perfil
+                            </a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button type="submit" class="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                                <button type="submit" class="flex items-center w-full px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200">
+                                    <i class="fas fa-sign-out-alt w-4 h-4 mr-2"></i>
                                     Cerrar Sesión
                                 </button>
                             </form>
                         </div>
                     </div>
                 </div>
-            </nav>
+            </div>
 
-            <!-- Page Content -->
-            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
-                <div class="container mx-auto px-6 py-8">
-                    {{ $slot }}
+            <!-- Main content area -->
+            <div class="flex-1 flex flex-col lg:ml-0 main-content">
+                <!-- Top bar for mobile -->
+                <div class="lg:hidden bg-white shadow-sm border-b border-gray-200">
+                    <div class="flex items-center justify-between h-16 px-4">
+                        <button id="openSidebar" class="text-gray-600 hover:text-gray-900">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
+                        </button>
+                        <div class="flex items-center">
+                            <img src="{{ asset('logo.png') }}" alt="Logo" class="h-8 w-auto">
+                            <span class="ml-2 text-gray-900 font-semibold text-lg">Residencias Alfa</span>
+                        </div>
+                        <div class="w-6"></div> <!-- Spacer for centering -->
+                    </div>
                 </div>
-            </main>
+
+                <!-- Page Content -->
+                <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
+                    <div class="container mx-auto px-6 py-8">
+                        {{ $slot }}
+                    </div>
+                </main>
+            </div>
         </div>
 
-        <!-- JavaScript for dropdowns and mobile menu -->
+        <!-- Overlay for mobile -->
+        <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden"></div>
+
+        <!-- JavaScript -->
         <script>
-            function toggleDropdown(dropdownId) {
-                const dropdown = document.getElementById(dropdownId);
-                const isHidden = dropdown.classList.contains('hidden');
-                
-                // Close all other dropdowns
-                document.querySelectorAll('[id$="-dropdown"]').forEach(el => {
-                    if (el.id !== dropdownId) {
-                        el.classList.add('hidden');
-                    }
-                });
-                
-                // Toggle current dropdown
-                dropdown.classList.toggle('hidden');
-            }
-
-            function toggleSubDropdown(dropdownId) {
-                const dropdown = document.getElementById(dropdownId);
-                dropdown.classList.toggle('hidden');
-            }
-
-            function toggleMobileSubmenu(submenuId) {
+            function toggleSidebarSubmenu(submenuId) {
                 const submenu = document.getElementById(submenuId);
-                submenu.classList.toggle('hidden');
-            }
-
-            function toggleMobileMenu() {
-                const mobileMenu = document.getElementById('mobile-menu');
-                const menuIcon = document.getElementById('mobile-menu-icon');
-                const closeIcon = document.getElementById('mobile-close-icon');
+                const button = submenu.previousElementSibling;
+                const arrow = button.querySelector('svg');
                 
-                mobileMenu.classList.toggle('hidden');
-                menuIcon.classList.toggle('hidden');
-                closeIcon.classList.toggle('hidden');
-            }
-
-            function toggleMobileSubmenu(submenuId) {
-                const submenu = document.getElementById(submenuId);
                 submenu.classList.toggle('hidden');
-            }
-
-            // Close dropdowns when clicking outside
-            document.addEventListener('click', function(event) {
-                // No cerrar dropdowns si el clic es dentro de un modal
-                if (event.target.closest('#deleteReciboModal') || event.target.closest('#deleteModal') || event.target.closest('[id$="Modal"]')) {
-                    return;
+                
+                if (arrow) {
+                    arrow.classList.toggle('rotate-180');
                 }
-                
-                const dropdowns = document.querySelectorAll('[id$="-dropdown"]');
-                dropdowns.forEach(dropdown => {
-                    if (!dropdown.closest('.relative').contains(event.target)) {
-                        dropdown.classList.add('hidden');
+            }
+
+            // Mobile sidebar functionality
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const openBtn = document.getElementById('openSidebar');
+            const closeBtn = document.getElementById('closeSidebar');
+
+            function openSidebar() {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            }
+
+            function closeSidebar() {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+
+            if (openBtn) openBtn.addEventListener('click', openSidebar);
+            if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+            if (overlay) overlay.addEventListener('click', closeSidebar);
+
+            // Close sidebar on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !sidebar.classList.contains('-translate-x-full')) {
+                    closeSidebar();
+                }
+            });
+
+            // Auto-expand active menu sections
+            document.addEventListener('DOMContentLoaded', function() {
+                const activeMenus = document.querySelectorAll('.bg-blue-100');
+                activeMenus.forEach(menu => {
+                    const submenu = menu.nextElementSibling;
+                    if (submenu && submenu.classList.contains('hidden')) {
+                        submenu.classList.remove('hidden');
+                        const arrow = menu.querySelector('svg');
+                        if (arrow) arrow.classList.add('rotate-180');
                     }
                 });
             });
@@ -315,17 +268,16 @@
         
         <style>
             @media print {
-                /* Ocultar toda la navegación durante la impresión */
-                nav.bg-white.shadow {
+                /* Hide sidebar and mobile bar during printing */
+                #sidebar, .lg\\:hidden {
                     display: none !important;
                 }
                 
-                /* Ocultar menú móvil */
-                #mobile-menu {
-                    display: none !important;
+                /* Adjust main content for printing */
+                .flex-1.flex.flex-col {
+                    margin-left: 0 !important;
                 }
                 
-                /* Ajustar el contenido principal para que ocupe toda la página */
                 main.flex-1 {
                     margin-top: 0 !important;
                     padding-top: 0 !important;
@@ -334,6 +286,55 @@
                 .container.mx-auto {
                     padding-top: 0 !important;
                 }
+            }
+
+            /* Custom scrollbar for sidebar */
+            #sidebar {
+                scrollbar-width: thin;
+                scrollbar-color: #cbd5e0 #f7fafc;
+            }
+
+            #sidebar::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            #sidebar::-webkit-scrollbar-track {
+                background: #f7fafc;
+            }
+
+            #sidebar::-webkit-scrollbar-thumb {
+                background: #cbd5e0;
+                border-radius: 3px;
+            }
+
+            #sidebar::-webkit-scrollbar-thumb:hover {
+                background: #a0aec0;
+            }
+
+            /* Smooth transitions */
+            .transition-transform {
+                transition-property: transform;
+                transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+                transition-duration: 300ms;
+            }
+
+            .rotate-180 {
+                transform: rotate(180deg);
+            }
+
+            /* Ensure sidebar maintains consistent width */
+            #sidebar {
+                min-width: 16rem !important;
+                max-width: 16rem !important;
+                width: 16rem !important;
+                flex-shrink: 0 !important;
+            }
+
+            /* Ensure main content doesn't affect sidebar */
+            .main-content {
+                min-width: 0;
+                flex: 1;
+                overflow-x: auto;
             }
         </style>
     </body>

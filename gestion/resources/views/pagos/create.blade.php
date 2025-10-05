@@ -111,6 +111,15 @@
                                 <x-input-error :messages="$errors->get('monto_pagado')" class="mt-2" />
                             </div>
 
+                            <!-- Monto en Bs -->
+                            <div>
+                                <x-input-label for="monto_en_bs" :value="__('Monto en Bs')" />
+                                <x-text-input id="monto_en_bs" name="monto_en_bs" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('monto_en_bs')" />
+                                <x-input-error :messages="$errors->get('monto_en_bs')" class="mt-2" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Fecha de Pago -->
                             <div>
                                 <x-input-label for="fecha_pago" :value="__('Fecha de Pago')" />

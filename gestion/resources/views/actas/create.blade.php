@@ -60,6 +60,17 @@
                             <x-input-error :messages="$errors->get('archivo')" class="mt-2" />
                         </div>
 
+                        <!-- Envío de Correo -->
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <div class="flex items-center">
+                                <input id="enviar_correo" name="enviar_correo" type="checkbox" value="1" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" {{ old('enviar_correo') ? 'checked' : '' }}>
+                                <label for="enviar_correo" class="ml-2 block text-sm text-gray-900">
+                                    <span class="font-medium">Enviar comunicación por correo electrónico</span>
+                                    <span class="block text-gray-600 text-xs mt-1">Se enviará un correo con el asunto "Nueva comunicación" a todos los apartamentos que tengan email registrado, incluyendo la fecha, tipo de documento y el archivo adjunto (si existe).</span>
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="flex items-center justify-end space-x-4">
                             <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 Cancelar

@@ -81,6 +81,7 @@ class PagoController extends Controller
             'apartamento_id' => 'required|exists:apartamentos,id',
             'recibo_gasto_comun_id' => 'required|exists:recibo_gasto_comuns,id',
             'monto_pagado' => 'required|numeric|min:0.01',
+            'monto_en_bs' => 'nullable|numeric|min:0',
             'fecha_pago' => 'required|date',
             'metodo_pago' => 'required|in:efectivo,pago_movil,transferencia',
             'numero_comprobante' => 'nullable|string|max:100|unique:pagos,numero_comprobante',

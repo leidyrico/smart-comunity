@@ -14,7 +14,26 @@
         <!-- Styles / Scripts -->
         <script src="https://cdn.tailwindcss.com"></script>
         <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <script src="{{ asset('js/app.js') }}" defer></script>
+        @if(file_exists(public_path('js/app.js')) && filesize(public_path('js/app.js')) > 0)
+            <script src="{{ asset('js/app.js') }}" defer></script>
+        @endif
+        
+        <!-- Configuración adicional de Tailwind para mejor compatibilidad -->
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '#3B82F6',
+                            secondary: '#6B7280',
+                            success: '#10B981',
+                            warning: '#F59E0B',
+                            danger: '#EF4444',
+                        }
+                    }
+                }
+            }
+        </script>
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">

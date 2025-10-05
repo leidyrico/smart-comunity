@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Acta;
+use App\Models\Apartamento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NuevaComunicacion;
 
 class ActaController extends Controller
 {
@@ -61,7 +64,8 @@ class ActaController extends Controller
             'fecha' => 'required|date',
             'descripcion' => 'required|string|min:10',
             'tipo_documento' => 'required|in:Correspondencia,Comunicado,Actas',
-            'archivo' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240' // 10MB máximo
+            'archivo' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240', // 10MB máximo
+            'enviar_correo' => 'sometimes|boolean'
         ], [
             'nro_doc.required' => 'El número de documento es obligatorio.',
             'nro_doc.unique' => 'Este número de documento ya existe.',
@@ -103,13 +107,56 @@ class ActaController extends Controller
         }
 
         // Crear el documento
-        Acta::create($datosActa);
+        $acta = Acta::create($datosActa);
+
+        // Enviar correos si el checkbox está marcado
+        if ($request->has('enviar_correo') && $request->enviar_correo) {
+            $this->enviarComunicacionATodosApartamentos($acta);
+        }
 
         $mensaje = $request->hasFile('archivo') ? 
             'Documento creado exitosamente con archivo adjunto.' : 
             'Documento creado exitosamente sin archivo adjunto.';
 
         return redirect()->route('actas.index')->with('success', $mensaje);
+    }
+
+    /**
+     * Envía la comunicación a todos los apartamentos con email registrado
+     */
+    private function enviarComunicacionATodosApartamentos(Acta $acta)
+    {
+        try {
+            // Obtener todos los apartamentos con email registrado
+            $apartamentos = Apartamento::whereNotNull('email')
+                                     ->where('email', '!=', '')
+                                     ->get();
+
+            $emailsEnviados = 0;
+            $errores = [];
+
+            foreach ($apartamentos as $apartamento) {
+                try {
+                    Mail::to($apartamento->email)->send(new NuevaComunicacion($acta, $apartamento->propietario));
+                    $emailsEnviados++;
+                } catch (\Exception $e) {
+                    $errores[] = "Error enviando a {$apartamento->email}: " . $e->getMessage();
+                    \Log::error("Error enviando comunicación a {$apartamento->email}: " . $e->getMessage());
+                }
+            }
+
+            if ($emailsEnviados > 0) {
+                session()->flash('success', "Comunicación enviada exitosamente a {$emailsEnviados} apartamento(s).");
+            }
+
+            if (!empty($errores)) {
+                session()->flash('warning', 'Algunos correos no pudieron ser enviados. Revise los logs para más detalles.');
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Error general enviando comunicaciones: ' . $e->getMessage());
+            session()->flash('error', 'Error al enviar las comunicaciones. Intente nuevamente.');
+        }
     }
 
     /**

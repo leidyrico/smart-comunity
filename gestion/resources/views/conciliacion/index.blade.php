@@ -38,11 +38,20 @@
             </div>
 
             <!-- Resumen de Totales -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
                 <div class="bg-green-100 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-green-800">
-                        <h3 class="text-lg font-semibold mb-2">Total Ingresos</h3>
+                        <h3 class="text-lg font-semibold mb-2">Total Ingresos USD</h3>
                         <p class="text-3xl font-bold">${{ number_format($totalIngresos, 2, ',', '.') }}</p>
+                        @if($mesSeleccionado)
+                            <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
+                        @endif
+                    </div>
+                </div>
+                <div class="bg-emerald-100 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-emerald-800">
+                        <h3 class="text-lg font-semibold mb-2">Total Ingresos Bs</h3>
+                        <p class="text-3xl font-bold">Bs {{ number_format($totalIngresosEnBs ?? 0, 2, ',', '.') }}</p>
                         @if($mesSeleccionado)
                             <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
                         @endif
@@ -50,8 +59,17 @@
                 </div>
                 <div class="bg-red-100 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-red-800">
-                        <h3 class="text-lg font-semibold mb-2">Total Egresos</h3>
+                        <h3 class="text-lg font-semibold mb-2">Total Egresos USD</h3>
                         <p class="text-3xl font-bold">${{ number_format($totalEgresos, 2, ',', '.') }}</p>
+                        @if($mesSeleccionado)
+                            <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
+                        @endif
+                    </div>
+                </div>
+                <div class="bg-rose-100 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-rose-800">
+                        <h3 class="text-lg font-semibold mb-2">Total Egresos Bs</h3>
+                        <p class="text-3xl font-bold">Bs {{ number_format($totalEgresosEnBs ?? 0, 2, ',', '.') }}</p>
                         @if($mesSeleccionado)
                             <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
                         @endif
@@ -59,9 +77,20 @@
                 </div>
                 <div class="bg-blue-100 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-blue-800">
-                        <h3 class="text-lg font-semibold mb-2">Balance</h3>
+                        <h3 class="text-lg font-semibold mb-2">Balance USD</h3>
                         <p class="text-3xl font-bold {{ $balance >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             ${{ number_format($balance, 2, ',', '.') }}
+                        </p>
+                        @if($mesSeleccionado)
+                            <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
+                        @endif
+                    </div>
+                </div>
+                <div class="bg-indigo-100 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-indigo-800">
+                        <h3 class="text-lg font-semibold mb-2">Balance Bs</h3>
+                        <p class="text-3xl font-bold {{ ($balanceEnBs ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                            Bs {{ number_format($balanceEnBs ?? 0, 2, ',', '.') }}
                         </p>
                         @if($mesSeleccionado)
                             <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
@@ -136,27 +165,31 @@
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apartamento</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recibo</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-                                    </tr>
-                                </thead>
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apartamento</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recibo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto USD</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto Bs</th>
+                            </tr>
+                        </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @forelse($ingresos as $ingreso)
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {{ $ingreso->fecha_pago ? \Carbon\Carbon::parse($ingreso->fecha_pago)->format('d/m/Y') : 'Sin fecha' }}
+                                                {{ \Carbon\Carbon::parse($ingreso->fecha_pago)->format('d/m/Y') }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {{ $ingreso->apartamento ? $ingreso->apartamento->numero : 'N/A' }}
+                                                {{ $ingreso->apartamento->numero ?? 'N/A' }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {{ $ingreso->reciboGastoComun ? $ingreso->reciboGastoComun->numero_recibo : 'N/A' }}
+                                                {{ $ingreso->reciboGastoComun->numero_recibo ?? 'N/A' }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 ${{ number_format($ingreso->monto_pagado, 2, ',', '.') }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                Bs {{ number_format($ingreso->monto_en_bs ?? 0, 2, ',', '.') }}
                                             </td>
                                         </tr>
                                     @empty
@@ -183,7 +216,8 @@
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nro. Factura</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto USD</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto Bs</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
@@ -201,6 +235,9 @@
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
                                                 ${{ number_format($egreso->monto, 2, ',', '.') }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
+                                                Bs {{ number_format($egreso->monto_en_bs ?? 0, 2, ',', '.') }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <form method="POST" action="{{ route('conciliacion.destroy', $egreso->id) }}" 
