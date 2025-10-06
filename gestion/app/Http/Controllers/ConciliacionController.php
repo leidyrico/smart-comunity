@@ -37,17 +37,17 @@ class ConciliacionController extends Controller
             $queryEgresos->whereBetween('fecha', [$fechaInicio, $fechaFin]);
         }
 
-        // Ejecutar las consultas
-        $ingresos = $queryIngresos->orderBy('fecha_pago', 'desc')->get();
-        $egresos = $queryEgresos->orderBy('fecha', 'desc')->get();
-
-        // Calcular totales
-        $totalIngresos = $ingresos->sum('monto_pagado');
-        $totalIngresosEnBs = $ingresos->sum('monto_en_bs');
-        $totalEgresos = $egresos->sum('monto');
-        $totalEgresosEnBs = $egresos->sum('monto_en_bs');
+        // Calcular totales antes de la paginación
+        $totalIngresos = $queryIngresos->sum('monto_pagado');
+        $totalIngresosEnBs = $queryIngresos->sum('monto_en_bs');
+        $totalEgresos = $queryEgresos->sum('monto');
+        $totalEgresosEnBs = $queryEgresos->sum('monto_en_bs');
         $balance = $totalIngresos - $totalEgresos;
         $balanceEnBs = $totalIngresosEnBs - $totalEgresosEnBs;
+
+        // Ejecutar las consultas con paginación
+        $ingresos = $queryIngresos->orderBy('fecha_pago', 'desc')->paginate(15, ['*'], 'ingresos_page');
+        $egresos = $queryEgresos->orderBy('fecha', 'desc')->paginate(15, ['*'], 'egresos_page');
 
         // Obtener lista de meses disponibles para el selector
         $mesesDisponibles = $this->obtenerMesesDisponibles();
@@ -156,18 +156,18 @@ class ConciliacionController extends Controller
             $query->where('periodo', 'like', '%' . $periodoTexto . '%');
         }
 
+        // Obtener total de apartamentos una sola vez
+        $totalApartamentos = Apartamento::count();
+        
         $recibos = $query->orderBy('periodo', 'desc')
-            ->get()
-            ->map(function($recibo) {
+            ->paginate(25) // Paginación de 25 recibos por página
+            ->through(function($recibo) use ($totalApartamentos) {
                 // Contar apartamentos que han pagado este recibo
                 $apartamentosPagados = $recibo->pagos
                     ->where('estado', 'confirmado')
                     ->where('monto_pagado', '>', 0)
                     ->unique('apartamento_id')
                     ->count();
-                
-                // Obtener total de apartamentos (asumiendo que todos los apartamentos deben pagar)
-                $totalApartamentos = Apartamento::count();
                 
                 return [
                     'id' => $recibo->id,

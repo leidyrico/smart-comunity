@@ -14,7 +14,7 @@ class SpaceController extends Controller
      */
     public function index()
     {
-        $spaces = Space::orderBy('nombre')->get();
+        $spaces = Space::orderBy('nombre')->paginate(10);
         return view('spaces.index', compact('spaces'));
     }
 

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Egreso extends Model
 {
-    protected $table = 'egresos_temp_1759253507';
+    protected $table = 'egresos_new';
 
     protected $fillable = [
         'nro_factura',
@@ -14,7 +14,8 @@ class Egreso extends Model
         'comprobante',
         'monto',
         'monto_en_bs',
-        'descripcion'
+        'descripcion',
+        'proveedor_id'
     ];
 
     protected $casts = [
@@ -22,4 +23,12 @@ class Egreso extends Model
         'monto' => 'decimal:2',
         'monto_en_bs' => 'decimal:2'
     ];
+
+    /**
+     * Relación con proveedor
+     */
+    public function proveedor()
+    {
+        return $this->belongsTo(Proveedor::class);
+    }
 }

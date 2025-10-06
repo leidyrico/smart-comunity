@@ -39,7 +39,7 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Período</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Apartamentos</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Apartamentos Asignados</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apartamentos Pagados</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">% Recaudación</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
@@ -96,6 +96,14 @@
                                 <!-- Los datos se cargarán aquí via JavaScript -->
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <!-- Paginación de Recibos -->
+                    <div id="paginacion-recibos" class="px-6 py-4 border-t border-gray-200" style="display: none;">
+                        <div class="flex items-center justify-between">
+                            <div id="info-paginacion" class="text-sm text-gray-700"></div>
+                            <div id="botones-paginacion" class="flex space-x-1"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -218,9 +226,19 @@
         }
 
         // Función para mostrar recibos en la tabla
-        function mostrarRecibos(recibos) {
+        function mostrarRecibos(data) {
             const tbody = document.getElementById('tbody-recibos');
             tbody.innerHTML = '';
+
+            // Si data es un array (respuesta antigua), convertir al nuevo formato
+            let recibos, paginacion;
+            if (Array.isArray(data)) {
+                recibos = data;
+                paginacion = null;
+            } else {
+                recibos = data.data || [];
+                paginacion = data;
+            }
 
             if (recibos.length === 0) {
                 tbody.innerHTML = `
@@ -230,6 +248,8 @@
                         </td>
                     </tr>
                 `;
+                // Ocultar paginación si no hay datos
+                document.getElementById('paginacion-recibos').style.display = 'none';
                 return;
             }
 
@@ -261,6 +281,128 @@
                 `;
                 tbody.appendChild(row);
             });
+
+            // Mostrar paginación si existe
+            if (paginacion && paginacion.last_page > 1) {
+                mostrarPaginacion(paginacion);
+            } else {
+                document.getElementById('paginacion-recibos').style.display = 'none';
+            }
+        }
+
+        // Función para mostrar la paginación
+        function mostrarPaginacion(paginacion) {
+            const contenedorPaginacion = document.getElementById('paginacion-recibos');
+            const infoPaginacion = document.getElementById('info-paginacion');
+            const botonesPaginacion = document.getElementById('botones-paginacion');
+
+            // Mostrar información de paginación
+            infoPaginacion.textContent = `Mostrando ${paginacion.from} a ${paginacion.to} de ${paginacion.total} recibos`;
+
+            // Limpiar botones existentes
+            botonesPaginacion.innerHTML = '';
+
+            // Botón Anterior
+            if (paginacion.current_page > 1) {
+                const btnAnterior = document.createElement('a');
+                btnAnterior.href = '#';
+                btnAnterior.className = 'px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50';
+                btnAnterior.textContent = 'Anterior';
+                btnAnterior.onclick = (e) => {
+                    e.preventDefault();
+                    cargarPagina(paginacion.current_page - 1);
+                };
+                botonesPaginacion.appendChild(btnAnterior);
+            } else {
+                const btnAnterior = document.createElement('span');
+                btnAnterior.className = 'px-3 py-2 text-sm text-gray-400 bg-gray-100 rounded-md cursor-not-allowed';
+                btnAnterior.textContent = 'Anterior';
+                botonesPaginacion.appendChild(btnAnterior);
+            }
+
+            // Números de página
+            for (let i = 1; i <= paginacion.last_page; i++) {
+                if (i === paginacion.current_page) {
+                    const spanActual = document.createElement('span');
+                    spanActual.className = 'px-3 py-2 text-sm text-white bg-blue-600 rounded-md';
+                    spanActual.textContent = i;
+                    botonesPaginacion.appendChild(spanActual);
+                } else {
+                    const btnPagina = document.createElement('a');
+                    btnPagina.href = '#';
+                    btnPagina.className = 'px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50';
+                    btnPagina.textContent = i;
+                    btnPagina.onclick = (e) => {
+                        e.preventDefault();
+                        cargarPagina(i);
+                    };
+                    botonesPaginacion.appendChild(btnPagina);
+                }
+            }
+
+            // Botón Siguiente
+            if (paginacion.current_page < paginacion.last_page) {
+                const btnSiguiente = document.createElement('a');
+                btnSiguiente.href = '#';
+                btnSiguiente.className = 'px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50';
+                btnSiguiente.textContent = 'Siguiente';
+                btnSiguiente.onclick = (e) => {
+                    e.preventDefault();
+                    cargarPagina(paginacion.current_page + 1);
+                };
+                botonesPaginacion.appendChild(btnSiguiente);
+            } else {
+                const btnSiguiente = document.createElement('span');
+                btnSiguiente.className = 'px-3 py-2 text-sm text-gray-400 bg-gray-100 rounded-md cursor-not-allowed';
+                btnSiguiente.textContent = 'Siguiente';
+                botonesPaginacion.appendChild(btnSiguiente);
+            }
+
+            // Mostrar el contenedor de paginación
+            contenedorPaginacion.style.display = 'block';
+        }
+
+        // Función para cargar una página específica
+        function cargarPagina(pagina) {
+            const numero = document.getElementById('filtro-numero').value;
+            const periodo = document.getElementById('filtro-periodo').value;
+            
+            let url = `/api/recaudacion/recibos?page=${pagina}`;
+            const params = new URLSearchParams();
+            
+            if (numero) params.append('numero', numero);
+            if (periodo) params.append('periodo', periodo);
+            
+            if (params.toString()) {
+                url += '&' + params.toString();
+            }
+            
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        if (response.url.includes('/login')) {
+                            window.location.href = '/login';
+                            return;
+                        }
+                        throw new Error('La respuesta no es JSON válido.');
+                    }
+                    
+                    return response.json();
+                })
+                .then(data => {
+                    if (data) {
+                        mostrarRecibos(data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar página:', error);
+                    mostrarError('Error al cargar los recibos. Por favor, intente nuevamente.');
+                });
         }
 
         // Función para ver detalle de un recibo

@@ -221,7 +221,7 @@
                                                         </svg>
                                                     </a>
                                                 @endif
-                                                <button onclick="deleteReciboSimple({{ $recibo->id }}, '{{ addslashes($recibo->numero_recibo) }}')" class="text-red-600 hover:text-red-900 inline-flex items-center" title="Eliminar">
+                                                <button onclick="deleteReciboSimple(event, {{ $recibo->id }}, '{{ addslashes($recibo->numero_recibo) }}')" class="text-red-600 hover:text-red-900 inline-flex items-center" title="Eliminar">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                     </svg>
@@ -358,20 +358,29 @@
     });
     
     // Función simple para eliminar recibo individual
-    function deleteReciboSimple(reciboId, numeroRecibo) {
-        if (confirm(`¿Está seguro de que desea eliminar el recibo ${numeroRecibo}?`)) {
-            currentAction = 'deleteSimple';
-            currentData = { reciboId: reciboId, numeroRecibo: numeroRecibo };
-            document.getElementById('modalMessage').textContent = `Está a punto de eliminar el recibo ${numeroRecibo}. Esta acción no se puede deshacer.`;
-            document.getElementById('modalAdminPassword').value = '';
+    function deleteReciboSimple(event, reciboId, numeroRecibo) {
+        // Prevenir propagación de eventos
+        event.preventDefault();
+        event.stopPropagation();
+        
+        currentAction = 'deleteSimple';
+        currentData = { reciboId: reciboId, numeroRecibo: numeroRecibo };
+        document.getElementById('modalMessage').textContent = `Está a punto de eliminar el recibo ${numeroRecibo}. Esta acción no se puede deshacer.`;
+        document.getElementById('modalAdminPassword').value = '';
+        
+        // Usar setTimeout para evitar conflictos de timing
+        setTimeout(function() {
             document.getElementById('adminPasswordModal').style.display = 'block';
-            document.getElementById('modalAdminPassword').focus();
-        }
+            // Enfocar el campo de contraseña después de un pequeño delay
+            setTimeout(function() {
+                document.getElementById('modalAdminPassword').focus();
+            }, 100);
+        }, 50);
     }
     </script>
 
     <!-- Modal para contraseña de administrador -->
-    <div id="adminPasswordModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);" onclick="cancelarEliminacion()">
+    <div id="adminPasswordModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);" onclick="handleModalBackgroundClick(event)">
         <div style="position: relative; margin: 15% auto; padding: 20px; width: 400px; background-color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onclick="event.stopPropagation()">
             <h3 style="margin-top: 0; color: #dc3545;">Confirmación de Eliminación</h3>
             <p id="modalMessage" style="margin: 15px 0;"></p>
@@ -389,6 +398,13 @@
     <script>
         let currentAction = null;
         let currentData = null;
+
+        function handleModalBackgroundClick(event) {
+            // Solo cerrar si el clic fue exactamente en el fondo del modal
+            if (event.target.id === 'adminPasswordModal') {
+                cancelarEliminacion();
+            }
+        }
 
         function cancelarEliminacion() {
             document.getElementById('adminPasswordModal').style.display = 'none';

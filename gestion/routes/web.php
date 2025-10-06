@@ -9,6 +9,10 @@ use App\Http\Controllers\PagoController;
 use App\Http\Controllers\DeudaController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\ConciliacionController;
+use App\Http\Controllers\SpaceController;
+use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\ProveedorController;
+use App\Http\Controllers\EgresoController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InquilinoController;
 
@@ -112,6 +116,19 @@ Route::resource('recibos', ReciboGastoComunController::class);
     
     // Rutas de Recaudación (submenú de Conciliación)
     Route::get('/conciliacion/recaudacion', [ConciliacionController::class, 'recaudacion'])->name('conciliacion.recaudacion');
+    
+    // Rutas para Espacios
+    Route::resource('spaces', SpaceController::class);
+    
+    // Rutas para Reservas de Espacios
+    Route::resource('reservations', ReservationController::class);
+    Route::post('/reservations/check-availability', [ReservationController::class, 'checkAvailability'])->name('reservations.check-availability');
+    
+    // Rutas para Proveedores
+    Route::resource('proveedores', ProveedorController::class);
+    
+    // Rutas para Egresos
+    Route::resource('egresos', EgresoController::class);
     
     // API endpoints
     Route::get('/api/apartamentos', [ApartamentoController::class, 'getApartamentosApi'])->name('api.apartamentos');

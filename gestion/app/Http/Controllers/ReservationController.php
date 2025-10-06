@@ -7,9 +7,12 @@ use App\Models\Reservation;
 use App\Models\Space;
 use App\Models\Apartamento;
 use App\Models\ReciboGastoComun;
+use App\Models\Pago;
+use App\Mail\ReservationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
 class ReservationController extends Controller
@@ -21,9 +24,11 @@ class ReservationController extends Controller
     {
         $reservations = Reservation::with(['apartamento', 'space', 'recibo'])
             ->orderBy('fecha_reserva', 'desc')
-            ->get();
+            ->paginate(10);
             
-        return view('reservations.index', compact('reservations'));
+        $spaces = Space::activos()->orderBy('nombre')->get();
+            
+        return view('reservations.index', compact('reservations', 'spaces'));
     }
 
     /**
@@ -35,10 +40,10 @@ class ReservationController extends Controller
         $spaces = Space::activos()->orderBy('nombre')->get();
         
         // Fechas disponibles (desde hoy hasta 2 meses)
-        $fechaInicio = Carbon::today();
-        $fechaFin = Carbon::today()->addMonths(2);
+        $fechaMinima = Carbon::today()->format('Y-m-d');
+        $fechaMaxima = Carbon::today()->addMonths(2)->format('Y-m-d');
         
-        return view('reservations.create', compact('apartamentos', 'spaces', 'fechaInicio', 'fechaFin'));
+        return view('reservations.create', compact('apartamentos', 'spaces', 'fechaMinima', 'fechaMaxima'));
     }
 
     /**
@@ -87,6 +92,16 @@ class ReservationController extends Controller
             // Actualizar la reserva con el ID del recibo
             $reservation->update(['recibo_id' => $recibo->id]);
 
+            // Enviar correo de notificación al apartamento
+            if ($apartamento->email) {
+                try {
+                    Mail::to($apartamento->email)->send(new ReservationNotification($reservation, $apartamento, $space));
+                } catch (\Exception $mailException) {
+                    // Log del error pero no fallar la transacción
+                    \Log::warning('Error al enviar correo de reserva: ' . $mailException->getMessage());
+                }
+            }
+
             DB::commit();
 
             return redirect()->route('reservations.index')
@@ -117,10 +132,10 @@ class ReservationController extends Controller
         $apartamentos = Apartamento::orderBy('numero')->get();
         $spaces = Space::activos()->orderBy('nombre')->get();
         
-        $fechaInicio = Carbon::today();
-        $fechaFin = Carbon::today()->addMonths(2);
+        $fechaMinima = Carbon::today()->format('Y-m-d');
+        $fechaMaxima = Carbon::today()->addMonths(2)->format('Y-m-d');
         
-        return view('reservations.edit', compact('reservation', 'apartamentos', 'spaces', 'fechaInicio', 'fechaFin'));
+        return view('reservations.edit', compact('reservation', 'apartamentos', 'spaces', 'fechaMinima', 'fechaMaxima'));
     }
 
     /**
@@ -181,7 +196,7 @@ class ReservationController extends Controller
     public function checkAvailability(Request $request)
     {
         $spaceId = $request->space_id;
-        $date = $request->date;
+        $date = $request->fecha_reserva; // Corregido para coincidir con el JavaScript
         $excludeId = $request->exclude_id;
 
         $available = Reservation::isDateAvailable($spaceId, $date, $excludeId);
@@ -194,17 +209,41 @@ class ReservationController extends Controller
      */
     private function generateReceipt(Reservation $reservation, Apartamento $apartamento, Space $space)
     {
-        $fechaVencimiento = Carbon::parse($reservation->fecha_reserva)->addDays(30);
+        $fechaCreacion = Carbon::now();
+        $fechaReserva = Carbon::parse($reservation->fecha_reserva);
         
-        return ReciboGastoComun::create([
-            'apartamento_id' => $apartamento->id,
-            'mes' => Carbon::parse($reservation->fecha_reserva)->format('m'),
-            'año' => Carbon::parse($reservation->fecha_reserva)->format('Y'),
-            'monto_gasto_comun' => $reservation->monto,
-            'monto_total' => $reservation->monto,
-            'fecha_vencimiento' => $fechaVencimiento,
-            'estado' => 'pendiente',
-            'concepto' => 'Reserva de espacio: ' . $space->nombre . ' - Fecha: ' . Carbon::parse($reservation->fecha_reserva)->format('d/m/Y')
+        // Generar número de recibo con formato: REC-fecha_creación-SALON
+        $numeroRecibo = 'REC-' . $fechaCreacion->format('dmy') . '-SALON';
+        
+        // Crear el recibo
+        $recibo = ReciboGastoComun::create([
+            'numero_recibo' => $numeroRecibo,
+            'periodo' => $fechaReserva->format('m/Y'),
+            'fecha_emision' => $fechaCreacion, // Momento en que se crea la reserva
+            'fecha_vencimiento' => $fechaReserva, // Fecha de la reserva
+            'valor_administracion' => 0,
+            'valor_aseo' => 0,
+            'valor_vigilancia' => 0,
+            'valor_mantenimiento' => 0,
+            'otros_conceptos' => $reservation->monto, // Monto de la reserva
+            'total_recibo' => $reservation->monto,
+            'observaciones' => 'Recibo generado automáticamente por reserva de ' . $space->nombre . ' para el ' . $fechaReserva->format('d/m/Y'),
+            'estado' => 'activo'
         ]);
+        
+        // Crear el registro de pago para asignar el recibo al apartamento
+        // Esto carga el monto al saldo pendiente del apartamento
+        Pago::create([
+            'apartamento_id' => $apartamento->id,
+            'recibo_gasto_comun_id' => $recibo->id,
+            'monto_pagado' => 0, // Sin pago inicial
+            'fecha_pago' => null,
+            'metodo_pago' => 'pendiente',
+            'numero_comprobante' => null,
+            'observaciones' => 'Recibo de reserva de espacio - ' . $space->nombre,
+            'estado' => 'pendiente_confirmacion'
+        ]);
+        
+        return $recibo;
     }
 }

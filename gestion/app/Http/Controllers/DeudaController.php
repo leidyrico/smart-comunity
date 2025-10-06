@@ -70,18 +70,11 @@ class DeudaController extends Controller
 
         // Obtener todos los recibos que tienen pagos asociados (asignados)
         // Incluir recibos que han tenido pagos aunque hayan sido eliminados
-        $recibosActivos = ReciboGastoComun::where('estado', 'activo')
+        // Ordenar todos los recibos de forma descendente por fecha de facturación
+        $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])
             ->whereHas('pagos') // Cualquier recibo que tenga pagos asociados
             ->orderBy('fecha_emision', 'desc')
             ->get();
-            
-        $recibosVencidos = ReciboGastoComun::where('estado', 'vencido')
-            ->whereHas('pagos') // Cualquier recibo que tenga pagos asociados
-            ->orderBy('fecha_emision', 'asc')
-            ->get();
-            
-        // Combinar: primero activos (fijados arriba), luego vencidos ordenados ascendente
-        $recibos = $recibosActivos->concat($recibosVencidos);
 
         // Preparar datos detallados para la tabla
         $datosDeuda = [];
@@ -1385,8 +1378,8 @@ class DeudaController extends Controller
             }
 
             // Obtener recibos que están asignados (manual, automáticamente o por pagos globales)
-            // Usar la misma lógica que en el método index()
-            $recibosActivos = ReciboGastoComun::where('estado', 'activo')
+            // Ordenar todos los recibos de forma descendente por fecha de facturación
+            $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])
                 ->whereHas('pagos', function($query) {
                     $query->where(function($subQuery) {
                         $subQuery->where('observaciones', 'like', '%Asignación manual%')
@@ -1396,24 +1389,8 @@ class DeudaController extends Controller
                 })
                 ->orderBy('fecha_emision', 'desc')
                 ->get();
-                
-            $recibosVencidos = ReciboGastoComun::where('estado', 'vencido')
-                ->whereHas('pagos', function($query) {
-                    $query->where(function($subQuery) {
-                        $subQuery->where('observaciones', 'like', '%Asignación manual%')
-                                 ->orWhere('observaciones', 'like', '%Pago global distribuido automáticamente%')
-                                 ->orWhere('observaciones', 'like', '%Recibo asignado automáticamente%');
-                    });
-                })
-                ->orderBy('fecha_emision', 'asc')
-                ->get();
-                
-            // Combinar: primero activos, luego vencidos
-            $recibos = $recibosActivos->concat($recibosVencidos);
             
             \Log::info('Recibos encontrados:', [
-                'activos' => $recibosActivos->count(),
-                'vencidos' => $recibosVencidos->count(),
                 'total' => $recibos->count()
             ]);
 

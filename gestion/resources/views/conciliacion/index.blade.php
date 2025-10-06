@@ -38,68 +38,76 @@
             </div>
 
             <!-- Resumen de Totales -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
-                <div class="bg-green-100 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-green-800">
-                        <h3 class="text-lg font-semibold mb-2">Total Ingresos USD</h3>
-                        <p class="text-3xl font-bold">${{ number_format($totalIngresos, 2, ',', '.') }}</p>
-                        @if($mesSeleccionado)
-                            <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
-                        @endif
+            <div class="mb-8">
+                <!-- Primera fila: USD -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-green-100 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6 text-green-800">
+                            <h3 class="text-lg font-semibold mb-2">Total Ingresos USD</h3>
+                            <p class="text-3xl font-bold">${{ number_format($totalIngresos, 2, ',', '.') }}</p>
+                            @if($mesSeleccionado)
+                                <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="bg-red-100 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6 text-red-800">
+                            <h3 class="text-lg font-semibold mb-2">Total Egresos USD</h3>
+                            <p class="text-3xl font-bold">${{ number_format($totalEgresos, 2, ',', '.') }}</p>
+                            @if($mesSeleccionado)
+                                <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="bg-blue-100 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6 text-blue-800">
+                            <h3 class="text-lg font-semibold mb-2">Balance USD</h3>
+                            <p class="text-3xl font-bold {{ $balance >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                ${{ number_format($balance, 2, ',', '.') }}
+                            </p>
+                            @if($mesSeleccionado)
+                                <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
+                            @endif
+                        </div>
                     </div>
                 </div>
-                <div class="bg-emerald-100 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-emerald-800">
-                        <h3 class="text-lg font-semibold mb-2">Total Ingresos Bs</h3>
-                        <p class="text-3xl font-bold">Bs {{ number_format($totalIngresosEnBs ?? 0, 2, ',', '.') }}</p>
-                        @if($mesSeleccionado)
-                            <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
-                        @endif
+                
+                <!-- Segunda fila: Bs -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-emerald-100 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6 text-emerald-800">
+                            <h3 class="text-lg font-semibold mb-2">Total Ingresos Bs</h3>
+                            <p class="text-3xl font-bold">Bs {{ number_format($totalIngresosEnBs ?? 0, 2, ',', '.') }}</p>
+                            @if($mesSeleccionado)
+                                <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
+                            @endif
+                        </div>
                     </div>
-                </div>
-                <div class="bg-red-100 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-red-800">
-                        <h3 class="text-lg font-semibold mb-2">Total Egresos USD</h3>
-                        <p class="text-3xl font-bold">${{ number_format($totalEgresos, 2, ',', '.') }}</p>
-                        @if($mesSeleccionado)
-                            <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
-                        @endif
+                    <div class="bg-rose-100 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6 text-rose-800">
+                            <h3 class="text-lg font-semibold mb-2">Total Egresos Bs</h3>
+                            <p class="text-3xl font-bold">Bs {{ number_format($totalEgresosEnBs ?? 0, 2, ',', '.') }}</p>
+                            @if($mesSeleccionado)
+                                <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
+                            @endif
+                        </div>
                     </div>
-                </div>
-                <div class="bg-rose-100 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-rose-800">
-                        <h3 class="text-lg font-semibold mb-2">Total Egresos Bs</h3>
-                        <p class="text-3xl font-bold">Bs {{ number_format($totalEgresosEnBs ?? 0, 2, ',', '.') }}</p>
-                        @if($mesSeleccionado)
-                            <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
-                        @endif
-                    </div>
-                </div>
-                <div class="bg-blue-100 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-blue-800">
-                        <h3 class="text-lg font-semibold mb-2">Balance USD</h3>
-                        <p class="text-3xl font-bold {{ $balance >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            ${{ number_format($balance, 2, ',', '.') }}
-                        </p>
-                        @if($mesSeleccionado)
-                            <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
-                        @endif
-                    </div>
-                </div>
-                <div class="bg-indigo-100 overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-indigo-800">
-                        <h3 class="text-lg font-semibold mb-2">Balance Bs</h3>
-                        <p class="text-3xl font-bold {{ ($balanceEnBs ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                            Bs {{ number_format($balanceEnBs ?? 0, 2, ',', '.') }}
-                        </p>
-                        @if($mesSeleccionado)
-                            <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
-                        @endif
+                    <div class="bg-indigo-100 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6 text-indigo-800">
+                            <h3 class="text-lg font-semibold mb-2">Balance Bs</h3>
+                            <p class="text-3xl font-bold {{ ($balanceEnBs ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                Bs {{ number_format($balanceEnBs ?? 0, 2, ',', '.') }}
+                            </p>
+                            @if($mesSeleccionado)
+                                <small class="text-sm">{{ \Carbon\Carbon::createFromFormat('Y-m', $mesSeleccionado)->locale('es')->isoFormat('MMMM YYYY') }}</small>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Formulario para Nuevo Egreso -->
+            {{-- Formulario para Nuevo Egreso - Oculto temporalmente, se moverá a un nuevo módulo --}}
+            {{--
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-8">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold mb-4">Registrar Nuevo Egreso</h3>
@@ -155,6 +163,7 @@
                     </form>
                 </div>
             </div>
+            --}}
 
             <!-- Tablas de Ingresos y Egresos -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -167,7 +176,7 @@
                                 <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apartamento</th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Apto</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recibo</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto USD</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto Bs</th>
@@ -179,7 +188,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {{ \Carbon\Carbon::parse($ingreso->fecha_pago)->format('d/m/Y') }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900 w-20">
                                                 {{ $ingreso->apartamento->numero ?? 'N/A' }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -194,7 +203,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">
                                                 No hay ingresos registrados
                                             </td>
                                         </tr>
@@ -202,6 +211,44 @@
                                 </tbody>
                             </table>
                         </div>
+                        
+                        <!-- Paginación de Ingresos -->
+                        @if($ingresos->hasPages())
+                            <div class="px-6 py-4 border-t border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="text-sm text-gray-700">
+                                        Mostrando {{ $ingresos->firstItem() }} a {{ $ingresos->lastItem() }} de {{ $ingresos->total() }} ingresos
+                                    </div>
+                                    <div class="flex space-x-1">
+                                        {{-- Botón Anterior --}}
+                                        @if ($ingresos->onFirstPage())
+                                            <span class="px-3 py-2 text-sm text-gray-400 bg-gray-100 rounded-md cursor-not-allowed">Anterior</span>
+                                        @else
+                                            <a href="{{ $ingresos->appends(request()->query())->previousPageUrl() }}" 
+                                               class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Anterior</a>
+                                        @endif
+
+                                        {{-- Números de página --}}
+                                        @foreach ($ingresos->appends(request()->query())->getUrlRange(1, $ingresos->lastPage()) as $page => $url)
+                                            @if ($page == $ingresos->currentPage())
+                                                <span class="px-3 py-2 text-sm text-white bg-blue-600 rounded-md">{{ $page }}</span>
+                                            @else
+                                                <a href="{{ $url }}" 
+                                                   class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">{{ $page }}</a>
+                                            @endif
+                                        @endforeach
+
+                                        {{-- Botón Siguiente --}}
+                                        @if ($ingresos->hasMorePages())
+                                            <a href="{{ $ingresos->appends(request()->query())->nextPageUrl() }}" 
+                                               class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Siguiente</a>
+                                        @else
+                                            <span class="px-3 py-2 text-sm text-gray-400 bg-gray-100 rounded-md cursor-not-allowed">Siguiente</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -218,7 +265,6 @@
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto USD</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto Bs</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -239,19 +285,6 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
                                                 Bs {{ number_format($egreso->monto_en_bs ?? 0, 2, ',', '.') }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <form method="POST" action="{{ route('conciliacion.destroy', $egreso->id) }}" 
-                                                      onsubmit="return confirm('¿Está seguro de eliminar este egreso?')" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-900">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                        </svg>
-                                                    </button>
-                                                </form>
-                                            </td>
                                         </tr>
                                     @empty
                                         <tr>
@@ -263,6 +296,44 @@
                                 </tbody>
                             </table>
                         </div>
+                        
+                        <!-- Paginación de Egresos -->
+                        @if(method_exists($egresos, 'hasPages') && $egresos->hasPages())
+                            <div class="px-6 py-4 border-t border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <div class="text-sm text-gray-700">
+                                        Mostrando {{ $egresos->firstItem() }} a {{ $egresos->lastItem() }} de {{ $egresos->total() }} egresos
+                                    </div>
+                                    <div class="flex space-x-1">
+                                        {{-- Botón Anterior --}}
+                                        @if ($egresos->onFirstPage())
+                                            <span class="px-3 py-2 text-sm text-gray-400 bg-gray-100 rounded-md cursor-not-allowed">Anterior</span>
+                                        @else
+                                            <a href="{{ $egresos->appends(request()->query())->previousPageUrl() }}" 
+                                               class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Anterior</a>
+                                        @endif
+
+                                        {{-- Números de página --}}
+                                        @foreach ($egresos->appends(request()->query())->getUrlRange(1, $egresos->lastPage()) as $page => $url)
+                                            @if ($page == $egresos->currentPage())
+                                                <span class="px-3 py-2 text-sm text-white bg-blue-600 rounded-md">{{ $page }}</span>
+                                            @else
+                                                <a href="{{ $url }}" 
+                                                   class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">{{ $page }}</a>
+                                            @endif
+                                        @endforeach
+
+                                        {{-- Botón Siguiente --}}
+                                        @if ($egresos->hasMorePages())
+                                            <a href="{{ $egresos->appends(request()->query())->nextPageUrl() }}" 
+                                               class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Siguiente</a>
+                                        @else
+                                            <span class="px-3 py-2 text-sm text-gray-400 bg-gray-100 rounded-md cursor-not-allowed">Siguiente</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

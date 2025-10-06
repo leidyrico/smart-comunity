@@ -279,13 +279,11 @@
                         function confirmarEliminacionRecibo(event, numeroRecibo) {
                             event.preventDefault();
                             
-                            if (confirm(`¿Está seguro de que desea eliminar el recibo ${numeroRecibo}?`)) {
-                                currentForm = event.target;
-                                document.getElementById('modalMessage').textContent = `Está a punto de eliminar el recibo ${numeroRecibo}. Esta acción no se puede deshacer.`;
-                                document.getElementById('modalAdminPassword').value = '';
-                                document.getElementById('adminPasswordModal').style.display = 'block';
-                                document.getElementById('modalAdminPassword').focus();
-                            }
+                            currentForm = event.target;
+                            document.getElementById('modalMessage').textContent = `Está a punto de eliminar el recibo ${numeroRecibo}. Esta acción no se puede deshacer.`;
+                            document.getElementById('modalAdminPassword').value = '';
+                            document.getElementById('adminPasswordModal').style.display = 'block';
+                            document.getElementById('modalAdminPassword').focus();
                             
                             return false;
                         }

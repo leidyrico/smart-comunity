@@ -90,11 +90,62 @@
                         </div>
                     </div>
 
+                    <!-- Reserva de Espacios -->
+                    <div class="mb-2">
+                        <button onclick="toggleSidebarSubmenu('reservations-submenu')" class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('spaces.*') || request()->routeIs('reservations.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar-alt w-5 h-5 mr-3"></i>
+                                Reserva de Espacios
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="reservations-submenu" class="ml-6 mt-2 space-y-1 {{ request()->routeIs('spaces.*') || request()->routeIs('reservations.*') ? '' : 'hidden' }}">
+                            <a href="{{ route('spaces.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Gestionar Espacios
+                            </a>
+                            <a href="{{ route('spaces.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Crear Espacio
+                            </a>
+                            <a href="{{ route('reservations.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Ver Reservas
+                            </a>
+                            <a href="{{ route('reservations.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Nueva Reserva
+                            </a>
+                        </div>
+                    </div>
+
                     <!-- Gestión de Deudas -->
                     <a href="{{ route('deudas.index') }}" class="flex items-center px-3 py-2 mb-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('deudas.*') ? 'bg-blue-100 text-blue-700 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
                         <i class="fas fa-exclamation-triangle w-5 h-5 mr-3"></i>
                         Gestión de Deudas
                     </a>
+
+                    <!-- Gestión de Egresos -->
+                    <div class="mb-2">
+                        <button onclick="toggleSidebarSubmenu('egresos-submenu')" class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('egresos.*') || request()->routeIs('proveedores.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <div class="flex items-center">
+                                <i class="fas fa-money-bill-wave w-5 h-5 mr-3"></i>
+                                Gestión de Egresos
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="egresos-submenu" class="ml-6 mt-2 space-y-1 {{ request()->routeIs('egresos.*') || request()->routeIs('proveedores.*') ? '' : 'hidden' }}">
+                            <a href="{{ route('proveedores.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Proveedores
+                            </a>
+                            <a href="{{ route('egresos.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Ver Egresos
+                            </a>
+                            <a href="{{ route('egresos.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Crear Egreso
+                            </a>
+                        </div>
+                    </div>
 
                     <!-- Conciliación -->
                     <div class="mb-2">

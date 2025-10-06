@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('egresos_temp_1759253507', function (Blueprint $table) {
-            $table->decimal('monto_en_bs', 15, 2)->nullable()->after('monto');
+            $table->foreignId('proveedor_id')->nullable()->constrained('proveedors')->onDelete('set null');
         });
     }
 
@@ -22,7 +22,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('egresos_temp_1759253507', function (Blueprint $table) {
-            $table->dropColumn('monto_en_bs');
+            $table->dropForeign(['proveedor_id']);
+            $table->dropColumn('proveedor_id');
         });
     }
 };

@@ -41,18 +41,33 @@ class DashboardController extends Controller
         
         $estadisticasUltimoRecibo = null;
         if ($ultimoRecibo) {
+            // Obtener IDs de apartamentos que deben ser excluidos de las estadísticas
+            $apartamentosExcluidos = Apartamento::where(function($query) {
+                $query->where('numero', 'like', '%-E%')
+                      ->orWhere('numero', 'like', '%-INUN%')
+                      ->orWhere('numero', 'like', '%-SALON%')
+                      ->orWhere('numero', 'like', '%Abg%');
+            })->pluck('id');
+            
+            // Calcular total de recaudación excluyendo apartamentos específicos
             $totalRecaudacion = $ultimoRecibo->pagos()
                 ->where('estado', 'confirmado')
+                ->whereNotIn('apartamento_id', $apartamentosExcluidos)
                 ->sum('monto_pagado');
             
+            // Contar apartamentos pagados excluyendo apartamentos específicos
             $apartamentosPagados = $ultimoRecibo->pagos()
                 ->where('estado', 'confirmado')
                 ->where('monto_pagado', '>', 0)
+                ->whereNotIn('apartamento_id', $apartamentosExcluidos)
                 ->distinct('apartamento_id')
                 ->count();
             
-            $porcentajeRecaudacion = $ultimoRecibo->total_recibo > 0 
-                ? ($totalRecaudacion / ($ultimoRecibo->total_recibo * $totalApartamentos)) * 100 
+            // Calcular total de apartamentos válidos (excluyendo los específicos)
+            $totalApartamentosValidos = $totalApartamentos - $apartamentosExcluidos->count();
+            
+            $porcentajeRecaudacion = $ultimoRecibo->total_recibo > 0 && $totalApartamentosValidos > 0
+                ? ($totalRecaudacion / ($ultimoRecibo->total_recibo * $totalApartamentosValidos)) * 100 
                 : 0;
             
             $estadisticasUltimoRecibo = [
@@ -60,7 +75,7 @@ class DashboardController extends Controller
                 'total_recaudacion' => $totalRecaudacion,
                 'porcentaje_recaudacion' => round($porcentajeRecaudacion, 2),
                 'apartamentos_pagados' => $apartamentosPagados,
-                'total_apartamentos' => $totalApartamentos
+                'total_apartamentos' => $totalApartamentosValidos
             ];
         }
         
