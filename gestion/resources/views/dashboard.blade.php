@@ -1,8 +1,17 @@
 <x-app-with-sidebar>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
+        <div class="flex justify-between items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Dashboard') }}
+            </h2>
+            <a href="{{ route('dashboard.pdf') }}" 
+               class="inline-flex items-center px-2 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-900 focus:outline-none focus:border-red-900 focus:ring ring-red-300 disabled:opacity-25 transition ease-in-out duration-150"
+               title="Generar PDF del Dashboard">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"></path>
+                </svg>
+            </a>
+        </div>
     </x-slot>
 
     <!-- Estilos adicionales para mejor apariencia -->
@@ -124,7 +133,6 @@
                                         <div>
                                             <p class="font-medium text-gray-900">Apto {{ $pago->apartamento->numero }}</p>
                                             <p class="text-sm text-gray-600">{{ $pago->fecha_pago ? $pago->fecha_pago->format('d/m/Y') : 'Sin fecha' }}</p>
-                                            <p class="text-xs text-gray-500">{{ $pago->reciboGastoComun->periodo ?? 'Sin período' }}</p>
                                         </div>
                                         <div class="text-right">
                                             <p class="font-bold text-green-600">${{ number_format($pago->monto_pagado, 2) }}</p>

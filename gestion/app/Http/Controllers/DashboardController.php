@@ -7,6 +7,7 @@ use App\Models\Apartamento;
 use App\Models\ReciboGastoComun;
 use App\Models\Pago;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class DashboardController extends Controller
 {
@@ -86,5 +87,79 @@ class DashboardController extends Controller
             'ultimosPagos',
             'estadisticasUltimoRecibo'
         ));
+    }
+
+    public function generatePdf()
+    {
+        // Obtener los mismos datos que en el método index
+        $totalApartamentos = Apartamento::count();
+        
+        $apartamentos = Apartamento::all();
+        $saldoPendienteTotal = $apartamentos->sum(function($apartamento) {
+            return $apartamento->saldo_pendiente;
+        });
+        
+        $apartamentosMorosos = $apartamentos->filter(function($apartamento) {
+            return $apartamento->saldo_pendiente > 0;
+        })->sortByDesc('saldo_pendiente')->take(5)->values();
+        
+        $ultimosPagos = Pago::with(['apartamento', 'reciboGastoComun'])
+            ->where('estado', 'confirmado')
+            ->orderBy('fecha_pago', 'desc')
+            ->take(5)
+            ->get();
+        
+        $ultimoRecibo = ReciboGastoComun::where('estado', 'activo')
+            ->orderBy('fecha_emision', 'desc')
+            ->first();
+        
+        $estadisticasUltimoRecibo = null;
+        if ($ultimoRecibo) {
+            $apartamentosExcluidos = Apartamento::where(function($query) {
+                $query->where('numero', 'like', '%-E%')
+                      ->orWhere('numero', 'like', '%-INUN%')
+                      ->orWhere('numero', 'like', '%-SALON%')
+                      ->orWhere('numero', 'like', '%Abg%');
+            })->pluck('id');
+            
+            $totalRecaudacion = $ultimoRecibo->pagos()
+                ->where('estado', 'confirmado')
+                ->whereNotIn('apartamento_id', $apartamentosExcluidos)
+                ->sum('monto_pagado');
+            
+            $apartamentosPagados = $ultimoRecibo->pagos()
+                ->where('estado', 'confirmado')
+                ->where('monto_pagado', '>', 0)
+                ->whereNotIn('apartamento_id', $apartamentosExcluidos)
+                ->distinct('apartamento_id')
+                ->count();
+            
+            $totalApartamentosValidos = $totalApartamentos - $apartamentosExcluidos->count();
+            
+            $porcentajeRecaudacion = $ultimoRecibo->total_recibo > 0 && $totalApartamentosValidos > 0
+                ? ($totalRecaudacion / ($ultimoRecibo->total_recibo * $totalApartamentosValidos)) * 100 
+                : 0;
+            
+            $estadisticasUltimoRecibo = [
+                'recibo' => $ultimoRecibo,
+                'total_recaudacion' => $totalRecaudacion,
+                'porcentaje_recaudacion' => round($porcentajeRecaudacion, 2),
+                'apartamentos_pagados' => $apartamentosPagados,
+                'total_apartamentos' => $totalApartamentosValidos
+            ];
+        }
+
+        // Generar PDF usando la vista específica para PDF
+        $pdf = PDF::loadView('dashboard-pdf', compact(
+            'totalApartamentos', 
+            'saldoPendienteTotal',
+            'apartamentosMorosos',
+            'ultimosPagos',
+            'estadisticasUltimoRecibo'
+        ));
+
+        $pdf->setPaper('A4', 'portrait');
+        
+        return $pdf->download('dashboard-' . date('Y-m-d') . '.pdf');
     }
 }
