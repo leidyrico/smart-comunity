@@ -58,12 +58,12 @@
                             </div>
                             <div class="flex-1 min-w-48">
                                 <label for="fecha_desde" class="block text-sm font-medium text-gray-700 mb-1">Desde</label>
-                                <input type="date" name="fecha_desde" id="fecha_desde" value="{{ request('fecha_desde') }}" 
+                                <input type="date" name="fecha_desde" id="fecha_desde" value="{{ request('fecha_desde') }}" lang="es-VE" placeholder="dd/MM/yyyy"
                                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             </div>
                             <div class="flex-1 min-w-48">
                                 <label for="fecha_hasta" class="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
-                                <input type="date" name="fecha_hasta" id="fecha_hasta" value="{{ request('fecha_hasta') }}" 
+                                <input type="date" name="fecha_hasta" id="fecha_hasta" value="{{ request('fecha_hasta') }}" lang="es-VE" placeholder="dd/MM/yyyy"
                                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             </div>
                             <div class="flex gap-2">

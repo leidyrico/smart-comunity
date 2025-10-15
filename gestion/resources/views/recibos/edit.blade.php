@@ -31,14 +31,14 @@
                             <!-- Fecha de Emisión -->
                             <div>
                                 <x-input-label for="fecha_emision" :value="__('Fecha de Emisión')" />
-                                <x-text-input id="fecha_emision" class="block mt-1 w-full" type="date" name="fecha_emision" :value="old('fecha_emision', $recibo->fecha_emision->format('Y-m-d'))" required />
+                                <x-text-input id="fecha_emision" class="block mt-1 w-full" type="date" name="fecha_emision" :value="old('fecha_emision', $recibo->fecha_emision->format('Y-m-d'))" required lang="es-VE" placeholder="dd/MM/yyyy" />
                                 <x-input-error :messages="$errors->get('fecha_emision')" class="mt-2" />
                             </div>
 
                             <!-- Fecha de Vencimiento -->
                             <div>
                                 <x-input-label for="fecha_vencimiento" :value="__('Fecha de Vencimiento')" />
-                                <x-text-input id="fecha_vencimiento" class="block mt-1 w-full" type="date" name="fecha_vencimiento" :value="old('fecha_vencimiento', $recibo->fecha_vencimiento->format('Y-m-d'))" required />
+                                <x-text-input id="fecha_vencimiento" class="block mt-1 w-full" type="date" name="fecha_vencimiento" :value="old('fecha_vencimiento', $recibo->fecha_vencimiento->format('Y-m-d'))" required lang="es-VE" placeholder="dd/MM/yyyy" />
                                 <x-input-error :messages="$errors->get('fecha_vencimiento')" class="mt-2" />
                             </div>
 

@@ -30,6 +30,10 @@
         </script>
         <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
         <script src="{{ asset('js/app.js') }}" defer></script>
+        <!-- Flatpickr for consistent dd/MM/yyyy calendar display -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js" defer></script>
     </head>
     <body class="font-sans antialiased bg-gray-100">
         <div class="flex h-screen">
@@ -370,34 +374,32 @@
             });
         </script>
         
-        <!-- Global date input formatting to dd/MM/yyyy -->
+        <!-- Global date input calendar with Flatpickr showing dd/MM/yyyy, submitting ISO -->
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                if (!window.flatpickr) return;
                 const dateInputs = document.querySelectorAll('input[type="date"]');
                 dateInputs.forEach(function(input) {
-                    // Ensure Spanish (Venezuela) locale for native date pickers
-                    if (!input.hasAttribute('lang')) {
-                        input.setAttribute('lang', 'es-VE');
-                    }
-                    // Hint the desired format in supported UAs
-                    input.setAttribute('placeholder', 'dd/MM/yyyy');
+                    const classes = input.className || '';
+                    const required = input.required;
+                    const placeholder = input.getAttribute('placeholder') || 'dd/MM/yyyy';
+                    const defaultDate = input.value || null;
+                    if (!input.hasAttribute('lang')) input.setAttribute('lang', 'es-VE');
                     input.setAttribute('aria-label', 'Formato de fecha dd/MM/yyyy');
 
-                    // Fallback: if browser treats type=date as text or user pastes dd/MM/yyyy, normalize to ISO for backend
-                    input.addEventListener('blur', function() {
-                        const raw = input.value;
-                        if (raw && raw.includes('/')) {
-                            const parts = raw.split('/');
-                            if (parts.length === 3) {
-                                const d = parts[0].padStart(2, '0');
-                                const m = parts[1].padStart(2, '0');
-                                const y = parts[2];
-                                const iso = `${y}-${m}-${d}`;
-                                // Only assign if valid date
-                                const testDate = new Date(iso);
-                                if (!isNaN(testDate.getTime())) {
-                                    input.value = iso;
-                                }
+                    flatpickr(input, {
+                        locale: 'es',
+                        dateFormat: 'Y-m-d',      // valor enviado al backend
+                        altInput: true,            // input visible al usuario
+                        altFormat: 'd/m/Y',        // formato mostrado
+                        altInputClass: classes || 'mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm',
+                        allowInput: true,
+                        defaultDate: defaultDate,
+                        onReady: function(selectedDates, dateStr, instance) {
+                            if (instance.altInput) {
+                                instance.altInput.placeholder = placeholder;
+                                if (required) instance.altInput.required = true;
+                                instance.altInput.setAttribute('aria-label', 'Formato de fecha dd/MM/yyyy');
                             }
                         }
                     });

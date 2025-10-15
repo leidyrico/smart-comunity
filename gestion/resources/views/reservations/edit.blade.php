@@ -75,7 +75,7 @@
                                 <!-- Fecha de reserva -->
                                 <div>
                                     <x-input-label for="fecha_reserva" :value="__('Fecha de Reserva')" />
-                                    <input type="date" id="fecha_reserva" name="fecha_reserva" 
+                                    <input type="date" id="fecha_reserva" name="fecha_reserva" lang="es-VE" placeholder="dd/MM/yyyy"
                                         class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                         min="{{ $fechaMinima }}" max="{{ $fechaMaxima }}" 
                                         value="{{ old('fecha_reserva', $reservation->fecha_reserva->format('Y-m-d')) }}" required>

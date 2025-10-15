@@ -45,7 +45,7 @@
                         <!-- Fecha Último Pago (Opcional) -->
                         <div class="mb-4">
                             <x-input-label for="fecha_ultimo_pago" :value="__('Fecha del Último Pago (Opcional)')" />
-                            <x-text-input id="fecha_ultimo_pago" class="block mt-1 w-full" type="date" name="fecha_ultimo_pago" :value="old('fecha_ultimo_pago')" />
+                            <x-text-input id="fecha_ultimo_pago" class="block mt-1 w-full" type="date" name="fecha_ultimo_pago" :value="old('fecha_ultimo_pago')" lang="es-VE" placeholder="dd/MM/yyyy" />
                             <x-input-error :messages="$errors->get('fecha_ultimo_pago')" class="mt-2" />
                         </div>
 

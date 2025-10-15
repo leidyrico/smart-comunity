@@ -41,7 +41,7 @@
                         <!-- Fecha -->
                         <div>
                             <x-input-label for="fecha" :value="__('Fecha')" />
-                            <x-text-input id="fecha" class="block mt-1 w-full" type="date" name="fecha" :value="old('fecha')" required />
+                            <x-text-input id="fecha" class="block mt-1 w-full" type="date" name="fecha" :value="old('fecha')" required lang="es-VE" placeholder="dd/MM/yyyy" />
                             <x-input-error :messages="$errors->get('fecha')" class="mt-2" />
                         </div>
 

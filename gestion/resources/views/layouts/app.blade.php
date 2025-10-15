@@ -17,6 +17,10 @@
         @if(file_exists(public_path('js/app.js')) && filesize(public_path('js/app.js')) > 0)
             <script src="{{ asset('js/app.js') }}" defer></script>
         @endif
+        <!-- Flatpickr for consistent dd/MM/yyyy calendar display -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js" defer></script>
         
         <!-- Configuración adicional de Tailwind para mejor compatibilidad -->
         <script>
@@ -53,5 +57,38 @@
                 @yield('content')
             </main>
         </div>
+        
+        <!-- Global date input calendar with Flatpickr showing dd/MM/yyyy, submitting ISO -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (!window.flatpickr) return;
+                const dateInputs = document.querySelectorAll('input[type="date"]');
+                dateInputs.forEach(function(input) {
+                    const classes = input.className || '';
+                    const required = input.required;
+                    const placeholder = input.getAttribute('placeholder') || 'dd/MM/yyyy';
+                    const defaultDate = input.value || null;
+                    if (!input.hasAttribute('lang')) input.setAttribute('lang', 'es-VE');
+                    input.setAttribute('aria-label', 'Formato de fecha dd/MM/yyyy');
+
+                    flatpickr(input, {
+                        locale: 'es',
+                        dateFormat: 'Y-m-d',
+                        altInput: true,
+                        altFormat: 'd/m/Y',
+                        altInputClass: classes || 'mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm',
+                        allowInput: true,
+                        defaultDate: defaultDate,
+                        onReady: function(selectedDates, dateStr, instance) {
+                            if (instance.altInput) {
+                                instance.altInput.placeholder = placeholder;
+                                if (required) instance.altInput.required = true;
+                                instance.altInput.setAttribute('aria-label', 'Formato de fecha dd/MM/yyyy');
+                            }
+                        }
+                    });
+                });
+            });
+        </script>
     </body>
 </html>

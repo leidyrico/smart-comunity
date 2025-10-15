@@ -54,6 +54,8 @@
                                        id="fecha_desde" 
                                        name="fecha_desde" 
                                        value="{{ request('fecha_desde') }}"
+                                       lang="es-VE" 
+                                       placeholder="dd/MM/yyyy"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             </div>
 
@@ -64,6 +66,8 @@
                                        id="fecha_hasta" 
                                        name="fecha_hasta" 
                                        value="{{ request('fecha_hasta') }}"
+                                       lang="es-VE" 
+                                       placeholder="dd/MM/yyyy"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             </div>
 
