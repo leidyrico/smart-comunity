@@ -56,6 +56,8 @@
                                            id="fecha_pago" 
                                            name="fecha_pago" 
                                            value="{{ old('fecha_pago', date('Y-m-d')) }}" 
+                                           lang="es-VE" 
+                                           placeholder="dd/MM/yyyy"
                                            required>
                                     @error('fecha_pago')
                                         <div class="text-red-500 text-sm mt-1">{{ $message }}</div>

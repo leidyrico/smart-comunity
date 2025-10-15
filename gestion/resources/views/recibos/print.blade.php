@@ -339,7 +339,7 @@
                 <tr>
                     <td>{{ $pago->apartamento->numero ?? 'N/A' }}</td>
                     <td class="amount">${{ number_format($pago->monto_pagado, 0, ',', '.') }}</td>
-                    <td>{{ $pago->fecha_pago->format('d/m/Y') }}</td>
+                    <td>{{ $pago->fecha_pago ? $pago->fecha_pago->format('d/m/Y') : 'Pendiente' }}</td>
                     <td>{{ ucfirst(str_replace('_', ' ', $pago->metodo_pago)) }}</td>
                     <td>{{ $pago->numero_comprobante ?? 'N/A' }}</td>
                     <td>

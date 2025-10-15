@@ -81,7 +81,10 @@ class ReciboGastoComun extends Model
      */
     public function getTotalPagadoAttribute()
     {
-        return $this->pagos()->sum('monto_pagado');
+        // Solo considerar pagos confirmados reales (sin pruebas) y con monto > 0
+        return $this->pagos()
+            ->confirmadosReales()
+            ->sum('monto_pagado');
     }
 
     /**
@@ -89,7 +92,8 @@ class ReciboGastoComun extends Model
      */
     public function getSaldoPendienteAttribute()
     {
-        return $this->total_recibo - $this->total_pagado;
+        // Evitar saldos negativos y excluir pagos de prueba
+        return max(0, $this->total_recibo - $this->total_pagado);
     }
 
     /**

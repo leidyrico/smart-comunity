@@ -33,6 +33,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'apartamento_id',
         'role',
         'status',
     ];
@@ -113,5 +114,13 @@ class User extends Authenticatable
             self::ROLE_USUARIO_JUNTA_VECINOS => 'Usuario Junta de Vecinos',
             self::ROLE_ADMIN => 'Administrador',
         ];
+    }
+
+    /**
+     * Relación con Apartamento
+     */
+    public function apartamento()
+    {
+        return $this->belongsTo(Apartamento::class);
     }
 }

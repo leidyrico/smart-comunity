@@ -34,13 +34,13 @@ $credentials = [
 ];
 
 echo "Credenciales a probar:\n";
-echo "  User: {$credentials['user']}\n";
+echo "  Email: {$credentials['email']}\n";
 echo "  Password: {$credentials['password']}\n\n";
 
 // Intentar autenticación
 if (Auth::attempt($credentials)) {
     echo "✓ AUTENTICACIÓN EXITOSA!\n";
-    echo "Usuario autenticado: " . Auth::user()->user . "\n";
+    echo "Usuario autenticado: " . Auth::user()->email . "\n";
     Auth::logout(); // Limpiar sesión
 } else {
     echo "✗ AUTENTICACIÓN FALLIDA\n";

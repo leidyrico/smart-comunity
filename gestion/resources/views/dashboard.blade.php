@@ -1,17 +1,8 @@
 <x-app-with-sidebar>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Dashboard') }}
-            </h2>
-            <a href="{{ route('dashboard.pdf') }}" 
-               class="inline-flex items-center px-2 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-900 focus:outline-none focus:border-red-900 focus:ring ring-red-300 disabled:opacity-25 transition ease-in-out duration-150"
-               title="Generar PDF del Dashboard">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"></path>
-                </svg>
-            </a>
-        </div>
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Dashboard') }}
+        </h2>
     </x-slot>
 
     <!-- Estilos adicionales para mejor apariencia -->
@@ -50,8 +41,20 @@
             <!-- Mensaje de bienvenida -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 dashboard-card">
                 <div class="p-6 text-gray-900">
-                    <h3 class="text-lg font-semibold mb-2">¡Bienvenido al Sistema de Gestión de Comunidad!</h3>
-                    <p class="text-gray-600">Aquí puedes gestionar todos los aspectos de tu comunidad de manera eficiente.</p>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2">¡Bienvenido al Sistema de Gestión de Comunidad!</h3>
+                            <p class="text-gray-600">Aquí puedes gestionar todos los aspectos de tu comunidad de manera eficiente.</p>
+                        </div>
+                        <!-- Icono PDF en la sección de bienvenida -->
+                        <a href="{{ route('dashboard.pdf') }}" 
+                           class="inline-flex items-center justify-center w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 ml-4"
+                           title="Generar PDF del Dashboard">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -184,6 +187,7 @@
             @endif
 
             <!-- Acciones rápidas -->
+            @unless(Auth::user() && method_exists(Auth::user(), 'isUsuarioPropietario') && Auth::user()->isUsuarioPropietario())
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg dashboard-card">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold mb-4">Acciones Rápidas</h3>
@@ -203,6 +207,7 @@
                     </div>
                 </div>
             </div>
+            @endunless
         </div>
     </div>
 </x-app-with-sidebar>

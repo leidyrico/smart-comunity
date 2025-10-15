@@ -51,6 +51,8 @@
 
                 <!-- Navigation Menu -->
                 <nav class="mt-6 px-3">
+                    @php($user = Auth::user())
+                    @php($isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
                     <!-- Dashboard -->
                     <a href="{{ route('dashboard') }}" class="flex items-center px-3 py-2 mb-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('dashboard') ? 'bg-blue-100 text-blue-700 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
                         <i class="fas fa-tachometer-alt w-5 h-5 mr-3"></i>
@@ -72,9 +74,11 @@
                             <a href="{{ route('apartamentos.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
                                 Ver Apartamentos
                             </a>
-                            <a href="{{ route('apartamentos.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-                                Nuevo Apartamento
-                            </a>
+                            @unless($isPropietario)
+                                <a href="{{ route('apartamentos.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Nuevo Apartamento
+                                </a>
+                            @endunless
                         </div>
                     </div>
 
@@ -93,12 +97,14 @@
                             <a href="{{ route('recibos.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
                                 Ver Recibos
                             </a>
-                            <a href="{{ route('recibos.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-                                Crear Recibo
-                            </a>
-                            <a href="{{ route('recibos.asignar-manual') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-                                Asignar Recibos Manual
-                            </a>
+                            @unless($isPropietario)
+                                <a href="{{ route('recibos.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Crear Recibo
+                                </a>
+                                <a href="{{ route('recibos.asignar-manual') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Asignar Recibos Manual
+                                </a>
+                            @endunless
                         </div>
                     </div>
 
@@ -114,15 +120,19 @@
                             </svg>
                         </button>
                         <div id="reservations-submenu" class="ml-6 mt-2 space-y-1 {{ request()->routeIs('spaces.*') || request()->routeIs('reservations.*') ? '' : 'hidden' }}">
-                            <a href="{{ route('spaces.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-                                Gestionar Espacios
-                            </a>
-                            <a href="{{ route('spaces.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-                                Crear Espacio
-                            </a>
-                            <a href="{{ route('reservations.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-                                Ver Reservas
-                            </a>
+                            @unless($isPropietario)
+                                <a href="{{ route('spaces.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Gestionar Espacios
+                                </a>
+                                <a href="{{ route('spaces.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Crear Espacio
+                                </a>
+                            @endunless
+                            @unless($isPropietario)
+                                <a href="{{ route('reservations.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Ver Reservas
+                                </a>
+                            @endunless
                             <a href="{{ route('reservations.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
                                 Nueva Reserva
                             </a>
@@ -130,32 +140,59 @@
                     </div>
 
                     <!-- Gestión de Deudas -->
-                    <a href="{{ route('deudas.index') }}" class="flex items-center px-3 py-2 mb-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('deudas.*') ? 'bg-blue-100 text-blue-700 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
-                        <i class="fas fa-exclamation-triangle w-5 h-5 mr-3"></i>
-                        Gestión de Deudas
-                    </a>
+                    @unless($isPropietario)
+                        <a href="{{ route('deudas.index') }}" class="flex items-center px-3 py-2 mb-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('deudas.*') ? 'bg-blue-100 text-blue-700 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-exclamation-triangle w-5 h-5 mr-3"></i>
+                            Gestión de Deudas
+                        </a>
+                    @endunless
 
                     <!-- Gestión de Egresos -->
+                    @unless($isPropietario)
+                        <div class="mb-2">
+                            <button onclick="toggleSidebarSubmenu('egresos-submenu')" class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('egresos.*') || request()->routeIs('proveedores.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                                <div class="flex items-center">
+                                    <i class="fas fa-money-bill-wave w-5 h-5 mr-3"></i>
+                                    Gestión de Egresos
+                                </div>
+                                <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="egresos-submenu" class="ml-6 mt-2 space-y-1 {{ request()->routeIs('egresos.*') || request()->routeIs('proveedores.*') ? '' : 'hidden' }}">
+                                <a href="{{ route('proveedores.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Proveedores
+                                </a>
+                                <a href="{{ route('egresos.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Ver Egresos
+                                </a>
+                                <a href="{{ route('egresos.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Crear Egreso
+                                </a>
+                            </div>
+                        </div>
+                    @endunless
+
+                    <!-- Gestión de Fondos -->
                     <div class="mb-2">
-                        <button onclick="toggleSidebarSubmenu('egresos-submenu')" class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('egresos.*') || request()->routeIs('proveedores.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                        <button onclick="toggleSidebarSubmenu('fondos-submenu')" class="flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('fondos.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
                             <div class="flex items-center">
-                                <i class="fas fa-money-bill-wave w-5 h-5 mr-3"></i>
-                                Gestión de Egresos
+                                <i class="fas fa-piggy-bank w-5 h-5 mr-3"></i>
+                                Gestión de Fondos
                             </div>
                             <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
-                        <div id="egresos-submenu" class="ml-6 mt-2 space-y-1 {{ request()->routeIs('egresos.*') || request()->routeIs('proveedores.*') ? '' : 'hidden' }}">
-                            <a href="{{ route('proveedores.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-                                Proveedores
+                        <div id="fondos-submenu" class="ml-6 mt-2 space-y-1 {{ request()->routeIs('fondos.*') ? '' : 'hidden' }}">
+                            <a href="{{ route('fondos.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                Ver Fondos
                             </a>
-                            <a href="{{ route('egresos.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-                                Ver Egresos
-                            </a>
-                            <a href="{{ route('egresos.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-                                Crear Egreso
-                            </a>
+                            @unless($isPropietario)
+                                <a href="{{ route('fondos.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Crear Fondo
+                                </a>
+                            @endunless
                         </div>
                     </div>
 
@@ -174,9 +211,11 @@
                             <a href="{{ route('conciliacion.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
                                 Conciliación
                             </a>
-                            <a href="{{ route('conciliacion.recaudacion') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-                                Recaudación
-                            </a>
+                            @unless($isPropietario)
+                                <a href="{{ route('conciliacion.recaudacion') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Recaudación
+                                </a>
+                            @endunless
                         </div>
                     </div>
 
@@ -192,15 +231,19 @@
                             </svg>
                         </button>
                         <div id="docs-submenu" class="ml-6 mt-2 space-y-1 {{ request()->routeIs('actas.*') || request()->routeIs('inventario.*') ? '' : 'hidden' }}">
-                            <a href="{{ route('actas.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-                                Crear Documento
-                            </a>
+                            @unless($isPropietario)
+                                <a href="{{ route('actas.create') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Crear Documento
+                                </a>
+                            @endunless
                             <a href="{{ route('actas.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
                                 Ver Documentos
                             </a>
-                            <a href="{{ route('actas.import') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
-                                Importar Documentos
-                            </a>
+                            @unless($isPropietario)
+                                <a href="{{ route('actas.import') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
+                                    Importar Documentos
+                                </a>
+                            @endunless
                             <a href="{{ route('inventario.index') }}" class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200">
                                 Inventario
                             </a>
@@ -323,6 +366,41 @@
                         const arrow = menu.querySelector('svg');
                         if (arrow) arrow.classList.add('rotate-180');
                     }
+                });
+            });
+        </script>
+        
+        <!-- Global date input formatting to dd/MM/yyyy -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const dateInputs = document.querySelectorAll('input[type="date"]');
+                dateInputs.forEach(function(input) {
+                    // Ensure Spanish (Venezuela) locale for native date pickers
+                    if (!input.hasAttribute('lang')) {
+                        input.setAttribute('lang', 'es-VE');
+                    }
+                    // Hint the desired format in supported UAs
+                    input.setAttribute('placeholder', 'dd/MM/yyyy');
+                    input.setAttribute('aria-label', 'Formato de fecha dd/MM/yyyy');
+
+                    // Fallback: if browser treats type=date as text or user pastes dd/MM/yyyy, normalize to ISO for backend
+                    input.addEventListener('blur', function() {
+                        const raw = input.value;
+                        if (raw && raw.includes('/')) {
+                            const parts = raw.split('/');
+                            if (parts.length === 3) {
+                                const d = parts[0].padStart(2, '0');
+                                const m = parts[1].padStart(2, '0');
+                                const y = parts[2];
+                                const iso = `${y}-${m}-${d}`;
+                                // Only assign if valid date
+                                const testDate = new Date(iso);
+                                if (!isNaN(testDate.getTime())) {
+                                    input.value = iso;
+                                }
+                            }
+                        }
+                    });
                 });
             });
         </script>

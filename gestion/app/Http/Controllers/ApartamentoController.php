@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Apartamento;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ApartamentoController extends Controller
 {
@@ -17,6 +18,17 @@ class ApartamentoController extends Controller
         $query = Apartamento::with(['pagos.reciboGastoComun'])
             ->orderBy('piso')
             ->orderBy('numero');
+        
+        // Si es usuario propietario, solo mostrar su propio apartamento
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            if ($user->apartamento_id) {
+                $query->where('id', $user->apartamento_id);
+            } else {
+                // Sin apartamento asociado, no mostrar resultados
+                $query->whereRaw('1 = 0');
+            }
+        }
         
         // Filtro por estatus financiero si se proporciona
         if ($request->filled('estatus_financiero')) {
@@ -38,6 +50,11 @@ class ApartamentoController extends Controller
      */
     public function create()
     {
+        // Propietarios no pueden crear apartamentos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         return view('apartamentos.create');
     }
 
@@ -46,6 +63,11 @@ class ApartamentoController extends Controller
      */
     public function store(Request $request)
     {
+        // Propietarios no pueden crear apartamentos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         $request->validate([
             'numero' => 'required|string|max:20|unique:apartamentos,numero',
             'piso' => 'required|integer|min:0',
@@ -70,6 +92,11 @@ class ApartamentoController extends Controller
      */
     public function show(Apartamento $apartamento)
     {
+        // Propietario solo puede ver su propio apartamento
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario() && $user->apartamento_id && $user->apartamento_id !== $apartamento->id) {
+            abort(403);
+        }
         $apartamento->load(['recibos', 'pagos']);
         return view('apartamentos.show', compact('apartamento'));
     }
@@ -79,6 +106,11 @@ class ApartamentoController extends Controller
      */
     public function edit(Apartamento $apartamento)
     {
+        // Propietarios no pueden editar apartamentos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         return view('apartamentos.edit', compact('apartamento'));
     }
 
@@ -87,6 +119,11 @@ class ApartamentoController extends Controller
      */
     public function update(Request $request, Apartamento $apartamento)
     {
+        // Propietarios no pueden actualizar apartamentos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         $request->validate([
             'numero' => 'required|string|max:20|unique:apartamentos,numero,' . $apartamento->id,
             'piso' => 'required|integer|min:0',
@@ -111,6 +148,11 @@ class ApartamentoController extends Controller
      */
     public function destroy(Request $request, Apartamento $apartamento)
     {
+        // Propietarios no pueden eliminar apartamentos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         // Validar clave de administrador
         $adminPassword = $request->input('admin_password');
         $configuredPassword = config('app.admin_password', 'admin123'); // Clave por defecto

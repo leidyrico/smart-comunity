@@ -1,4 +1,6 @@
 <x-app-with-sidebar>
+    @php($user = Auth::user())
+    @php($isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
     <div class="container mx-auto px-4 py-6">
         <!-- Mensaje de éxito -->
         @if(session('success'))
@@ -28,6 +30,7 @@
                         </svg>
                         Imprimir
                     </button>
+                    @unless($isPropietario)
                     <a href="{{ route('pagos.create', ['apartamento_id' => $apartamento->id]) }}" 
                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150 print:hidden">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,6 +45,7 @@
                         </svg>
                         Pago Global
                     </a>
+                    @endunless
                     <a href="{{ route('deudas.index') }}" 
                        class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150 print:hidden">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

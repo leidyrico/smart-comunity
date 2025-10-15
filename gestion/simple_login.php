@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         $credentials = [
-            'user' => $_POST['user'] ?? '',
+            'email' => $_POST['email'] ?? '',
             'password' => $_POST['password'] ?? ''
         ];
         
@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "<script>console.log('Intentando login con:', " . json_encode($credentials) . ");</script>";
         
         if (Auth::attempt($credentials, $remember)) {
-            $message = '¡Login exitoso! Usuario: ' . Auth::user()->user;
+            $message = '¡Login exitoso! Usuario: ' . Auth::user()->email;
             // Redirigir al dashboard
             header('Location: /dashboard');
             exit;
@@ -138,8 +138,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="hidden" name="_token" value="<?= $csrfToken ?>">
             
             <div class="form-group">
-                <label for="user">Usuario:</label>
-                <input type="text" id="user" name="user" value="admintest@gmail.com" required>
+                <label for="email">Email:</label>
+                <input type="text" id="email" name="email" value="admintest@gmail.com" required>
             </div>
             
             <div class="form-group">
@@ -160,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <strong>Debug Info:</strong><br>
             CSRF Token: <?= substr($csrfToken, 0, 10) ?>...<br>
             Método: <?= $_SERVER['REQUEST_METHOD'] ?><br>
-            Auth Status: <?= Auth::check() ? 'Autenticado como ' . Auth::user()->user : 'No autenticado' ?>
+            Auth Status: <?= Auth::check() ? 'Autenticado como ' . Auth::user()->email : 'No autenticado' ?>
         </div>
     </div>
 </body>

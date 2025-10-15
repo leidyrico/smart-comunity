@@ -177,7 +177,7 @@
             const numero = document.getElementById('filtro-numero').value;
             const periodo = document.getElementById('filtro-periodo').value;
             
-            let url = '/api/recaudacion/recibos?';
+            let url = '{{ url("api/recaudacion/recibos") }}?';
             const params = new URLSearchParams();
             
             if (numero) params.append('numero', numero);
@@ -367,7 +367,7 @@
             const numero = document.getElementById('filtro-numero').value;
             const periodo = document.getElementById('filtro-periodo').value;
             
-            let url = `/api/recaudacion/recibos?page=${pagina}`;
+            let url = '{{ url("api/recaudacion/recibos") }}?page=' + pagina;
             const params = new URLSearchParams();
             
             if (numero) params.append('numero', numero);
@@ -467,7 +467,7 @@
             document.getElementById('detalle-emision').textContent = formatearFecha(data.recibo.fecha_emision);
             document.getElementById('detalle-vencimiento').textContent = formatearFecha(data.recibo.fecha_vencimiento);
             document.getElementById('detalle-monto').textContent = formatearMoneda(data.recibo.monto_total);
-            document.getElementById('detalle-pagados').textContent = `${data.pagos.length} de ${data.recibo.total_apartamentos}`;
+            document.getElementById('detalle-pagados').textContent = `${data.apartamentos_pagados} de ${data.recibo.total_apartamentos}`;
 
             // Mostrar lista de pagos
             const tbodyPagos = document.getElementById('tbody-pagos');

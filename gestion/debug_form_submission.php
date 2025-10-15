@@ -33,8 +33,8 @@ echo "\n";
 // 2. Simular datos del formulario
 echo "2. Simulando envío de formulario:\n";
 $formData = [
-    'user' => 'admintest@gmail.com',
-    'password' => 'admintest',
+    'email' => 'admin@sc.com',
+    'password' => 'admin123',
     'remember' => false
 ];
 
@@ -76,13 +76,13 @@ echo "\n";
 echo "4. Probando autenticación directa:\n";
 try {
     $credentials = [
-        'user' => $formData['user'],
+        'email' => $formData['email'],
         'password' => $formData['password']
     ];
     
     if (Auth::attempt($credentials, $formData['remember'])) {
         echo "✓ Autenticación exitosa\n";
-        echo "  Usuario autenticado: " . Auth::user()->user . "\n";
+        echo "  Usuario autenticado: " . Auth::user()->email . "\n";
         Auth::logout();
     } else {
         echo "✗ Autenticación fallida\n";

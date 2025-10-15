@@ -13,6 +13,7 @@ use App\Http\Controllers\SpaceController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\EgresoController;
+use App\Http\Controllers\FondoController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InquilinoController;
 
@@ -124,12 +125,20 @@ Route::resource('recibos', ReciboGastoComunController::class);
     // Rutas para Reservas de Espacios
     Route::resource('reservations', ReservationController::class);
     Route::post('/reservations/check-availability', [ReservationController::class, 'checkAvailability'])->name('reservations.check-availability');
+    Route::post('/reservations/get-occupied-dates', [ReservationController::class, 'getOccupiedDates'])->name('reservations.get-occupied-dates');
     
     // Rutas para Proveedores
     Route::resource('proveedores', ProveedorController::class);
     
     // Rutas para Egresos
     Route::resource('egresos', EgresoController::class);
+    Route::get('/egresos/{egreso}/pdf', [EgresoController::class, 'generatePdf'])->name('egresos.pdf');
+
+    // Rutas para Fondos
+    Route::resource('fondos', FondoController::class);
+    Route::post('/fondos/{fondo}/ingreso', [FondoController::class, 'registrarIngreso'])->name('fondos.ingreso');
+    Route::post('/fondos/{fondo}/egreso', [FondoController::class, 'registrarEgreso'])->name('fondos.egreso');
+    Route::delete('/fondos/movimientos/{movimiento}', [FondoController::class, 'eliminarMovimiento'])->name('fondos.movimientos.destroy');
     
     // API endpoints
     Route::get('/api/apartamentos', [ApartamentoController::class, 'getApartamentosApi'])->name('api.apartamentos');

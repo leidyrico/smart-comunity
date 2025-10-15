@@ -8,6 +8,7 @@ use App\Models\Egreso;
 use App\Models\ReciboGastoComun;
 use App\Models\Apartamento;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class ConciliacionController extends Controller
 {
@@ -17,8 +18,7 @@ class ConciliacionController extends Controller
         $mesSeleccionado = $request->get('mes');
         
         // Query base para ingresos (pagos confirmados con monto > 0)
-        $queryIngresos = Pago::where('estado', 'confirmado')
-            ->where('monto_pagado', '>', 0)
+        $queryIngresos = Pago::confirmadosReales()
             ->with(['apartamento', 'reciboGastoComun']);
 
         // Query base para egresos
@@ -72,8 +72,7 @@ class ConciliacionController extends Controller
     private function obtenerMesesDisponibles()
     {
         // Obtener meses de ingresos
-        $mesesIngresos = Pago::where('estado', 'confirmado')
-            ->where('monto_pagado', '>', 0)
+        $mesesIngresos = Pago::confirmadosReales()
             ->whereNotNull('fecha_pago')
             ->selectRaw('DATE_FORMAT(fecha_pago, "%Y-%m") as mes')
             ->distinct()
@@ -103,6 +102,9 @@ class ConciliacionController extends Controller
 
     public function store(Request $request)
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403);
+        }
         $request->validate([
             'nro_factura' => 'required|string|max:255',
             'fecha' => 'required|date',
@@ -119,6 +121,9 @@ class ConciliacionController extends Controller
 
     public function destroy($id)
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403);
+        }
         $egreso = Egreso::findOrFail($id);
         $egreso->delete();
 
@@ -141,7 +146,8 @@ class ConciliacionController extends Controller
     {
         $query = ReciboGastoComun::with(['pagos' => function($query) {
             $query->where('estado', 'confirmado')
-                  ->where('monto_pagado', '>', 0);
+                  ->where('monto_pagado', '>', 0)
+                  ->sinPruebas();
         }]);
 
         // Aplicar filtros
@@ -164,8 +170,6 @@ class ConciliacionController extends Controller
             ->through(function($recibo) use ($totalApartamentos) {
                 // Contar apartamentos que han pagado este recibo
                 $apartamentosPagados = $recibo->pagos
-                    ->where('estado', 'confirmado')
-                    ->where('monto_pagado', '>', 0)
                     ->unique('apartamento_id')
                     ->count();
                 
@@ -190,8 +194,7 @@ class ConciliacionController extends Controller
         
         // Obtener pagos confirmados para este recibo con información del apartamento
         $pagosDetalle = Pago::where('recibo_gasto_comun_id', $reciboId)
-            ->where('estado', 'confirmado')
-            ->where('monto_pagado', '>', 0)
+            ->confirmadosReales()
             ->with('apartamento')
             ->orderBy('fecha_pago', 'desc')
             ->get()
@@ -205,6 +208,12 @@ class ConciliacionController extends Controller
                 ];
             });
 
+        // Contar apartamentos únicos que han pagado (excluyendo pagos de prueba)
+        $apartamentosPagados = Pago::where('recibo_gasto_comun_id', $reciboId)
+            ->confirmadosReales()
+            ->distinct('apartamento_id')
+            ->count('apartamento_id');
+
         // Obtener total de apartamentos
         $totalApartamentos = Apartamento::count();
 
@@ -216,7 +225,8 @@ class ConciliacionController extends Controller
                 'monto_total' => $recibo->total_recibo,
                 'total_apartamentos' => $totalApartamentos
             ],
-            'pagos' => $pagosDetalle
+            'pagos' => $pagosDetalle,
+            'apartamentos_pagados' => $apartamentosPagados
         ]);
     }
 }

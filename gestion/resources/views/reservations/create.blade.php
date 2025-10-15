@@ -28,14 +28,23 @@
                                 <!-- Apartamento -->
                                 <div>
                                     <x-input-label for="apartamento_id" :value="__('Apartamento')" />
-                                    <select id="apartamento_id" name="apartamento_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                        <option value="">Seleccione un apartamento</option>
-                                        @foreach($apartamentos as $apartamento)
-                                            <option value="{{ $apartamento->id }}" {{ old('apartamento_id') == $apartamento->id ? 'selected' : '' }}>
-                                                Apartamento {{ $apartamento->numero }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    @php($user = Auth::user())
+                                    @php($isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
+                                    @if($isPropietario)
+                                        <input type="hidden" id="apartamento_id" name="apartamento_id" value="{{ $user->apartamento_id }}" />
+                                        <div class="mt-1 block w-full p-3 bg-gray-50 border border-gray-300 rounded-md text-gray-700">
+                                            Apartamento {{ optional($apartamentos->first())->numero ?? 'N/A' }}
+                                        </div>
+                                    @else
+                                        <select id="apartamento_id" name="apartamento_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                            <option value="">Seleccione un apartamento</option>
+                                            @foreach($apartamentos as $apartamento)
+                                                <option value="{{ $apartamento->id }}" {{ old('apartamento_id') == $apartamento->id ? 'selected' : '' }}>
+                                                    Apartamento {{ $apartamento->numero }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    @endif
                                     <x-input-error class="mt-2" :messages="$errors->get('apartamento_id')" />
                                 </div>
 
@@ -53,13 +62,13 @@
                                     <x-input-error class="mt-2" :messages="$errors->get('space_id')" />
                                 </div>
 
-                                <!-- Fecha de reserva -->
+                                <!-- Fecha de reserva seleccionada -->
                                 <div>
-                                    <x-input-label for="fecha_reserva" :value="__('Fecha de Reserva')" />
-                                    <input type="date" id="fecha_reserva" name="fecha_reserva" 
-                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                        min="{{ $fechaMinima }}" max="{{ $fechaMaxima }}" 
-                                        value="{{ old('fecha_reserva') }}" required>
+                                    <x-input-label for="fecha_seleccionada_display" :value="__('Fecha de Reserva Seleccionada')" />
+                                    <div id="fecha_seleccionada_display" class="mt-1 block w-full p-3 bg-gray-50 border border-gray-300 rounded-md text-gray-700">
+                                        <span class="text-gray-500">Seleccione una fecha en el calendario</span>
+                                    </div>
+                                    <input type="hidden" id="fecha_reserva" name="fecha_reserva" value="{{ old('fecha_reserva') }}" required>
                                     <p class="mt-1 text-sm text-gray-500">
                                         Puede reservar desde {{ \Carbon\Carbon::parse($fechaMinima)->format('d/m/Y') }} 
                                         hasta {{ \Carbon\Carbon::parse($fechaMaxima)->format('d/m/Y') }}
@@ -135,14 +144,26 @@
             
             const spaceSelect = document.getElementById('space_id');
             const fechaInput = document.getElementById('fecha_reserva');
+            const fechaSeleccionadaDisplay = document.getElementById('fecha_seleccionada_display');
             const montoInput = document.getElementById('monto');
             const calendarDiv = document.getElementById('calendar');
             const submitBtn = document.getElementById('submitBtn');
             const availabilityMessage = document.getElementById('availability-message');
             
+            // Variables globales para navegación del calendario
+            let currentCalendarYear = new Date().getFullYear();
+            let currentCalendarMonth = new Date().getMonth();
+            const today = new Date();
+            
+            // Rango de fechas: desde hoy hasta 07/01/2026
+            const maxDate = new Date(2026, 0, 7); // 7 de enero de 2026 (mes 0 = enero)
+            const maxYear = maxDate.getFullYear();
+            const maxMonth = maxDate.getMonth();
+            
             console.log('Elementos encontrados:', {
                 spaceSelect: !!spaceSelect,
                 fechaInput: !!fechaInput,
+                fechaSeleccionadaDisplay: !!fechaSeleccionadaDisplay,
                 montoInput: !!montoInput,
                 calendarDiv: !!calendarDiv,
                 submitBtn: !!submitBtn,
@@ -156,6 +177,9 @@
                 
                 if (precio) {
                     montoInput.value = parseFloat(precio).toFixed(2);
+                    // Resetear calendario al mes actual
+                    currentCalendarYear = new Date().getFullYear();
+                    currentCalendarMonth = new Date().getMonth();
                     loadCalendar();
                 } else {
                     montoInput.value = '';
@@ -165,26 +189,38 @@
                 checkFormValidity();
             });
 
-            // Verificar disponibilidad cuando cambia la fecha
-            fechaInput.addEventListener('change', function() {
-                checkAvailability();
-                checkFormValidity();
-            });
+            // La verificación de disponibilidad ahora se maneja en selectDate()
+            // cuando se selecciona una fecha en el calendario
 
             function loadCalendar() {
                 const spaceId = spaceSelect.value;
                 if (!spaceId) return;
 
-                // Aquí cargarías el calendario con las fechas ocupadas
-                // Por simplicidad, mostraremos un calendario básico
-                const today = new Date();
-                const currentMonth = today.getMonth();
-                const currentYear = today.getFullYear();
-                
-                calendarDiv.innerHTML = generateCalendar(currentYear, currentMonth, spaceId);
+                // Mostrar mensaje de carga
+                calendarDiv.innerHTML = '<div class="text-center text-gray-500">Cargando calendario...</div>';
+
+                // Obtener fechas ocupadas del servidor
+                fetch('{{ route("reservations.get-occupied-dates") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        space_id: spaceId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    calendarDiv.innerHTML = generateCalendar(currentCalendarYear, currentCalendarMonth, spaceId, data.occupied_dates || []);
+                })
+                .catch(error => {
+                    console.error('Error al cargar fechas ocupadas:', error);
+                    calendarDiv.innerHTML = generateCalendar(currentCalendarYear, currentCalendarMonth, spaceId, []);
+                });
             }
 
-            function generateCalendar(year, month, spaceId) {
+            function generateCalendar(year, month, spaceId, occupiedDates = []) {
                 const firstDay = new Date(year, month, 1);
                 const lastDay = new Date(year, month + 1, 0);
                 const daysInMonth = lastDay.getDate();
@@ -195,9 +231,25 @@
                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
                 ];
 
+                // Calcular si se pueden mostrar botones de navegación
+                const currentDate = new Date();
+                const isCurrentMonth = year === currentDate.getFullYear() && month === currentDate.getMonth();
+                const currentMonthDate = new Date(year, month);
+                const isMaxMonth = currentMonthDate >= maxDate;
+                
                 let html = `
-                    <div class="text-center mb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <button type="button" onclick="navigateCalendar(-1)" 
+                                class="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded ${isCurrentMonth ? 'invisible' : ''}"
+                                ${isCurrentMonth ? 'disabled' : ''}>
+                            ← Anterior
+                        </button>
                         <h5 class="text-lg font-semibold">${monthNames[month]} ${year}</h5>
+                        <button type="button" onclick="navigateCalendar(1)" 
+                                class="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded ${isMaxMonth ? 'invisible' : ''}"
+                                ${isMaxMonth ? 'disabled' : ''}>
+                            Siguiente →
+                        </button>
                     </div>
                     <div class="grid grid-cols-7 gap-1 text-center text-sm">
                         <div class="font-semibold p-2">Dom</div>
@@ -220,40 +272,97 @@
                     const dateStr = date.toISOString().split('T')[0];
                     const isToday = date.toDateString() === new Date().toDateString();
                     const isPast = date < new Date().setHours(0,0,0,0);
+                    const isOccupied = occupiedDates.includes(dateStr);
+                    const isOutOfRange = date > maxDate; // Verificar si está fuera del rango permitido
                     
-                    let classes = 'p-2 border rounded cursor-pointer hover:bg-gray-100';
+                    let classes = 'p-2 border rounded';
+                    let clickable = true;
                     
                     if (isPast) {
                         classes += ' bg-gray-100 text-gray-400 cursor-not-allowed';
+                        clickable = false;
+                    } else if (isOccupied) {
+                        classes += ' bg-red-200 border-red-300 text-red-800 cursor-not-allowed';
+                        clickable = false;
+                    } else if (isOutOfRange) {
+                        classes += ' bg-gray-100 text-gray-400 cursor-not-allowed';
+                        clickable = false;
                     } else {
-                        classes += ' bg-green-100 border-green-300 text-green-800';
+                        classes += ' bg-green-200 border-green-300 text-green-800 cursor-pointer hover:bg-green-100';
                     }
                     
                     if (isToday) {
                         classes += ' ring-2 ring-blue-500';
                     }
 
-                    html += `<div class="${classes}" data-date="${dateStr}" onclick="selectDate('${dateStr}')">${day}</div>`;
+                    const onclick = clickable ? `onclick="selectDate('${dateStr}')"` : '';
+                    html += `<div class="${classes}" data-date="${dateStr}" ${onclick}>${day}</div>`;
                 }
 
                 html += '</div>';
                 return html;
             }
 
+            window.navigateCalendar = function(direction) {
+                const spaceId = spaceSelect.value;
+                if (!spaceId) return;
+                
+                // Calcular nuevo mes y año
+                currentCalendarMonth += direction;
+                if (currentCalendarMonth > 11) {
+                    currentCalendarMonth = 0;
+                    currentCalendarYear++;
+                } else if (currentCalendarMonth < 0) {
+                    currentCalendarMonth = 11;
+                    currentCalendarYear--;
+                }
+                
+                // Verificar límites
+                const currentDate = new Date();
+                const newDate = new Date(currentCalendarYear, currentCalendarMonth);
+                const minDate = new Date(currentDate.getFullYear(), currentDate.getMonth());
+                
+                if (newDate < minDate) {
+                    currentCalendarMonth = currentDate.getMonth();
+                    currentCalendarYear = currentDate.getFullYear();
+                    return;
+                }
+                
+                if (newDate > maxDate) {
+                    currentCalendarMonth = maxDate.getMonth();
+                    currentCalendarYear = maxDate.getFullYear();
+                    return;
+                }
+                
+                // Recargar calendario
+                loadCalendar();
+            };
+
             window.selectDate = function(dateStr) {
                 fechaInput.value = dateStr;
+                
+                // Actualizar la visualización de la fecha seleccionada en formato dd/MM/yyyy
+                const fechaSeleccionadaDisplay = document.getElementById('fecha_seleccionada_display');
+                const date = new Date(dateStr + 'T00:00:00'); // Agregar tiempo para evitar problemas de zona horaria
+                const formattedDate = date.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+                fechaSeleccionadaDisplay.innerHTML = `<span class="font-semibold text-blue-600">${formattedDate}</span>`;
                 
                 // Actualizar estilos del calendario
                 document.querySelectorAll('[data-date]').forEach(el => {
                     el.classList.remove('bg-blue-200', 'border-blue-300', 'text-blue-800');
-                    if (!el.classList.contains('bg-gray-100')) {
-                        el.classList.add('bg-green-100', 'border-green-300', 'text-green-800');
+                    if (!el.classList.contains('bg-gray-100') && !el.classList.contains('bg-red-200')) {
+                        el.classList.remove('bg-green-100');
+                        el.classList.add('bg-green-200', 'border-green-300', 'text-green-800');
                     }
                 });
                 
                 const selectedEl = document.querySelector(`[data-date="${dateStr}"]`);
-                if (selectedEl && !selectedEl.classList.contains('bg-gray-100')) {
-                    selectedEl.classList.remove('bg-green-100', 'border-green-300', 'text-green-800');
+                if (selectedEl && !selectedEl.classList.contains('bg-gray-100') && !selectedEl.classList.contains('bg-red-200')) {
+                    selectedEl.classList.remove('bg-green-200', 'border-green-300', 'text-green-800');
                     selectedEl.classList.add('bg-blue-200', 'border-blue-300', 'text-blue-800');
                 }
                 

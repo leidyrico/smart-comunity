@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\NuevaComunicacion;
+use Illuminate\Support\Facades\Auth;
 
 class ActaController extends Controller
 {
@@ -49,6 +50,9 @@ class ActaController extends Controller
      */
     public function create()
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403, 'Acción no permitida para propietarios');
+        }
         return view('actas.create');
     }
 
@@ -57,6 +61,9 @@ class ActaController extends Controller
      */
     public function store(Request $request)
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403, 'Acción no permitida para propietarios');
+        }
         // Validación de campos requeridos y archivo
         $request->validate([
             'nro_doc' => 'required|string|max:255|unique:actas,nro_doc',
@@ -188,6 +195,9 @@ class ActaController extends Controller
      */
     public function destroy(Request $request, Acta $acta)
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403, 'Acción no permitida para propietarios');
+        }
         // Validar que se proporcione la clave de administrador
         $request->validate([
             'admin_password' => 'required|string'
@@ -243,6 +253,9 @@ class ActaController extends Controller
      */
     public function showImport()
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403, 'Acción no permitida para propietarios');
+        }
         return view('actas.import');
     }
 
@@ -251,6 +264,9 @@ class ActaController extends Controller
      */
     public function import(Request $request)
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403, 'Acción no permitida para propietarios');
+        }
         $request->validate([
             'file' => 'required|file|mimes:csv,txt|max:2048'
         ]);
@@ -334,6 +350,9 @@ class ActaController extends Controller
      */
     public function downloadTemplate()
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403, 'Acción no permitida para propietarios');
+        }
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="plantilla_documentos.csv"'

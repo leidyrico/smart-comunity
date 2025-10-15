@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class ReservationController extends Controller
@@ -20,14 +21,21 @@ class ReservationController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $reservations = Reservation::with(['apartamento', 'space', 'recibo'])
-            ->orderBy('fecha_reserva', 'desc')
-            ->paginate(10);
-            
+        $query = Reservation::with(['apartamento', 'space', 'recibo'])
+            ->orderBy('fecha_reserva', 'desc');
+
+        // Si es usuario propietario, solo ver reservas de su apartamento
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario() && $user->apartamento_id) {
+            $query->where('apartamento_id', $user->apartamento_id);
+        }
+
+        $reservations = $query->paginate(10);
+
         $spaces = Space::activos()->orderBy('nombre')->get();
-            
+
         return view('reservations.index', compact('reservations', 'spaces'));
     }
 
@@ -36,7 +44,14 @@ class ReservationController extends Controller
      */
     public function create()
     {
-        $apartamentos = Apartamento::orderBy('numero')->get();
+        $user = Auth::user();
+        // Si es propietario, solo su apartamento
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario() && $user->apartamento_id) {
+            $apartamentos = Apartamento::where('id', $user->apartamento_id)->get();
+        } else {
+            $apartamentos = Apartamento::orderBy('numero')->get();
+        }
+
         $spaces = Space::activos()->orderBy('nombre')->get();
         
         // Fechas disponibles (desde hoy hasta 2 meses)
@@ -51,6 +66,17 @@ class ReservationController extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::user();
+        // Forzar apartamento del usuario propietario
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            if (!$user->apartamento_id) {
+                return redirect()->back()
+                    ->with('error', 'No se encontró el apartamento asociado al usuario.')
+                    ->withInput();
+            }
+            $request->merge(['apartamento_id' => $user->apartamento_id]);
+        }
+
         $validator = Validator::make($request->all(), [
             'apartamento_id' => 'required|exists:apartamentos,id',
             'space_id' => 'required|exists:spaces,id',
@@ -120,6 +146,10 @@ class ReservationController extends Controller
      */
     public function show(Reservation $reservation)
     {
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario() && $user->apartamento_id && $reservation->apartamento_id !== $user->apartamento_id) {
+            abort(403);
+        }
         $reservation->load(['apartamento', 'space', 'recibo']);
         return view('reservations.show', compact('reservation'));
     }
@@ -129,6 +159,10 @@ class ReservationController extends Controller
      */
     public function edit(Reservation $reservation)
     {
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario() && $user->apartamento_id && $reservation->apartamento_id !== $user->apartamento_id) {
+            abort(403);
+        }
         $apartamentos = Apartamento::orderBy('numero')->get();
         $spaces = Space::activos()->orderBy('nombre')->get();
         
@@ -143,6 +177,15 @@ class ReservationController extends Controller
      */
     public function update(Request $request, Reservation $reservation)
     {
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario() && $user->apartamento_id && $reservation->apartamento_id !== $user->apartamento_id) {
+            abort(403);
+        }
+
+        // Si es propietario, mantener su apartamento
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            $request->merge(['apartamento_id' => $user->apartamento_id]);
+        }
         $validator = Validator::make($request->all(), [
             'apartamento_id' => 'required|exists:apartamentos,id',
             'space_id' => 'required|exists:spaces,id',
@@ -184,6 +227,10 @@ class ReservationController extends Controller
      */
     public function destroy(Reservation $reservation)
     {
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario() && $user->apartamento_id && $reservation->apartamento_id !== $user->apartamento_id) {
+            abort(403);
+        }
         $reservation->delete();
 
         return redirect()->route('reservations.index')
@@ -202,6 +249,34 @@ class ReservationController extends Controller
         $available = Reservation::isDateAvailable($spaceId, $date, $excludeId);
 
         return response()->json(['available' => $available]);
+    }
+
+    /**
+     * Get occupied dates for a specific space
+     */
+    public function getOccupiedDates(Request $request)
+    {
+        $spaceId = $request->space_id;
+        
+        if (!$spaceId) {
+            return response()->json(['occupied_dates' => []]);
+        }
+
+        // Obtener fechas ocupadas desde hoy hasta 2 meses
+        $startDate = Carbon::today();
+        $endDate = Carbon::today()->addMonths(2);
+
+        $occupiedDates = Reservation::where('space_id', $spaceId)
+            ->where('fecha_reserva', '>=', $startDate)
+            ->where('fecha_reserva', '<=', $endDate)
+            ->whereIn('estado', ['pendiente', 'confirmada'])
+            ->pluck('fecha_reserva')
+            ->map(function ($date) {
+                return Carbon::parse($date)->format('Y-m-d');
+            })
+            ->toArray();
+
+        return response()->json(['occupied_dates' => $occupiedDates]);
     }
 
     /**

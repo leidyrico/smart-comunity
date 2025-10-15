@@ -38,14 +38,23 @@
                                 <!-- Apartamento -->
                                 <div>
                                     <x-input-label for="apartamento_id" :value="__('Apartamento')" />
-                                    <select id="apartamento_id" name="apartamento_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                        <option value="">Seleccione un apartamento</option>
-                                        @foreach($apartamentos as $apartamento)
-                                            <option value="{{ $apartamento->id }}" {{ old('apartamento_id', $reservation->apartamento_id) == $apartamento->id ? 'selected' : '' }}>
-                                                Apartamento {{ $apartamento->numero }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    @php($user = Auth::user())
+                                    @php($isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
+                                    @if($isPropietario)
+                                        <input type="hidden" id="apartamento_id" name="apartamento_id" value="{{ $reservation->apartamento_id }}" />
+                                        <div class="mt-1 block w-full p-3 bg-gray-50 border border-gray-300 rounded-md text-gray-700">
+                                            Apartamento {{ $reservation->apartamento->numero }}
+                                        </div>
+                                    @else
+                                        <select id="apartamento_id" name="apartamento_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                                            <option value="">Seleccione un apartamento</option>
+                                            @foreach($apartamentos as $apartamento)
+                                                <option value="{{ $apartamento->id }}" {{ old('apartamento_id', $reservation->apartamento_id) == $apartamento->id ? 'selected' : '' }}>
+                                                    Apartamento {{ $apartamento->numero }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    @endif
                                     <x-input-error class="mt-2" :messages="$errors->get('apartamento_id')" />
                                 </div>
 

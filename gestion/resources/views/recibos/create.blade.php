@@ -79,7 +79,7 @@
                             <!-- Fecha de Emisión -->
                             <div>
                                 <label for="fecha_emision" class="block text-sm font-medium text-gray-700">Fecha de Emisión *</label>
-                                <input type="date" name="fecha_emision" id="fecha_emision" value="{{ old('fecha_emision', date('Y-m-d')) }}" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <input type="date" name="fecha_emision" id="fecha_emision" value="{{ old('fecha_emision', date('Y-m-d')) }}" lang="es-VE" placeholder="dd/MM/yyyy" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                 @error('fecha_emision')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -88,7 +88,7 @@
                             <!-- Fecha de Vencimiento -->
                             <div>
                                 <label for="fecha_vencimiento" class="block text-sm font-medium text-gray-700">Fecha de Vencimiento *</label>
-                                <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" value="{{ old('fecha_vencimiento') }}" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" value="{{ old('fecha_vencimiento') }}" lang="es-VE" placeholder="dd/MM/yyyy" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                 @error('fecha_vencimiento')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror

@@ -166,6 +166,9 @@
             --}}
 
             <!-- Tablas de Ingresos y Egresos -->
+            @php($user = Auth::user())
+            @php($isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
+            @unless($isPropietario)
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Tabla de Ingresos -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -337,6 +340,7 @@
                     </div>
                 </div>
             </div>
+            @endunless
         </div>
     </div>
 </x-app-with-sidebar>

@@ -1,4 +1,6 @@
 <x-app-with-sidebar>
+    @php($user = Auth::user())
+    @php($isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Consulta de Deudas por Apartamento') }}
@@ -44,6 +46,7 @@
                             Recibos Emitidos
                         </h3>
                         <div class="flex flex-wrap gap-2 justify-end">
+                            @unless($isPropietario)
                             <a href="{{ route('pagos.create') }}" class="inline-flex items-center px-3 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -84,6 +87,7 @@
                                     <span class="hidden sm:inline">Enviar por</span> Correo
                                 </button>
                             </form>
+                            @endunless
 
                             <button onclick="window.print()" class="inline-flex items-center px-3 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,18 +239,22 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex flex-col space-y-1">
-                                                <a href="{{ route('deudas.show', $dato['apartamento_id']) }}" class="text-blue-600 hover:text-blue-900 inline-flex items-center" title="Ver detalles">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                    </svg>
-                                                </a>
+                                                @unless($isPropietario)
+                                                    <a href="{{ route('deudas.show', $dato['apartamento_id']) }}" class="text-blue-600 hover:text-blue-900 inline-flex items-center" title="Ver detalles">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                        </svg>
+                                                    </a>
+                                                @endunless
                                                 @if($dato['saldo_actual'] > 0)
+                                                    @unless($isPropietario)
                                                     <a href="{{ route('pagos.create', array_merge(['apartamento_id' => $dato['apartamento_id'], 'recibo_id' => $dato['recibo_id']], request()->only(['numero_apartamento', 'nombre_propietario', 'estado_deuda', 'numero_recibo']))) }}" class="text-green-600 hover:text-green-900 inline-flex items-center" title="Registrar pago">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                                         </svg>
                                                     </a>
+                                                    @endunless
                                                 @endif
                                                 @if($dato['monto_pagado'] > 0 && !empty($dato['pagos']))
                                                     <div class="mt-2">
@@ -262,6 +270,7 @@
                                                                             (Sin fecha)
                                                                         @endif
                                                                     </span>
+                                                                    @unless($isPropietario)
                                                                     <button onclick="eliminarPago({{ $pago['id'] }}, '{{ $dato['numero_recibo'] }}', '{{ $pago['monto'] }}')" 
                                                                             class="text-red-600 hover:text-red-900 ml-2" 
                                                                             title="Eliminar pago">
@@ -269,6 +278,7 @@
                                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                                         </svg>
                                                                     </button>
+                                                                    @endunless
                                                                 </div>
                                                             @endif
                                                         @endforeach
@@ -347,6 +357,7 @@ function exportarExcel() {
     window.open(url, '_blank');
 }
 
+@unless($isPropietario)
 function mostrarModalPagoGlobal() {
     // Crear el modal dinámicamente
     const modalHtml = `
@@ -446,6 +457,7 @@ function cargarApartamentosConDeudas() {
         select.appendChild(option);
     });
 }
+@endunless
 </script>
 
 </x-app-with-sidebar>
@@ -645,6 +657,7 @@ function cargarApartamentosConDeudas() {
 </style>
 
 <script>
+@unless($isPropietario)
 function eliminarPago(pagoId, numeroRecibo, montoPago) {
     const montoNumerico = parseFloat(montoPago);
     if (confirm('¿Está seguro de que desea eliminar el pago de $' + montoNumerico.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' del recibo ' + numeroRecibo + '?\n\nEsta acción no se puede deshacer y el recibo volverá a tener saldo pendiente.')) {
@@ -688,4 +701,5 @@ function eliminarPago(pagoId, numeroRecibo, montoPago) {
         form.submit();
     }
 }
+@endunless
 </script>

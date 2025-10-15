@@ -9,9 +9,12 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
+                    @php($user = Auth::user())
+                    @php($isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-lg font-medium text-gray-900">Lista de Recibos</h3>
                         <div class="flex space-x-2">
+                            @unless($isPropietario)
                             <button id="deleteSelectedBtn" class="hidden inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -24,6 +27,7 @@
                                 </svg>
                                 Nuevo Recibo
                             </a>
+                            @endunless
                         </div>
                     </div>
 
@@ -160,9 +164,11 @@
                                 <table class="min-w-full divide-y divide-gray-200">
                                     <thead class="bg-gray-50">
                                         <tr>
+                                            @unless($isPropietario)
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                             </th>
+                                            @endunless
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Período</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Emisión</th>
@@ -175,9 +181,11 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($recibos as $recibo)
                                         <tr class="hover:bg-gray-50">
+                                            @unless($isPropietario)
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <input type="checkbox" name="recibo_ids[]" value="{{ $recibo->id }}" class="recibo-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                             </td>
+                                            @endunless
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 {{ $recibo->numero_recibo }}
                                             </td>
@@ -203,17 +211,21 @@
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                                @unless($isPropietario)
                                                 <a href="{{ route('recibos.show', $recibo) }}" class="text-blue-600 hover:text-blue-900 inline-flex items-center" title="Ver">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                     </svg>
                                                 </a>
+                                                @endunless
+                                                @unless($isPropietario)
                                                 <a href="{{ route('recibos.edit', $recibo) }}" class="text-indigo-600 hover:text-indigo-900 inline-flex items-center" title="Editar">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                     </svg>
                                                 </a>
+                                                @endunless
                                                 @if($recibo->archivo_adjunto)
                                                     <a href="{{ route('recibos.descargar-archivo', $recibo) }}" class="text-green-600 hover:text-green-900 inline-flex items-center" title="Descargar Archivo">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -221,11 +233,13 @@
                                                         </svg>
                                                     </a>
                                                 @endif
+                                                @unless($isPropietario)
                                                 <button onclick="deleteReciboSimple(event, {{ $recibo->id }}, '{{ addslashes($recibo->numero_recibo) }}')" class="text-red-600 hover:text-red-900 inline-flex items-center" title="Eliminar">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                     </svg>
                                                 </button>
+                                                @endunless
                                             </td>
                                         </tr>
                                     @endforeach
@@ -241,12 +255,14 @@
                             <h3 class="mt-2 text-sm font-medium text-gray-900">No hay recibos registrados</h3>
                             <p class="mt-1 text-sm text-gray-500">Comience creando un nuevo recibo o generando recibos masivos.</p>
                             <div class="mt-6 flex justify-center space-x-4">
+                                @unless($isPropietario)
                                 <a href="{{ route('recibos.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                     </svg>
                                     Nuevo Recibo
                                 </a>
+                                @endunless
                             </div>
                         </div>
                     @endif
@@ -254,6 +270,7 @@
             </div>
         </div>
     </div>
+    @unless($isPropietario)
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         console.log('DOM cargado, inicializando funcionalidades...');
@@ -488,4 +505,5 @@
             });
         });
     </script>
+    @endunless
 </x-app-with-sidebar>

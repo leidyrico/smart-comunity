@@ -123,7 +123,7 @@
                             <!-- Fecha de Pago -->
                             <div>
                                 <x-input-label for="fecha_pago" :value="__('Fecha de Pago')" />
-                                <x-text-input id="fecha_pago" name="fecha_pago" type="date" class="mt-1 block w-full" :value="old('fecha_pago', date('Y-m-d'))" required />
+                                <x-text-input id="fecha_pago" name="fecha_pago" type="date" lang="es-VE" placeholder="dd/MM/yyyy" class="mt-1 block w-full" :value="old('fecha_pago', date('Y-m-d'))" required />
                                 <x-input-error :messages="$errors->get('fecha_pago')" class="mt-2" />
                             </div>
                         </div>

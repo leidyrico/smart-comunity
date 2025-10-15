@@ -22,22 +22,30 @@
                            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                             ← Volver a la lista
                         </a>
+                        @php($user = Auth::user())
+                        @php($isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
                         <div class="flex space-x-2">
-                            <a href="{{ route('egresos.edit', $egreso) }}" 
-                               class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                Editar
+                            <a href="{{ route('egresos.pdf', $egreso) }}" 
+                               class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                📄 Descargar PDF
                             </a>
-                            <form action="{{ route('egresos.destroy', $egreso) }}" 
-                                  method="POST" 
-                                  class="inline"
-                                  onsubmit="return confirm('¿Está seguro de que desea eliminar este egreso?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" 
-                                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                                    Eliminar
-                                </button>
-                            </form>
+                            @unless($isPropietario)
+                                <a href="{{ route('egresos.edit', $egreso) }}" 
+                                   class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                    Editar
+                                </a>
+                                <form action="{{ route('egresos.destroy', $egreso) }}" 
+                                      method="POST" 
+                                      class="inline"
+                                      onsubmit="return confirm('¿Está seguro de que desea eliminar este egreso?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" 
+                                            class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            @endunless
                         </div>
                     </div>
 
@@ -67,10 +75,14 @@
                                     <label class="block text-sm font-medium text-gray-600">Proveedor</label>
                                     <p class="text-lg text-gray-900">
                                         @if($egreso->proveedor)
-                                            <a href="{{ route('proveedores.show', $egreso->proveedor) }}" 
-                                               class="text-blue-600 hover:text-blue-800 underline">
+                                            @unless($isPropietario)
+                                                <a href="{{ route('proveedores.show', $egreso->proveedor) }}" 
+                                                   class="text-blue-600 hover:text-blue-800 underline">
+                                                    {{ $egreso->proveedor->nombre }}
+                                                </a>
+                                            @else
                                                 {{ $egreso->proveedor->nombre }}
-                                            </a>
+                                            @endunless
                                         @else
                                             Sin proveedor asignado
                                         @endif
@@ -150,12 +162,14 @@
                                 @endif
                             </div>
 
-                            <div class="mt-4">
-                                <a href="{{ route('proveedores.show', $egreso->proveedor) }}" 
-                                   class="text-blue-600 hover:text-blue-800 underline">
-                                    Ver todos los detalles del proveedor →
-                                </a>
-                            </div>
+                            @unless($isPropietario)
+                                <div class="mt-4">
+                                    <a href="{{ route('proveedores.show', $egreso->proveedor) }}" 
+                                       class="text-blue-600 hover:text-blue-800 underline">
+                                        Ver todos los detalles del proveedor →
+                                    </a>
+                                </div>
+                            @endunless
                         </div>
                     @endif
 

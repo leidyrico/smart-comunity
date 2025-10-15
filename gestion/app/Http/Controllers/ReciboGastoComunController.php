@@ -15,6 +15,7 @@ use App\Mail\NuevoRecibo;
 use App\Services\EmailMasivoService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 // Incluir configuración de timeout para evitar errores de tiempo de ejecución
 require_once __DIR__ . '/../../../config_timeout.php';
@@ -70,6 +71,11 @@ class ReciboGastoComunController extends Controller
      */
     public function create()
     {
+        // Propietarios no pueden crear recibos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         return view('recibos.create');
     }
 
@@ -78,6 +84,11 @@ class ReciboGastoComunController extends Controller
      */
     public function store(Request $request)
     {
+        // Propietarios no pueden crear recibos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         \Log::info('Método store ejecutado', ['request_data' => $request->all()]);
         $request->validate([
             'numero_recibo' => 'required|string|max:50|unique:recibo_gasto_comuns,numero_recibo',
@@ -127,7 +138,14 @@ class ReciboGastoComunController extends Controller
      */
     public function show(ReciboGastoComun $recibo)
     {
-        $recibo->load('pagos.apartamento');
+        // Mostrar solo pagos confirmados reales (sin pruebas) en el detalle
+        $recibo->load([
+            'pagos' => function($query) {
+                $query->confirmadosReales()
+                      ->with('apartamento')
+                      ->orderBy('fecha_pago', 'desc');
+            }
+        ]);
         $apartamentos = Apartamento::orderBy('numero')->get();
         return view('recibos.show', compact('recibo', 'apartamentos'));
     }
@@ -137,6 +155,11 @@ class ReciboGastoComunController extends Controller
      */
     public function edit(ReciboGastoComun $recibo)
     {
+        // Propietarios no pueden editar recibos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         return view('recibos.edit', compact('recibo'));
     }
 
@@ -145,6 +168,11 @@ class ReciboGastoComunController extends Controller
      */
     public function update(Request $request, ReciboGastoComun $recibo)
     {
+        // Propietarios no pueden actualizar recibos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         $request->validate([
             'numero_recibo' => 'required|string|max:50|unique:recibo_gasto_comuns,numero_recibo,' . $recibo->id,
             'periodo' => 'required|string|max:50',
@@ -172,6 +200,11 @@ class ReciboGastoComunController extends Controller
      */
     public function destroy(Request $request, ReciboGastoComun $recibo)
     {
+        // Propietarios no pueden eliminar recibos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         // Validar clave de administrador
         $adminPassword = $request->input('admin_password');
         $configuredPassword = config('app.admin_password', 'admin123'); // Clave por defecto
@@ -272,6 +305,11 @@ class ReciboGastoComunController extends Controller
      */
     public function import()
     {
+        // Propietarios no deben acceder a importación de recibos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         return view('recibos.import');
     }
 
@@ -280,6 +318,11 @@ class ReciboGastoComunController extends Controller
      */
     public function importProcess(Request $request)
     {
+        // Propietarios no pueden importar (crear) recibos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         $request->validate([
             'csv_file' => 'required|file|mimes:csv,txt|max:2048'
         ]);
@@ -410,6 +453,11 @@ class ReciboGastoComunController extends Controller
      */
     public function destroyMultiple(Request $request)
     {
+        // Propietarios no pueden eliminar múltiples recibos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         $request->validate([
             'recibo_ids' => 'required|array|min:1',
             'recibo_ids.*' => 'exists:recibo_gasto_comuns,id'
@@ -457,6 +505,11 @@ class ReciboGastoComunController extends Controller
      */
     public function destroyAll()
     {
+        // Propietarios no pueden eliminar todos los recibos
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         try {
             $count = ReciboGastoComun::count();
             
@@ -546,6 +599,11 @@ class ReciboGastoComunController extends Controller
      */
     public function showAsignarRecibosManual()
     {
+        // Propietarios no pueden asignar recibos manualmente
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         // Obtener todos los recibos vencidos/activos (pueden tener asignaciones existentes)
         $recibosDisponibles = ReciboGastoComun::whereIn('estado', ['vencido', 'activo'])
             ->with(['pagos.apartamento']) // Cargar asignaciones existentes
@@ -572,6 +630,11 @@ class ReciboGastoComunController extends Controller
      */
     public function asignarRecibosManual(Request $request)
     {
+        // Propietarios no pueden asignar recibos manualmente
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         $request->validate([
             'recibos_seleccionados' => 'required|array|min:1',
             'recibos_seleccionados.*' => 'exists:recibo_gasto_comuns,id',
@@ -695,6 +758,11 @@ class ReciboGastoComunController extends Controller
      */
     public function eliminarAsignacion($reciboId, $apartamentoId)
     {
+        // Propietarios no pueden eliminar asignaciones
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         try {
             \DB::beginTransaction();
 

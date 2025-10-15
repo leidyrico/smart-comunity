@@ -58,4 +58,28 @@ class Pago extends Model
     {
         return ucfirst(str_replace('_', ' ', $this->metodo_pago));
     }
+
+    /**
+     * Scope: excluir pagos marcados como pruebas via observaciones
+     */
+    public function scopeSinPruebas($query)
+    {
+        return $query->where(function($q) {
+            $q->whereNull('observaciones')
+              ->orWhere(function($qq) {
+                  $qq->whereRaw('LOWER(observaciones) NOT LIKE ?', ['%prueba%'])
+                     ->whereRaw('LOWER(observaciones) NOT LIKE ?', ['%test%']);
+              });
+        });
+    }
+
+    /**
+     * Scope: pagos confirmados, con monto > 0 y no de prueba
+     */
+    public function scopeConfirmadosReales($query)
+    {
+        return $query->where('estado', 'confirmado')
+                     ->where('monto_pagado', '>', 0)
+                     ->sinPruebas();
+    }
 }

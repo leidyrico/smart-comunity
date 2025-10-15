@@ -7,6 +7,8 @@ use App\Models\Egreso;
 use App\Models\Proveedor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class EgresoController extends Controller
 {
@@ -46,6 +48,9 @@ class EgresoController extends Controller
      */
     public function create()
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403);
+        }
         $proveedores = Proveedor::activos()->orderBy('nombre')->get();
         return view('egresos.create', compact('proveedores'));
     }
@@ -55,6 +60,9 @@ class EgresoController extends Controller
      */
     public function store(Request $request)
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403);
+        }
         $validator = Validator::make($request->all(), [
             'nro_factura' => 'required|string|max:255',
             'comprobante' => 'nullable|string|max:255',
@@ -71,10 +79,12 @@ class EgresoController extends Controller
                 ->withInput();
         }
 
-        Egreso::create($request->all());
+        $egreso = Egreso::create($request->all());
 
         return redirect()->route('egresos.index')
-            ->with('success', 'Egreso creado exitosamente.');
+            ->with('success', 'Egreso creado exitosamente.')
+            ->with('egreso_id', $egreso->id)
+            ->with('show_pdf_link', true);
     }
 
     /**
@@ -91,6 +101,9 @@ class EgresoController extends Controller
      */
     public function edit(Egreso $egreso)
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403);
+        }
         $proveedores = Proveedor::activos()->orderBy('nombre')->get();
         return view('egresos.edit', compact('egreso', 'proveedores'));
     }
@@ -100,6 +113,9 @@ class EgresoController extends Controller
      */
     public function update(Request $request, Egreso $egreso)
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403);
+        }
         $validator = Validator::make($request->all(), [
             'nro_factura' => 'required|string|max:255',
             'comprobante' => 'nullable|string|max:255',
@@ -127,9 +143,30 @@ class EgresoController extends Controller
      */
     public function destroy(Egreso $egreso)
     {
+        if (Auth::check() && Auth::user()->isUsuarioPropietario()) {
+            abort(403);
+        }
         $egreso->delete();
 
         return redirect()->route('egresos.index')
             ->with('success', 'Egreso eliminado exitosamente.');
+    }
+
+    /**
+     * Generate PDF for an existing egreso.
+     */
+    public function generatePdf(Egreso $egreso)
+    {
+        // Cargar la relación del proveedor para el PDF
+        $egreso->load('proveedor');
+
+        // Generar el PDF
+        $pdf = Pdf::loadView('egresos.pdf', compact('egreso'));
+        
+        // Nombre del archivo PDF
+        $filename = 'egreso_' . $egreso->nro_factura . '_' . $egreso->fecha->format('Y-m-d') . '.pdf';
+
+        // Descargar el PDF
+        return $pdf->download($filename);
     }
 }

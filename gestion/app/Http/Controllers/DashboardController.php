@@ -29,14 +29,28 @@ class DashboardController extends Controller
         })->sortByDesc('saldo_pendiente')->take(5)->values();
         
         // 2. Los 5 últimos pagos más recientes
+        // Excluir pagos de prueba (observaciones contienen 'prueba' o 'test')
         $ultimosPagos = Pago::with(['apartamento', 'reciboGastoComun'])
             ->where('estado', 'confirmado')
+            ->where(function($q) {
+                $q->whereNull('observaciones')
+                  ->orWhere(function($qq) {
+                      $qq->whereRaw('LOWER(observaciones) NOT LIKE ?', ['%prueba%'])
+                         ->whereRaw('LOWER(observaciones) NOT LIKE ?', ['%test%']);
+                  });
+            })
             ->orderBy('fecha_pago', 'desc')
             ->take(5)
             ->get();
         
-        // 3. Estadísticas del último recibo más actual
+        // 3. Estadísticas del último recibo más actual (excluyendo recibos específicos)
         $ultimoRecibo = ReciboGastoComun::where('estado', 'activo')
+            ->where(function($query) {
+                $query->where('numero_recibo', 'not like', '%-E%')
+                      ->where('numero_recibo', 'not like', '%-INUN%')
+                      ->where('numero_recibo', 'not like', '%-SALON%')
+                      ->where('numero_recibo', 'not like', '%Abg%');
+            })
             ->orderBy('fecha_emision', 'desc')
             ->first();
         
@@ -104,12 +118,18 @@ class DashboardController extends Controller
         })->sortByDesc('saldo_pendiente')->take(5)->values();
         
         $ultimosPagos = Pago::with(['apartamento', 'reciboGastoComun'])
-            ->where('estado', 'confirmado')
+            ->confirmadosReales()
             ->orderBy('fecha_pago', 'desc')
             ->take(5)
             ->get();
         
         $ultimoRecibo = ReciboGastoComun::where('estado', 'activo')
+            ->where(function($query) {
+                $query->where('numero_recibo', 'not like', '%-E%')
+                      ->where('numero_recibo', 'not like', '%-INUN%')
+                      ->where('numero_recibo', 'not like', '%-SALON%')
+                      ->where('numero_recibo', 'not like', '%Abg%');
+            })
             ->orderBy('fecha_emision', 'desc')
             ->first();
         
@@ -123,13 +143,12 @@ class DashboardController extends Controller
             })->pluck('id');
             
             $totalRecaudacion = $ultimoRecibo->pagos()
-                ->where('estado', 'confirmado')
+                ->confirmadosReales()
                 ->whereNotIn('apartamento_id', $apartamentosExcluidos)
                 ->sum('monto_pagado');
             
             $apartamentosPagados = $ultimoRecibo->pagos()
-                ->where('estado', 'confirmado')
-                ->where('monto_pagado', '>', 0)
+                ->confirmadosReales()
                 ->whereNotIn('apartamento_id', $apartamentosExcluidos)
                 ->distinct('apartamento_id')
                 ->count();

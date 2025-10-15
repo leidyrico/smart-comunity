@@ -10,6 +10,8 @@
             <!-- Información del Recibo -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6 text-gray-900">
+                    @php($user = Auth::user())
+                    @php($isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
                     <div class="flex justify-between items-start mb-6">
                         <div>
                             <h3 class="text-2xl font-bold text-gray-800">{{ $recibo->numero_recibo }}</h3>
@@ -133,7 +135,7 @@
                                         ${{ number_format($pago->monto_pagado, 2, ',', '.') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $pago->fecha_pago->format('d/m/Y') }}
+                                        {{ $pago->fecha_pago ? $pago->fecha_pago->format('d/m/Y') : 'Pendiente' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ ucfirst(str_replace('_', ' ', $pago->metodo_pago)) }}
@@ -173,7 +175,7 @@
             @endif
 
             <!-- Apartamentos Asociados -->
-            @if(isset($apartamentos) && $apartamentos->count() > 0)
+            @if(!$isPropietario && isset($apartamentos) && $apartamentos->count() > 0)
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6 text-gray-900">
                     <h3 class="text-xl font-bold text-gray-800 mb-4">Registrar Pago</h3>
@@ -237,6 +239,7 @@
                         </svg>
                         {{ __('Imprimir') }}
                     </a>
+                    @unless($isPropietario)
                     
                     <a href="{{ route('recibos.edit', $recibo) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -320,6 +323,7 @@
                             });
                         });
                     </script>
+                    @endunless
                 </div>
             </div>
         </div>

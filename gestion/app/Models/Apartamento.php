@@ -66,7 +66,7 @@ class Apartamento extends Model
             // Obtener el total pagado para este recibo específico
             $totalPagado = $this->pagos()
                 ->where('recibo_gasto_comun_id', $recibo->id)
-                ->where('estado', 'confirmado')
+                ->confirmadosReales()
                 ->sum('monto_pagado');
             
             // Calcular saldo pendiente del recibo (no puede ser negativo)
@@ -118,7 +118,7 @@ class Apartamento extends Model
             
             $totalPagado = $this->pagos()
                 ->where('recibo_gasto_comun_id', $recibo->id)
-                ->where('estado', 'confirmado')
+                ->confirmadosReales()
                 ->sum('monto_pagado');
             
             $saldoRecibo = max(0, $recibo->total_recibo - $totalPagado);

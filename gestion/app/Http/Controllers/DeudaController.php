@@ -8,6 +8,7 @@ use App\Models\Pago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
 use App\Mail\ReporteDeudas;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
@@ -37,6 +38,16 @@ class DeudaController extends Controller
         // Filtro por propietario si se proporciona
         if ($request->filled('nombre_propietario')) {
             $query->where('propietario', 'like', '%' . $request->nombre_propietario . '%');
+        }
+
+        // Restringir a propietarios: solo su propio apartamento por email o apartamento_id
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            if (!empty($user->apartamento_id)) {
+                $query->where('id', $user->apartamento_id);
+            } elseif (!empty($user->email)) {
+                $query->where('email', $user->email);
+            }
         }
 
         $apartamentos = $query->get();
@@ -196,6 +207,20 @@ class DeudaController extends Controller
     {
         $apartamento = Apartamento::with(['pagos.reciboGastoComun'])->findOrFail($id);
         
+        // Restringir a propietarios: acceso solo a su propio apartamento
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            if (!empty($user->apartamento_id)) {
+                if ((int)$apartamento->id !== (int)$user->apartamento_id) {
+                    abort(403);
+                }
+            } elseif (!empty($user->email)) {
+                if (!empty($apartamento->email) && $apartamento->email !== $user->email) {
+                    abort(403);
+                }
+            }
+        }
+        
         // Actualizar el estatus financiero del apartamento antes de mostrar los detalles
         $apartamento->actualizarEstatusFinanciero();
         
@@ -239,6 +264,11 @@ class DeudaController extends Controller
      */
     public function cambiarEstadoRecibo(Request $request, $reciboId)
     {
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
+
         $request->validate([
             'estado' => 'required|in:pagado,pendiente'
         ]);
@@ -301,11 +331,19 @@ class DeudaController extends Controller
 
     public function showImport()
     {
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         return view('deudas.import');
     }
 
     public function import(Request $request)
     {
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         $request->validate([
             'file' => 'required|mimes:csv,txt'
         ]);
@@ -353,6 +391,10 @@ class DeudaController extends Controller
 
     public function downloadTemplate()
     {
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="plantilla_apartamentos.csv"',
@@ -374,6 +416,10 @@ class DeudaController extends Controller
      */
     public function showImportCompleto()
     {
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         return view('deudas.import-completo');
     }
 
@@ -382,6 +428,10 @@ class DeudaController extends Controller
      */
     public function importCompleto(Request $request)
     {
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         $request->validate([
             'excel_file' => 'required|file|mimes:xlsx,xls|max:10240',
             'borrar_datos' => 'nullable|boolean',
@@ -793,6 +843,10 @@ class DeudaController extends Controller
      */
     public function downloadTemplateCompleto()
     {
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         $spreadsheet = new Spreadsheet();
         
         // Hoja de Apartamentos
@@ -1349,6 +1403,10 @@ class DeudaController extends Controller
      */
     public function enviarReportePorCorreo(Request $request)
     {
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
         try {
             \Log::info('=== INICIO ENVIO CORREO ===');
             \Log::info('Request data:', $request->all());
