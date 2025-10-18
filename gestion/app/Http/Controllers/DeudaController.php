@@ -1527,7 +1527,7 @@ class DeudaController extends Controller
             // Debug: Log para verificar los datos
             \Log::info('Datos de deuda para correo:', [
                 'total_apartamentos' => $apartamentos->count(),
-                'total_recibos_activos' => $recibosActivos->count(),
+                'total_recibos_activos' => $recibos->count(),
                 'datos_deuda_count' => count($datosDeuda),
                 'datos_filtrados_count' => count($datos),
                 'filtros' => $request->all()
