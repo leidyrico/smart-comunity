@@ -50,6 +50,13 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- Paginación de Recibos -->
+                <div id="paginacion-recibos" class="px-6 py-4 border-t border-gray-200" style="display: none;">
+                    <div class="flex items-center justify-between">
+                        <div id="info-paginacion" class="text-sm text-gray-700"></div>
+                        <div id="botones-paginacion" class="flex space-x-1"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Detalles del Recibo Seleccionado -->
@@ -98,13 +105,6 @@
                         </table>
                     </div>
                     
-                    <!-- Paginación de Recibos -->
-                    <div id="paginacion-recibos" class="px-6 py-4 border-t border-gray-200" style="display: none;">
-                        <div class="flex items-center justify-between">
-                            <div id="info-paginacion" class="text-sm text-gray-700"></div>
-                            <div id="botones-paginacion" class="flex space-x-1"></div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -377,7 +377,13 @@
                 url += '&' + params.toString();
             }
             
-            fetch(url)
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);

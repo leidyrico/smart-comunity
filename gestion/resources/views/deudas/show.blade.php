@@ -187,10 +187,10 @@
                                         {{ $detalle['recibo']->numero_recibo }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $detalle['recibo']->fecha_emision->format('d/m/Y') }}
+                                        {{ optional($detalle['recibo']->fecha_emision)->format('d/m/Y') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $detalle['recibo']->fecha_vencimiento->format('d/m/Y') }}
+                                        {{ optional($detalle['recibo']->fecha_vencimiento)->format('d/m/Y') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         ${{ number_format($detalle['recibo']->total_recibo, 2, ',', '.') }}

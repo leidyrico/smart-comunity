@@ -207,7 +207,7 @@
                                             {{ $dato['numero_recibo'] }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $dato['fecha_facturacion']->format('d/m/Y') }}
+                                            {{ $dato['fecha_facturacion'] ? \Carbon\Carbon::parse($dato['fecha_facturacion'])->format('d/m/Y') : '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             ${{ number_format($dato['monto_facturado'], 2, ',', '.') }}

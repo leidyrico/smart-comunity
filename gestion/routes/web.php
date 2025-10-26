@@ -68,11 +68,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/recibos/eliminar-asignacion/{recibo}/{apartamento}', [ReciboGastoComunController::class, 'eliminarAsignacion'])->name('recibos.eliminar-asignacion');
     
     Route::get('/recibos/{recibo}/print', [ReciboGastoComunController::class, 'print'])->name('recibos.print');
-Route::get('/recibos/{recibo}/descargar-archivo', [ReciboGastoComunController::class, 'descargarArchivo'])->name('recibos.descargar-archivo');
-Route::delete('/recibos/destroy-multiple', [ReciboGastoComunController::class, 'destroyMultiple'])->name('recibos.destroy-multiple');
-Route::delete('/recibos/destroy-all', [ReciboGastoComunController::class, 'destroyAll'])->name('recibos.destroy-all');
-Route::resource('recibos', ReciboGastoComunController::class);
-    
+    Route::get('/recibos/{recibo}/descargar-archivo', [ReciboGastoComunController::class, 'descargarArchivo'])->name('recibos.descargar-archivo');
+    Route::delete('/recibos/destroy-multiple', [ReciboGastoComunController::class, 'destroyMultiple'])->name('recibos.destroy-multiple');
+    Route::delete('/recibos/destroy-all', [ReciboGastoComunController::class, 'destroyAll'])->name('recibos.destroy-all');
+    Route::resource('recibos', ReciboGastoComunController::class);
+        
     // Rutas para pagos
     Route::resource('pagos', PagoController::class);
     Route::get('/pagos/apartamento/{apartamento}/estado-cuenta', [PagoController::class, 'estadoCuenta'])->name('pagos.estado-cuenta');
@@ -81,71 +81,63 @@ Route::resource('recibos', ReciboGastoComunController::class);
     // Rutas para pago global
     Route::get('/pagos/global/create/{apartamento}', [PagoController::class, 'createGlobal'])->name('pagos.create-global');
     Route::post('/pagos/global/store', [PagoController::class, 'storeGlobal'])->name('pagos.store-global');
-    
+        
     // Rutas para consulta de deudas
     Route::get('/deudas', [DeudaController::class, 'index'])->name('deudas.index');
+    Route::get('/deudas/{id}', [DeudaController::class, 'show'])->name('deudas.show');
     Route::post('/deudas/enviar-correo', [DeudaController::class, 'enviarReportePorCorreo'])->name('deudas.enviar-correo');
     Route::get('/deudas/export/excel', [DeudaController::class, 'exportExcel'])->name('deudas.export.excel');
     Route::get('/api/deudas/estadisticas', [DeudaController::class, 'estadisticas'])->name('api.deudas.estadisticas');
-    
-    // Rutas para importación CSV de apartamentos
-    Route::get('/deudas/import', [DeudaController::class, 'showImport'])->name('deudas.import');
-    Route::post('/deudas/import', [DeudaController::class, 'import'])->name('deudas.import.process');
-    Route::get('/deudas/template', [DeudaController::class, 'downloadTemplate'])->name('deudas.template');
-    
-    // Rutas para importación completa de Excel
+
+    // Rutas de importación de Deudas (Excel completo y recibos vencidos)
     Route::get('/deudas/import/completo', [DeudaController::class, 'showImportCompleto'])->name('deudas.import.completo');
     Route::post('/deudas/import/completo', [DeudaController::class, 'importCompleto'])->name('deudas.import.completo.process');
-    Route::get('/deudas/template/completo', [DeudaController::class, 'downloadTemplateCompleto'])->name('deudas.template.completo');
     Route::get('/deudas/import/errors', [DeudaController::class, 'showImportErrors'])->name('deudas.import.errors');
-    
-    // Rutas para importación selectiva de recibos vencidos
     Route::get('/deudas/import/recibos-vencidos', [DeudaController::class, 'showImportRecibosVencidos'])->name('deudas.import.recibos-vencidos');
     Route::post('/deudas/import/recibos-vencidos', [DeudaController::class, 'importRecibosVencidos'])->name('deudas.import.recibos-vencidos.process');
     
-    Route::get('/deudas/{apartamento}', [DeudaController::class, 'show'])->name('deudas.show');
-    Route::patch('/deudas/recibo/{recibo}/cambiar-estado', [DeudaController::class, 'cambiarEstadoRecibo'])->name('deudas.cambiar-estado-recibo');
-    
 
-    
+    Route::patch('/deudas/recibo/{recibo}/cambiar-estado', [DeudaController::class, 'cambiarEstadoRecibo'])->name('deudas.cambiar-estado-recibo');
+        
+
+        
     // Rutas de Inventario
     Route::resource('inventario', InventarioController::class);
-    
+        
     // Rutas de Conciliación
     Route::get('/conciliacion', [ConciliacionController::class, 'index'])->name('conciliacion.index');
     Route::post('/conciliacion/egresos', [ConciliacionController::class, 'store'])->name('conciliacion.store');
     Route::delete('/conciliacion/egresos/{egreso}', [ConciliacionController::class, 'destroy'])->name('conciliacion.destroy');
-    
+        
     // Rutas de Recaudación (submenú de Conciliación)
     Route::get('/conciliacion/recaudacion', [ConciliacionController::class, 'recaudacion'])->name('conciliacion.recaudacion');
-    
+        
     // Rutas para Espacios
     Route::resource('spaces', SpaceController::class);
-    
+        
     // Rutas para Reservas de Espacios
     Route::resource('reservations', ReservationController::class);
     Route::post('/reservations/check-availability', [ReservationController::class, 'checkAvailability'])->name('reservations.check-availability');
     Route::post('/reservations/get-occupied-dates', [ReservationController::class, 'getOccupiedDates'])->name('reservations.get-occupied-dates');
-    
+        
     // Rutas para Proveedores
     Route::resource('proveedores', ProveedorController::class);
-    
+        
     // Rutas para Egresos
     Route::resource('egresos', EgresoController::class);
-    Route::get('/egresos/{egreso}/pdf', [EgresoController::class, 'generatePdf'])->name('egresos.pdf');
 
     // Rutas para Fondos
     Route::resource('fondos', FondoController::class);
     Route::post('/fondos/{fondo}/ingreso', [FondoController::class, 'registrarIngreso'])->name('fondos.ingreso');
     Route::post('/fondos/{fondo}/egreso', [FondoController::class, 'registrarEgreso'])->name('fondos.egreso');
     Route::delete('/fondos/movimientos/{movimiento}', [FondoController::class, 'eliminarMovimiento'])->name('fondos.movimientos.destroy');
-    
-    // API endpoints
-    Route::get('/api/apartamentos', [ApartamentoController::class, 'getApartamentosApi'])->name('api.apartamentos');
 });
 
+// API endpoints
+Route::get('/api/apartamentos', [ApartamentoController::class, 'getApartamentosApi'])->name('api.apartamentos');
+
 // API endpoints con autenticación mejorada para AJAX
-Route::middleware('api.auth')->group(function () {
+Route::middleware('auth')->group(function () {
     Route::get('/api/recaudacion/recibos', [ConciliacionController::class, 'getRecibosApi'])->name('api.recaudacion.recibos');
     Route::get('/api/recaudacion/detalle/{recibo}', [ConciliacionController::class, 'detalleRecaudacion'])->name('api.recaudacion.detalle');
 });

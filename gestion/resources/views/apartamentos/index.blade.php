@@ -40,34 +40,56 @@
                     <!-- Filtros -->
                     <div class="mb-6 bg-gray-50 p-4 rounded-lg">
                         <form method="GET" action="{{ route('apartamentos.index') }}" class="flex flex-wrap items-end gap-4">
-                            <div class="flex-1 min-w-48">
+                            <div class="flex-none">
                                 <label for="estatus_financiero" class="block text-sm font-medium text-gray-700 mb-1">Estatus Financiero</label>
-                                <select name="estatus_financiero" id="estatus_financiero" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <select name="estatus_financiero" id="estatus_financiero" class="block w-64 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                     <option value="">Todos los estatus</option>
                                     <option value="solvente" {{ request('estatus_financiero') === 'solvente' ? 'selected' : '' }}>Solvente</option>
                                     <option value="deudor" {{ request('estatus_financiero') === 'deudor' ? 'selected' : '' }}>Deudor</option>
                                     <option value="moroso" {{ request('estatus_financiero') === 'moroso' ? 'selected' : '' }}>Moroso</option>
                                 </select>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex-none">
                                 <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                     </svg>
                                     Filtrar
                                 </button>
-                                @if(request()->hasAny(['estatus_financiero']))
-                                    <a href="{{ route('apartamentos.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                        </svg>
-                                        Limpiar
-                                    </a>
-                                @endif
                             </div>
+                            @if(request()->hasAny(['estatus_financiero']))
+                                <div class="flex-none">
+                                    <a href="{{ route('apartamentos.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+                                    </a>
+                                </div>
+                            @endif
                         </form>
                     </div>
 
+                    {{-- Resumen para filtros Deudor/Moroso --}}
+                    @if(isset($estatusFiltrado) && in_array($estatusFiltrado, ['deudor','moroso']))
+                        <div class="mb-6 bg-white border rounded-lg p-4 shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-800">Resumen del filtro: {{ ucfirst($estatusFiltrado) }}</h4>
+                                    <p class="text-xs text-gray-500">Mostrando totales para apartamentos con estatus "{{ strtolower($estatusFiltrado) }}"</p>
+                                </div>
+                                <div class="flex space-x-6">
+                                    <div>
+                                        <div class="text-xs text-gray-500">Total de registros</div>
+                                        <div class="text-lg font-semibold text-gray-900">{{ $totalRegistros }}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-gray-500">Total saldo pendiente</div>
+                                        <div class="text-lg font-semibold {{ ($totalSaldoPendiente ?? 0) > 0 ? 'text-red-600' : 'text-green-600' }}">
+                                            ${{ number_format($totalSaldoPendiente ?? 0, 2) }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     @if($apartamentos->count() > 0)
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">

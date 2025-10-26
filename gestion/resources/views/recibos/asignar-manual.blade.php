@@ -153,18 +153,18 @@
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     @if($recibo->pagos->count() > 0)
-                                        <button type="button" 
-                                                class="inline-flex items-center px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-sm font-medium rounded-full transition-colors duration-200"
-                                                onclick="openAssignmentModal('{{ $recibo->id }}')">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                            </svg>
-                                            Ver {{ $recibo->pagos->count() }} asignación{{ $recibo->pagos->count() > 1 ? 'es' : '' }}
-                                        </button>
-                                    @else
-                                        <span class="text-xs text-gray-400 italic">Sin asignaciones</span>
-                                    @endif
+                                                        <button type="button" 
+                                                                class="inline-flex items-center px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-sm font-medium rounded-full transition-colors duration-200"
+                                                                onclick="openAssignmentModal('{{ $recibo->id }}')">
+                                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                            </svg>
+                                                            Ver {{ $recibo->pagos->pluck('apartamento_id')->unique()->count() }} apartamento{{ $recibo->pagos->pluck('apartamento_id')->unique()->count() > 1 ? 's' : '' }}
+                                                        </button>
+                                                    @else
+                                                        <span class="text-xs text-gray-400 italic">Sin asignaciones</span>
+                                                    @endif
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap">
                                                     <select name="apartamentos[{{ $recibo->id }}]" class="border-gray-300 rounded-md shadow-sm text-sm apartamento-select" data-recibo-id="{{ $recibo->id }}">
@@ -255,16 +255,26 @@
             if (!recibo) return;
 
             const modalContent = document.getElementById('modalContent');
+            const pagos = recibo.pagos || [];
             
-            if (!recibo.pagos || recibo.pagos.length === 0) {
+            if (!pagos || pagos.length === 0) {
                 modalContent.innerHTML = '<p class="text-gray-500 text-center py-8">No hay asignaciones para este recibo.</p>';
             } else {
+                // Deduplicar por apartamento
+                const mapaPorApto = {};
+                pagos.forEach(p => {
+                    if (p.apartamento && p.apartamento.id) {
+                        mapaPorApto[p.apartamento.id] = p;
+                    }
+                });
+                const listaUnica = Object.values(mapaPorApto);
+
                 let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
-                recibo.pagos.forEach(pago => {
+                listaUnica.forEach(pago => {
                     const statusColor = pago.apartamento.estatus_financiero === 'solvente' ? 'bg-green-100 text-green-800' : 
-                                       pago.apartamento.estatus_financiero === 'deudor' ? 'bg-red-100 text-red-800' : 
-                                       pago.apartamento.estatus_financiero === 'parcial' ? 'bg-yellow-100 text-yellow-800' :
-                                       'bg-gray-100 text-gray-800';
+                                               pago.apartamento.estatus_financiero === 'deudor' ? 'bg-red-100 text-red-800' : 
+                                               pago.apartamento.estatus_financiero === 'parcial' ? 'bg-yellow-100 text-yellow-800' :
+                                               'bg-gray-100 text-gray-800';
                     
                     html += `
                         <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">

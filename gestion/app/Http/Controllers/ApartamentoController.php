@@ -42,7 +42,14 @@ class ApartamentoController extends Controller
             $apartamento->actualizarEstatusFinanciero();
         }
         
-        return view('apartamentos.index', compact('apartamentos'));
+        // Calcular totales para el resumen cuando hay filtro de estatus
+        $estatusFiltrado = $request->filled('estatus_financiero') ? $request->estatus_financiero : null;
+        $totalRegistros = $apartamentos->count();
+        $totalSaldoPendiente = $apartamentos->sum(function ($apto) {
+            return $apto->saldo_pendiente;
+        });
+        
+        return view('apartamentos.index', compact('apartamentos', 'totalRegistros', 'totalSaldoPendiente', 'estatusFiltrado'));
     }
 
     /**
@@ -326,6 +333,4 @@ class ApartamentoController extends Controller
             
         return response()->json($apartamentos);
     }
-
-
 }

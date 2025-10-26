@@ -20,7 +20,9 @@ class MailConfigServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Configurar el correo automáticamente al iniciar la aplicación
-        MailConfigService::configurarCorreo();
+        // Ejecutar configuración de correo solo en producción para evitar latencia en desarrollo
+        if (app()->environment('production')) {
+            MailConfigService::configurarCorreo();
+        }
     }
 }
