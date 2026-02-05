@@ -6,8 +6,8 @@
  * en AbstractStream.php línea 82 durante envío de correos SMTP
  */
 
-// Aumentar tiempo de ejecución a 300 segundos (5 minutos)
-ini_set('max_execution_time', 300);
+// Aumentar tiempo de ejecución a 1800 segundos (30 minutos)
+ini_set('max_execution_time', 1800);
 
 // También aumentar el tiempo límite de memoria si es necesario
 ini_set('memory_limit', '256M');

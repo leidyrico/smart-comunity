@@ -67,7 +67,7 @@ class ActaController extends Controller
         // Validación de campos requeridos y archivo
         $request->validate([
             'nro_doc' => 'required|string|max:255|unique:actas,nro_doc',
-            'nombre_doc' => 'required|string|max:20',
+            'nombre_doc' => 'required|string|max:100',
             'fecha' => 'required|date',
             'descripcion' => 'required|string|min:10',
             'tipo_documento' => 'required|in:Correspondencia,Comunicado,Actas',
@@ -77,6 +77,7 @@ class ActaController extends Controller
             'nro_doc.required' => 'El número de documento es obligatorio.',
             'nro_doc.unique' => 'Este número de documento ya existe.',
             'nombre_doc.required' => 'El nombre del documento es obligatorio.',
+            'nombre_doc.max' => 'El nombre del documento no debe exceder 100 caracteres.',
             'fecha.required' => 'La fecha es obligatoria.',
             'descripcion.required' => 'La descripción es obligatoria.',
             'descripcion.min' => 'La descripción debe tener al menos 10 caracteres.',

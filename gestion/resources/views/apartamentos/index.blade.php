@@ -383,6 +383,35 @@ function printTable() {
         if (lastCell) lastCell.remove();
     });
     
+    // Preparar resumen de filtro (será mostrado arriba de la tabla)
+    const resumenFiltroHtml = `
+        <div style="margin-bottom: 16px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 12px; color: #6b7280;">Resumen del filtro</div>
+                    <div style="font-weight: 600; color: #111827;">Estatus: {{ isset($estatusFiltrado) ? ucfirst($estatusFiltrado) : (request('estatus_financiero') ? ucfirst(request('estatus_financiero')) : 'Todos') }}</div>
+                </div>
+                <div style="display: flex; gap: 24px;">
+                    @if(isset($estatusFiltrado) && in_array($estatusFiltrado, ['deudor','moroso']))
+                        <div>
+                            <div style="font-size: 12px; color: #6b7280;">Total de registros</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #111827;">{{ $totalRegistros }}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #6b7280;">Total saldo pendiente</div>
+                            <div style="font-size: 16px; font-weight: 600; color: {{ ($totalSaldoPendiente ?? 0) > 0 ? '#b91c1c' : '#065f46' }};">${{ number_format($totalSaldoPendiente ?? 0, 2) }}</div>
+                        </div>
+                    @else
+                        <div>
+                            <div style="font-size: 12px; color: #6b7280;">Total de registros mostrados</div>
+                            <div style="font-size: 16px; font-weight: 600; color: #111827;">{{ $apartamentos->count() }}</div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    `;
+    
     // Crear ventana de impresión
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
@@ -398,12 +427,12 @@ function printTable() {
                 h1 {
                     text-align: center;
                     color: #333;
-                    margin-bottom: 30px;
+                    margin-bottom: 12px;
                 }
                 table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-top: 20px;
+                    margin-top: 10px;
                 }
                 th, td {
                     border: 1px solid #ddd;
@@ -432,6 +461,7 @@ function printTable() {
         <body>
             <div class="print-date">Fecha de impresión: ${new Date().toLocaleDateString('es-ES')}</div>
             <h1>Lista de Apartamentos - Residencias Alfa</h1>
+            ${resumenFiltroHtml}
             ${tableClone.outerHTML}
         </body>
         </html>

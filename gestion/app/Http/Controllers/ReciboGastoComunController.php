@@ -120,9 +120,21 @@ class ReciboGastoComunController extends Controller
         $recibo->calcularTotal();
         $recibo->save();
 
+        \Log::info('Recibo creado exitosamente', [
+            'recibo_id' => $recibo->id,
+            'numero_recibo' => $recibo->numero_recibo,
+            'estado' => $recibo->estado,
+            'total_recibo' => $recibo->total_recibo
+        ]);
+
         // Si el recibo está activo, asignarlo a todos los apartamentos
         if ($recibo->estado === 'activo') {
             $enviarCorreo = $request->has('enviar_correo');
+            \Log::info('Procesando asignación de recibo activo', [
+                'recibo_id' => $recibo->id,
+                'enviar_correo' => $enviarCorreo,
+                'request_data' => $request->all()
+            ]);
             $this->asignarReciboATodosApartamentos($recibo, $enviarCorreo);
         }
         
@@ -534,6 +546,15 @@ class ReciboGastoComunController extends Controller
      */
     private function asignarReciboATodosApartamentos(ReciboGastoComun $recibo, $enviarCorreo = true)
     {
+        // Aumentar tiempo de ejecución ilimitadamente para este proceso largo
+        set_time_limit(0);
+
+        \Log::info('Iniciando asignación de recibo a apartamentos', [
+            'recibo_id' => $recibo->id,
+            'numero_recibo' => $recibo->numero_recibo,
+            'enviar_correo' => $enviarCorreo
+        ]);
+
         // Si es un recibo vencido, NO asignarlo automáticamente
         // Los recibos vencidos solo se asignan manualmente a través de recibos/asignar-manual
         if ($recibo->estado === 'vencido') {
@@ -546,6 +567,7 @@ class ReciboGastoComunController extends Controller
         }
         
         $apartamentos = Apartamento::all();
+        \Log::info('Apartamentos encontrados', ['total' => $apartamentos->count()]);
         
         foreach ($apartamentos as $apartamento) {
             // Solo para recibos activos - determinar el estado del pago
@@ -575,19 +597,44 @@ class ReciboGastoComunController extends Controller
             
             // Enviar correo si el apartamento tiene email y está habilitado el envío
             if ($enviarCorreo && $apartamento->email && !empty($apartamento->email)) {
+                \Log::info('Intentando enviar correo a apartamento', [
+                    'apartamento_id' => $apartamento->id,
+                    'apartamento_numero' => $apartamento->numero,
+                    'email' => $apartamento->email,
+                    'enviar_correo' => $enviarCorreo
+                ]);
+                
                 try {
                     Mail::to($apartamento->email)->send(new NuevoRecibo($recibo, $apartamento->propietario));
-                    \Log::info('Correo de nuevo recibo enviado', [
+                    \Log::info('Correo de nuevo recibo enviado exitosamente', [
                         'recibo_id' => $recibo->id,
+                        'numero_recibo' => $recibo->numero_recibo,
                         'apartamento_id' => $apartamento->id,
+                        'apartamento_numero' => $apartamento->numero,
                         'email' => $apartamento->email
                     ]);
                 } catch (\Exception $e) {
                     \Log::error('Error enviando correo de nuevo recibo', [
                         'recibo_id' => $recibo->id,
+                        'numero_recibo' => $recibo->numero_recibo,
                         'apartamento_id' => $apartamento->id,
+                        'apartamento_numero' => $apartamento->numero,
                         'email' => $apartamento->email,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
+                        'error_trace' => $e->getTraceAsString()
+                    ]);
+                }
+            } else {
+                if (!$enviarCorreo) {
+                    \Log::info('Correo no enviado: enviar_correo está deshabilitado', [
+                        'apartamento_id' => $apartamento->id,
+                        'apartamento_numero' => $apartamento->numero
+                    ]);
+                } elseif (!$apartamento->email || empty($apartamento->email)) {
+                    \Log::info('Correo no enviado: apartamento no tiene email', [
+                        'apartamento_id' => $apartamento->id,
+                        'apartamento_numero' => $apartamento->numero,
+                        'email' => $apartamento->email
                     ]);
                 }
             }
