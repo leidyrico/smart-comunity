@@ -228,14 +228,24 @@ class ReciboGastoComunController extends Controller
 
         try {
             \DB::beginTransaction();
+            
+            \Log::info("Iniciando eliminación de recibo ID: {$recibo->id}");
 
             $numeroRecibo = $recibo->numero_recibo;
             
             // Obtener todos los pagos asociados al recibo antes de eliminarlo
             $pagosAsociados = \App\Models\Pago::where('recibo_gasto_comun_id', $recibo->id)->get();
+            \Log::info("Pagos asociados encontrados: " . $pagosAsociados->count());
             
-            // Eliminar el recibo (esto también eliminará los pagos por cascada)
+            // Eliminar pagos explícitamente para asegurar integridad (por si falta ON DELETE CASCADE)
+            foreach ($pagosAsociados as $pago) {
+                $pago->delete();
+            }
+            \Log::info("Pagos eliminados correctamente");
+            
+            // Eliminar el recibo
             $recibo->delete();
+            \Log::info("Registro de recibo eliminado");
             
             // Actualizar el estatus financiero de los apartamentos afectados
             $apartamentosAfectados = $pagosAsociados->pluck('apartamento_id')->unique();
@@ -255,6 +265,9 @@ class ReciboGastoComunController extends Controller
                 
         } catch (\Exception $e) {
             \DB::rollback();
+            \Log::error("Error eliminando recibo ID {$recibo->id}: " . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            
             return redirect()->route('recibos.index')
                 ->with('error', 'Error al eliminar el recibo: ' . $e->getMessage());
         }

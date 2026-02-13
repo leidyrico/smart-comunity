@@ -333,4 +333,32 @@ class ApartamentoController extends Controller
             
         return response()->json($apartamentos);
     }
+
+    /**
+     * Enviar recordatorio de pago
+     */
+    public function enviarRecordatorio(Apartamento $apartamento)
+    {
+        // Propietarios no pueden enviar recordatorios
+        $user = Auth::user();
+        if ($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario()) {
+            abort(403);
+        }
+
+        if (!$apartamento->email) {
+             return redirect()->route('apartamentos.index')
+                ->with('error', 'El apartamento ' . $apartamento->numero . ' no tiene un correo electrónico registrado.');
+        }
+
+        // Enviar correo
+        try {
+            \Illuminate\Support\Facades\Mail::to($apartamento->email)->send(new \App\Mail\RecordatorioPago($apartamento));
+            
+            return redirect()->route('apartamentos.index')
+                ->with('success', 'Recordatorio de pago enviado exitosamente a ' . $apartamento->email);
+        } catch (\Exception $e) {
+            return redirect()->route('apartamentos.index')
+                ->with('error', 'Error al enviar el correo: ' . $e->getMessage());
+        }
+    }
 }

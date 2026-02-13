@@ -67,8 +67,8 @@
                         </form>
                     </div>
 
-                    {{-- Resumen para filtros Deudor/Moroso --}}
-                    @if(isset($estatusFiltrado) && in_array($estatusFiltrado, ['deudor','moroso']))
+                    {{-- Resumen para filtros Solvente/Deudor/Moroso --}}
+                    @if(isset($estatusFiltrado) && in_array($estatusFiltrado, ['deudor','moroso','solvente']))
                         <div class="mb-6 bg-white border rounded-lg p-4 shadow-sm">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -95,10 +95,10 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Piso</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Propietario</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider no-print">Email</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estatus Financiero</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo Pendiente</th>
@@ -109,15 +109,15 @@
                                     @foreach($apartamentos as $apartamento)
                                         <tr class="hover:bg-gray-50">
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {{ $apartamento->numero }}
+                                                {{ $apartamento->piso }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ $apartamento->piso }}
+                                                {{ $apartamento->numero }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {{ $apartamento->propietario }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 no-print">
                                                 {{ $apartamento->email ?? 'N/A' }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
@@ -158,6 +158,16 @@
                                     </svg>
                                 </a>
                                 @unless($isPropietario)
+                                    @if(in_array($apartamento->estatus_financiero, ['deudor', 'moroso']))
+                                        <form action="{{ route('apartamentos.recordatorio', $apartamento) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Está seguro de enviar el recordatorio de pago a {{ $apartamento->email }}?');">
+                                            @csrf
+                                            <button type="submit" class="text-yellow-600 hover:text-yellow-900" title="Recordatorio de Pago">
+                                                <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    @endif
                                     <button onclick="openDeleteModal({{ $apartamento->id }}, '{{ $apartamento->numero }}')" class="text-red-600 hover:text-red-900" title="Eliminar">
                                         <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -455,6 +465,9 @@ function printTable() {
                     margin-bottom: 20px;
                     font-size: 12px;
                     color: #666;
+                }
+                .no-print {
+                    display: none !important;
                 }
             </style>
         </head>

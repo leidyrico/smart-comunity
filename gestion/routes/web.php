@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
     // Route::post('/apartamentos/import', [ApartamentoController::class, 'import'])->name('apartamentos.import.process');
     // Route::get('/apartamentos/template', [ApartamentoController::class, 'downloadTemplate'])->name('apartamentos.template');
 
+    Route::post('/apartamentos/{apartamento}/recordatorio', [ApartamentoController::class, 'enviarRecordatorio'])->name('apartamentos.recordatorio');
     Route::resource('apartamentos', ApartamentoController::class);
     
     // Rutas para recibos de gasto común

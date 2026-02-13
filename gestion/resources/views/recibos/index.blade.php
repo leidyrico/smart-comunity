@@ -234,7 +234,7 @@
                                                     </a>
                                                 @endif
                                                 @unless($isPropietario)
-                                                <button onclick="deleteReciboSimple(event, {{ $recibo->id }}, '{{ addslashes($recibo->numero_recibo) }}')" class="text-red-600 hover:text-red-900 inline-flex items-center" title="Eliminar">
+                                                <button type="button" onclick="deleteReciboSimple(event, {{ $recibo->id }}, '{{ addslashes($recibo->numero_recibo) }}')" class="text-red-600 hover:text-red-900 inline-flex items-center" title="Eliminar">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                     </svg>
@@ -271,7 +271,34 @@
         </div>
     </div>
     @unless($isPropietario)
+    <!-- Modal para contraseña de administrador -->
+    <div id="adminPasswordModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);" onclick="handleModalBackgroundClick(event)">
+        <div style="position: relative; margin: 15% auto; padding: 20px; width: 400px; background-color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onclick="event.stopPropagation()">
+            <h3 style="margin-top: 0; color: #dc3545;">Confirmación de Eliminación</h3>
+            <p id="modalMessage" style="margin: 15px 0;"></p>
+            <div style="margin: 15px 0;">
+                <label for="modalAdminPassword" style="display: block; margin-bottom: 5px; font-weight: bold;">Clave de Administrador:</label>
+                <input type="password" id="modalAdminPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Ingrese la clave de administrador">
+            </div>
+            <div style="text-align: right;">
+                <button type="button" onclick="cancelarEliminacion()" style="background-color: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 10px; cursor: pointer;">Cancelar</button>
+                <button type="button" onclick="confirmarConPassword()" style="background-color: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario oculto para eliminación individual -->
+    <form id="deleteSimpleForm" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+        <input type="hidden" name="admin_password" id="simpleFormPassword">
+    </form>
+
     <script>
+    // Variables globales
+    let currentAction = null;
+    let currentData = null;
+
     document.addEventListener('DOMContentLoaded', function() {
         console.log('DOM cargado, inicializando funcionalidades...');
         
@@ -280,35 +307,25 @@
         const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
         const deleteMultipleForm = document.getElementById('deleteMultipleForm');
         
-        console.log('Elementos encontrados:', {
-            selectAllCheckbox: !!selectAllCheckbox,
-            deleteSelectedBtn: !!deleteSelectedBtn,
-            deleteMultipleForm: !!deleteMultipleForm
-        });
-        
         // Función para actualizar el estado del botón eliminar seleccionados
         function updateDeleteButton() {
             const checkedBoxes = document.querySelectorAll('.recibo-checkbox:checked');
-            console.log('Actualizando botón, checkboxes seleccionados:', checkedBoxes.length);
-            
-            if (checkedBoxes.length > 0) {
-                deleteSelectedBtn.classList.remove('hidden');
-            } else {
-                deleteSelectedBtn.classList.add('hidden');
+            if (deleteSelectedBtn) {
+                if (checkedBoxes.length > 0) {
+                    deleteSelectedBtn.classList.remove('hidden');
+                } else {
+                    deleteSelectedBtn.classList.add('hidden');
+                }
             }
         }
         
         // Manejar checkbox "Seleccionar Todos"
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', function() {
-                console.log('Checkbox selectAll cambiado a:', this.checked);
                 const reciboCheckboxes = document.querySelectorAll('.recibo-checkbox');
-                console.log('Checkboxes encontrados:', reciboCheckboxes.length);
-                
                 reciboCheckboxes.forEach(function(checkbox) {
                     checkbox.checked = selectAllCheckbox.checked;
                 });
-                
                 updateDeleteButton();
             });
         }
@@ -316,11 +333,8 @@
         // Manejar checkboxes individuales
         document.addEventListener('change', function(e) {
             if (e.target && e.target.classList.contains('recibo-checkbox')) {
-                console.log('Checkbox individual cambiado:', e.target.checked);
-                
                 const reciboCheckboxes = document.querySelectorAll('.recibo-checkbox');
                 const checkedBoxes = document.querySelectorAll('.recibo-checkbox:checked');
-                console.log('Total:', reciboCheckboxes.length, 'Seleccionados:', checkedBoxes.length);
                 
                 // Actualizar estado del checkbox "Seleccionar todo"
                 if (selectAllCheckbox) {
@@ -344,7 +358,6 @@
         if (deleteSelectedBtn) {
             deleteSelectedBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                console.log('Botón eliminar seleccionados clickeado');
                 
                 const checkedBoxes = document.querySelectorAll('.recibo-checkbox:checked');
                 if (checkedBoxes.length === 0) {
@@ -353,157 +366,114 @@
                 }
 
                 const count = checkedBoxes.length;
-                const message = count === 1 
-                    ? '¿Estás seguro de que deseas eliminar el recibo seleccionado?' 
-                    : '¿Estás seguro de que deseas eliminar los ' + count + ' recibos seleccionados?';
                 
-                if (confirm(message)) {
-                    currentAction = 'deleteMultiple';
-                    document.getElementById('modalMessage').textContent = `Está a punto de eliminar ${count} recibo${count > 1 ? 's' : ''}. Esta acción no se puede deshacer.`;
-                    document.getElementById('modalAdminPassword').value = '';
-                    document.getElementById('adminPasswordModal').style.display = 'block';
-                    document.getElementById('modalAdminPassword').focus();
-                }
+                // Usar el modal
+                currentAction = 'deleteMultiple';
+                document.getElementById('modalMessage').textContent = `Está a punto de eliminar ${count} recibo${count > 1 ? 's' : ''}. Esta acción no se puede deshacer.`;
+                document.getElementById('modalAdminPassword').value = '';
+                document.getElementById('adminPasswordModal').style.display = 'block';
+                document.getElementById('modalAdminPassword').focus();
             });
         }
 
+        // Permitir envío con Enter en el modal
+        const modalPassInput = document.getElementById('modalAdminPassword');
+        if (modalPassInput) {
+            modalPassInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    confirmarConPassword();
+                }
+            });
+        }
         
         // Inicializar estado del botón
         updateDeleteButton();
-        
-        console.log('Inicialización completada');
     });
     
-    // Función simple para eliminar recibo individual
+    // Función simple para eliminar recibo individual (llamada desde HTML onclick)
     function deleteReciboSimple(event, reciboId, numeroRecibo) {
         // Prevenir propagación de eventos
         event.preventDefault();
         event.stopPropagation();
         
+        console.log('Iniciando eliminación simple para:', reciboId);
         currentAction = 'deleteSimple';
         currentData = { reciboId: reciboId, numeroRecibo: numeroRecibo };
+        
         document.getElementById('modalMessage').textContent = `Está a punto de eliminar el recibo ${numeroRecibo}. Esta acción no se puede deshacer.`;
         document.getElementById('modalAdminPassword').value = '';
-        
-        // Usar setTimeout para evitar conflictos de timing
-        setTimeout(function() {
-            document.getElementById('adminPasswordModal').style.display = 'block';
-            // Enfocar el campo de contraseña después de un pequeño delay
-            setTimeout(function() {
-                document.getElementById('modalAdminPassword').focus();
-            }, 100);
-        }, 50);
+        document.getElementById('adminPasswordModal').style.display = 'block';
+        document.getElementById('modalAdminPassword').focus();
     }
-    </script>
 
-    <!-- Modal para contraseña de administrador -->
-    <div id="adminPasswordModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);" onclick="handleModalBackgroundClick(event)">
-        <div style="position: relative; margin: 15% auto; padding: 20px; width: 400px; background-color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onclick="event.stopPropagation()">
-            <h3 style="margin-top: 0; color: #dc3545;">Confirmación de Eliminación</h3>
-            <p id="modalMessage" style="margin: 15px 0;"></p>
-            <div style="margin: 15px 0;">
-                <label for="modalAdminPassword" style="display: block; margin-bottom: 5px; font-weight: bold;">Clave de Administrador:</label>
-                <input type="password" id="modalAdminPassword" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Ingrese la clave de administrador">
-            </div>
-            <div style="text-align: right;">
-                <button onclick="cancelarEliminacion()" style="background-color: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 10px; cursor: pointer;">Cancelar</button>
-                <button onclick="confirmarConPassword()" style="background-color: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Eliminar</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let currentAction = null;
-        let currentData = null;
-
-        function handleModalBackgroundClick(event) {
-            // Solo cerrar si el clic fue exactamente en el fondo del modal
-            if (event.target.id === 'adminPasswordModal') {
-                cancelarEliminacion();
-            }
+    // Funciones del Modal
+    function handleModalBackgroundClick(event) {
+        // Solo cerrar si el clic fue exactamente en el fondo del modal
+        if (event.target.id === 'adminPasswordModal') {
+            cancelarEliminacion();
         }
+    }
 
-        function cancelarEliminacion() {
-            document.getElementById('adminPasswordModal').style.display = 'none';
-            currentAction = null;
-            currentData = null;
+    function cancelarEliminacion() {
+        document.getElementById('adminPasswordModal').style.display = 'none';
+        document.getElementById('modalAdminPassword').value = ''; // Limpiar password
+        currentAction = null;
+        currentData = null;
+    }
+
+    function confirmarConPassword() {
+        const adminPassword = document.getElementById('modalAdminPassword').value;
+        
+        if (!adminPassword) {
+            alert('Se requiere la clave de administrador.');
+            return;
         }
-
-        function confirmarConPassword() {
-            const adminPassword = document.getElementById('modalAdminPassword').value;
-            
-            if (!adminPassword) {
-                alert('Se requiere la clave de administrador.');
-                return;
-            }
-            
-            // Ocultar modal
-            document.getElementById('adminPasswordModal').style.display = 'none';
-            
-            // Ejecutar la acción correspondiente
-            if (currentAction === 'deleteMultiple') {
-                executeDeleteMultiple(adminPassword);
-            } else if (currentAction === 'deleteSimple') {
+        
+        // Ocultar modal
+        document.getElementById('adminPasswordModal').style.display = 'none';
+        
+        // Ejecutar la acción correspondiente
+        if (currentAction === 'deleteMultiple') {
+            executeDeleteMultiple(adminPassword);
+        } else if (currentAction === 'deleteSimple') {
+            if (currentData && currentData.reciboId) {
                 executeDeleteSimple(adminPassword, currentData.reciboId, currentData.numeroRecibo);
+            } else {
+                alert('Error: Datos del recibo no encontrados.');
             }
         }
+    }
 
-        function executeDeleteMultiple(adminPassword) {
-            // Limpiar campos de contraseña previos
-            const existingPasswordFields = deleteMultipleForm.querySelectorAll('input[name="admin_password"]');
-            existingPasswordFields.forEach(field => field.remove());
-            
-            // Agregar campo de contraseña al formulario
-            const passwordField = document.createElement('input');
-            passwordField.type = 'hidden';
-            passwordField.name = 'admin_password';
-            passwordField.value = adminPassword;
-            deleteMultipleForm.appendChild(passwordField);
-            
-            // Enviar formulario
-            deleteMultipleForm.submit();
-        }
+    function executeDeleteMultiple(adminPassword) {
+        const deleteMultipleForm = document.getElementById('deleteMultipleForm');
+        // Limpiar campos de contraseña previos
+        const existingPasswordFields = deleteMultipleForm.querySelectorAll('input[name="admin_password"]');
+        existingPasswordFields.forEach(field => field.remove());
+        
+        // Agregar campo de contraseña al formulario
+        const passwordField = document.createElement('input');
+        passwordField.type = 'hidden';
+        passwordField.name = 'admin_password';
+        passwordField.value = adminPassword;
+        deleteMultipleForm.appendChild(passwordField);
+        
+        // Enviar formulario
+        console.log('Enviando formulario múltiple...');
+        deleteMultipleForm.submit();
+    }
 
-        function executeDeleteSimple(adminPassword, reciboId, numeroRecibo) {
-            // Crear formulario para enviar la eliminación
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `{{ url('/recibos') }}/${reciboId}`;
-            form.style.display = 'none';
-            
-            const csrfToken = document.createElement('input');
-            csrfToken.type = 'hidden';
-            csrfToken.name = '_token';
-            csrfToken.value = '{{ csrf_token() }}';
-            form.appendChild(csrfToken);
-            
-            // Agregar método DELETE
-            const methodField = document.createElement('input');
-            methodField.type = 'hidden';
-            methodField.name = '_method';
-            methodField.value = 'DELETE';
-            form.appendChild(methodField);
-            
-            // Agregar campo de contraseña de administrador
-            const passwordField = document.createElement('input');
-            passwordField.type = 'hidden';
-            passwordField.name = 'admin_password';
-            passwordField.value = adminPassword;
-            form.appendChild(passwordField);
-            
-            // Enviar formulario
-            document.body.appendChild(form);
-            form.submit();
-        }
-
-        // Permitir envío con Enter
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('modalAdminPassword').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    confirmarConPassword();
-                }
-            });
-        });
+    function executeDeleteSimple(adminPassword, reciboId, numeroRecibo) {
+        // Usar el formulario estático
+        const form = document.getElementById('deleteSimpleForm');
+        const baseUrl = '{{ url('/recibos') }}';
+        form.action = `${baseUrl}/${reciboId}`;
+        
+        document.getElementById('simpleFormPassword').value = adminPassword;
+        
+        // Enviar formulario
+        console.log('Enviando formulario simple a:', form.action);
+        form.submit();
+    }
     </script>
     @endunless
 </x-app-with-sidebar>
