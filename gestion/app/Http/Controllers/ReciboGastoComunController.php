@@ -670,10 +670,8 @@ class ReciboGastoComunController extends Controller
             ->orderBy('fecha_emision', 'desc')
             ->get();
 
-        // Obtener todos los apartamentos activos
-        $apartamentos = Apartamento::where('estado', 'ocupado')
-            ->orderBy('numero')
-            ->get();
+        // Obtener todos los apartamentos (sin filtrar por estado) para mostrar listado completo
+        $apartamentos = Apartamento::orderBy('numero')->get();
 
         // Calcular monto total disponible
         $totalMontoDisponible = $recibosDisponibles->sum('total_recibo');
