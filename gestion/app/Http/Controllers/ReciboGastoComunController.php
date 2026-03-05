@@ -158,8 +158,29 @@ class ReciboGastoComunController extends Controller
                       ->orderBy('fecha_pago', 'desc');
             }
         ]);
+        
+        // Calcular totales globales para la vista show
+        // Total de apartamentos asignados únicos (para evitar duplicados en el cálculo)
+        $totalAsignados = \App\Models\Pago::where('recibo_gasto_comun_id', $recibo->id)->distinct('apartamento_id')->count('apartamento_id');
+        
+        // Total esperado a recaudar (Valor del recibo * Cantidad de apartamentos únicos asignados)
+        $totalEsperado = $recibo->total_recibo * $totalAsignados;
+        
+        // Total recaudado (confirmados reales)
+        $totalRecaudado = $recibo->total_pagado;
+        
+        // Desglose por método de pago
+        $pagosConfirmados = $recibo->pagos; // Ya filtrados por confirmadosReales en el load
+        $totalEfectivo = $pagosConfirmados->where('metodo_pago', 'efectivo')->sum('monto_pagado');
+        $totalTransferencia = $pagosConfirmados->where('metodo_pago', 'transferencia')->sum('monto_pagado');
+        $totalPagoMovil = $pagosConfirmados->where('metodo_pago', 'pago_movil')->sum('monto_pagado');
+        
+        // Saldo pendiente por recaudar
+        $saldoPendiente = max(0, $totalEsperado - $totalRecaudado);
+        
         $apartamentos = Apartamento::orderBy('numero')->get();
-        return view('recibos.show', compact('recibo', 'apartamentos'));
+        
+        return view('recibos.show', compact('recibo', 'apartamentos', 'totalEsperado', 'saldoPendiente', 'totalRecaudado', 'totalEfectivo', 'totalTransferencia', 'totalPagoMovil'));
     }
 
     /**
@@ -319,8 +340,29 @@ class ReciboGastoComunController extends Controller
      */
     public function print(ReciboGastoComun $recibo)
     {
-        $recibo->load('pagos.apartamento');
-        return view('recibos.print', compact('recibo'));
+        // Cargar pagos filtrados para la lista visual (excluir pendientes)
+        $recibo->load(['pagos' => function($query) {
+            $query->whereNotIn('estado', ['pendiente', 'pendiente_confirmacion'])
+                  ->with('apartamento');
+        }]);
+
+        // Calcular totales globales
+        $totalAsignados = \App\Models\Pago::where('recibo_gasto_comun_id', $recibo->id)->distinct('apartamento_id')->count('apartamento_id');
+        $totalEsperado = $recibo->total_recibo * $totalAsignados;
+        
+        // Total recaudado (confirmados reales)
+        $totalRecaudado = $recibo->total_pagado;
+        
+        // Desglose por método de pago para impresión
+        $pagosConfirmados = $recibo->pagos; // Ya filtrados por confirmadosReales en el load
+        $totalEfectivo = $pagosConfirmados->where('metodo_pago', 'efectivo')->sum('monto_pagado');
+        $totalTransferencia = $pagosConfirmados->where('metodo_pago', 'transferencia')->sum('monto_pagado');
+        $totalPagoMovil = $pagosConfirmados->where('metodo_pago', 'pago_movil')->sum('monto_pagado');
+        
+        // Saldo pendiente por recaudar
+        $saldoPendiente = max(0, $totalEsperado - $totalRecaudado);
+        
+        return view('recibos.print', compact('recibo', 'totalEsperado', 'saldoPendiente', 'totalRecaudado', 'totalEfectivo', 'totalTransferencia', 'totalPagoMovil'));
     }
 
 

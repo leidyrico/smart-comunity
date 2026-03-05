@@ -351,25 +351,27 @@
                 @endforeach
             </tbody>
         </table>
-        
+    </div>
+    @endif
+
+    <div class="pagos-section">
         <div class="resumen-pagos">
             <div class="resumen-row">
-                <span>Total del Recibo:</span>
-                <span>${{ number_format($recibo->total_recibo, 0, ',', '.') }}</span>
+                <span>Total a Recaudar:</span>
+                <span>${{ number_format($totalEsperado, 0, ',', '.') }}</span>
             </div>
             <div class="resumen-row">
                 <span>Total Pagado:</span>
-                <span>${{ number_format($recibo->total_pagado, 0, ',', '.') }}</span>
+                <span>${{ number_format($totalRecaudado, 0, ',', '.') }}</span>
             </div>
             <div class="resumen-row">
                 <span>Saldo Pendiente:</span>
-                <span style="color: {{ $recibo->saldo_pendiente > 0 ? '#dc2626' : '#059669' }}">
-                    ${{ number_format($recibo->saldo_pendiente, 0, ',', '.') }}
+                <span style="color: {{ $saldoPendiente > 0 ? '#dc2626' : '#059669' }}">
+                    ${{ number_format($saldoPendiente, 0, ',', '.') }}
                 </span>
             </div>
         </div>
     </div>
-    @endif
     
     <div class="footer">
         <p>Este recibo fue generado el {{ now()->format('d/m/Y H:i:s') }}</p>

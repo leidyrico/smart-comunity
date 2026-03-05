@@ -155,8 +155,10 @@
             let currentCalendarMonth = new Date().getMonth();
             const today = new Date();
             
-            // Rango de fechas: desde hoy hasta 07/01/2026
-            const maxDate = new Date(2026, 0, 7); // 7 de enero de 2026 (mes 0 = enero)
+            // Rango de fechas: dinámico desde el controlador
+            const maxDateStr = '{{ $fechaMaxima }}';
+            const maxDateParts = maxDateStr.split('-');
+            const maxDate = new Date(maxDateParts[0], maxDateParts[1] - 1, maxDateParts[2]);
             const maxYear = maxDate.getFullYear();
             const maxMonth = maxDate.getMonth();
             

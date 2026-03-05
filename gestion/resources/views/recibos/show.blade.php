@@ -160,15 +160,34 @@
 
                     <div class="mt-4 bg-gray-50 p-4 rounded-lg">
                         <div class="flex justify-between items-center">
-                            <span class="text-gray-700 font-medium">Total Pagado:</span>
-                            <span class="text-lg font-bold text-green-600">${{ number_format($recibo->total_pagado, 2, ',', '.') }}</span>
+                            <span class="text-gray-700 font-medium">Total a Recaudar:</span>
+                            <span class="text-lg font-bold text-gray-800">${{ number_format($totalEsperado, 2, ',', '.') }}</span>
                         </div>
                         <div class="flex justify-between items-center mt-2">
+                            <span class="text-gray-700 font-medium">Total Pagado:</span>
+                            <span class="text-lg font-bold text-green-600">${{ number_format($totalRecaudado, 2, ',', '.') }}</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-2 border-b border-gray-200 pb-2 mb-2">
                             <span class="text-gray-700 font-medium">Saldo Pendiente:</span>
-                            <span class="text-lg font-bold {{ $recibo->saldo_pendiente > 0 ? 'text-red-600' : 'text-green-600' }}">
-                                ${{ number_format($recibo->saldo_pendiente, 2, ',', '.') }}
+                            <span class="text-lg font-bold {{ $saldoPendiente > 0 ? 'text-red-600' : 'text-green-600' }}">
+                                ${{ number_format($saldoPendiente, 2, ',', '.') }}
                             </span>
                         </div>
+                        
+                        <div class="flex justify-between items-center mt-1 text-sm">
+                            <span class="text-gray-600">Total Efectivo:</span>
+                            <span class="font-medium text-gray-800">${{ number_format($totalEfectivo, 2, ',', '.') }}</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-1 text-sm">
+                            <span class="text-gray-600">Total Transferencia:</span>
+                            <span class="font-medium text-gray-800">${{ number_format($totalTransferencia, 2, ',', '.') }}</span>
+                        </div>
+                        @if($totalPagoMovil > 0)
+                        <div class="flex justify-between items-center mt-1 text-sm">
+                            <span class="text-gray-600">Total Pago Móvil:</span>
+                            <span class="font-medium text-gray-800">${{ number_format($totalPagoMovil, 2, ',', '.') }}</span>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
