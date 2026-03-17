@@ -157,6 +157,13 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                     </svg>
                                 </a>
+                                @if($isPropietario && $user && $user->apartamento_id == $apartamento->id)
+                                    <a href="{{ route('pagos.create', ['apartamento_id' => $apartamento->id]) }}" class="text-green-600 hover:text-green-900" title="Registrar pago">
+                                        <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12M6 12h12"></path>
+                                        </svg>
+                                    </a>
+                                @endif
                                 @unless($isPropietario)
                                     @if(in_array($apartamento->estatus_financiero, ['deudor', 'moroso']))
                                         <form action="{{ route('apartamentos.recordatorio', $apartamento) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Está seguro de enviar el recordatorio de pago a {{ $apartamento->email }}?');">

@@ -10,6 +10,9 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     
+                    @php($user = Auth::user())
+                    @php($isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
+                    
                     @if (session('success'))
                         <div id="success-message" class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
                             <span class="block sm:inline">{{ session('success') }}</span>
@@ -72,15 +75,20 @@
                             <!-- Apartamento -->
                             <div>
                                 <x-input-label for="apartamento_id" :value="__('Apartamento')" />
-                                <select id="apartamento_id" name="apartamento_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
-                                    <option value="">Seleccione un apartamento</option>
-                                    @foreach($apartamentos as $apartamento)
-                                        <option value="{{ $apartamento->id }}" 
-                                            {{ (old('apartamento_id') == $apartamento->id || (isset($apartamentoSeleccionado) && $apartamentoSeleccionado->id == $apartamento->id)) ? 'selected' : '' }}>
-                                            {{ $apartamento->numero }} - {{ $apartamento->propietario }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                @if($isPropietario && isset($apartamentoSeleccionado) && $apartamentoSeleccionado)
+                                    <input type="hidden" name="apartamento_id" value="{{ $apartamentoSeleccionado->id }}">
+                                    <x-text-input id="apartamento_id_text" type="text" class="mt-1 block w-full" value="{{ $apartamentoSeleccionado->numero }} - {{ $apartamentoSeleccionado->propietario }}" disabled />
+                                @else
+                                    <select id="apartamento_id" name="apartamento_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                                        <option value="">Seleccione un apartamento</option>
+                                        @foreach($apartamentos as $apartamento)
+                                            <option value="{{ $apartamento->id }}" 
+                                                {{ (old('apartamento_id') == $apartamento->id || (isset($apartamentoSeleccionado) && $apartamentoSeleccionado->id == $apartamento->id)) ? 'selected' : '' }}>
+                                                {{ $apartamento->numero }} - {{ $apartamento->propietario }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                @endif
                                 <x-input-error :messages="$errors->get('apartamento_id')" class="mt-2" />
                             </div>
 
@@ -152,10 +160,15 @@
                         <!-- Estado -->
                         <div>
                             <x-input-label for="estado" :value="__('Estado')" />
-                            <select id="estado" name="estado" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
-                                <option value="confirmado" {{ old('estado', 'confirmado') == 'confirmado' ? 'selected' : '' }}>Confirmado</option>
-                                <option value="pendiente_confirmacion" {{ old('estado') == 'pendiente_confirmacion' ? 'selected' : '' }}>Pendiente de Confirmación</option>
-                            </select>
+                            @if($isPropietario)
+                                <input type="hidden" name="estado" value="pendiente_confirmacion">
+                                <x-text-input id="estado_text" type="text" class="mt-1 block w-full" value="Pendiente de Confirmación" disabled />
+                            @else
+                                <select id="estado" name="estado" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                                    <option value="confirmado" {{ old('estado') == 'confirmado' ? 'selected' : '' }}>Confirmado</option>
+                                    <option value="pendiente_confirmacion" {{ old('estado', 'pendiente_confirmacion') == 'pendiente_confirmacion' ? 'selected' : '' }}>Pendiente de Confirmación</option>
+                                </select>
+                            @endif
                             <x-input-error :messages="$errors->get('estado')" class="mt-2" />
                         </div>
 

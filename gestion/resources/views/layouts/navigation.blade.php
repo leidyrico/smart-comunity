@@ -15,6 +15,12 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    @php($user = Auth::user())
+                    @if($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
+                        <x-nav-link :href="route('pagos.create')" :active="request()->routeIs('pagos.create')">
+                            {{ __('Registrar Pago') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -83,6 +89,12 @@
                 <x-responsive-nav-link :href="route('profile.edit')">
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
+                @php($user = Auth::user())
+                @if($user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
+                    <x-responsive-nav-link :href="route('pagos.create')" :active="request()->routeIs('pagos.create')">
+                        {{ __('Registrar Pago') }}
+                    </x-responsive-nav-link>
+                @endif
 
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">

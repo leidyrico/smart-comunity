@@ -15,21 +15,27 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
         <!-- Scripts -->
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script>
-            tailwind.config = {
-                theme: {
-                    extend: {
-                        colors: {
-                            primary: '#1f2937',
-                            secondary: '#374151',
+        @php($manifest = public_path('build/manifest.json'))
+        @if(file_exists($manifest))
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @else
+            <script src="https://cdn.tailwindcss.com"></script>
+            <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+            <script src="{{ asset('js/app.js') }}" defer></script>
+            <script>
+                tailwind.config = {
+                    theme: {
+                        extend: {
+                            colors: {
+                                primary: '#1f2937',
+                                secondary: '#374151',
+                            }
                         }
                     }
                 }
-            }
-        </script>
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <script src="{{ asset('js/app.js') }}" defer></script>
+            </script>
+        @endif
+        
         
         <!-- Flatpickr for consistent dd/MM/yyyy calendar display -->
 
@@ -48,7 +54,7 @@
                     </div>
                     <!-- Close button for mobile -->
                     <button id="closeSidebar" class="lg:hidden text-gray-600 hover:text-gray-900">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg width="24" height="24" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
@@ -63,6 +69,12 @@
                         <i class="fas fa-tachometer-alt w-5 h-5 mr-3"></i>
                         Dashboard
                     </a>
+                    @if($isPropietario)
+                        <a href="{{ route('pagos.create') }}" class="flex items-center px-3 py-2 mb-2 text-sm font-medium rounded-lg transition-colors duration-200 {{ request()->routeIs('pagos.create') ? 'bg-blue-100 text-blue-700 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-credit-card w-5 h-5 mr-3"></i>
+                            Registrar pagos
+                        </a>
+                    @endif
 
                     <!-- Apartamentos -->
                     <div class="mb-2">
@@ -71,7 +83,7 @@
                                 <i class="fas fa-building w-5 h-5 mr-3"></i>
                                 Apartamentos
                             </div>
-                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg width="16" height="16" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
@@ -94,7 +106,7 @@
                                 <i class="fas fa-receipt w-5 h-5 mr-3"></i>
                                 Recibos
                             </div>
-                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg width="16" height="16" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
@@ -120,7 +132,7 @@
                                 <i class="fas fa-calendar-alt w-5 h-5 mr-3"></i>
                                 Reserva de Espacios
                             </div>
-                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg width="16" height="16" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
@@ -160,7 +172,7 @@
                                     <i class="fas fa-money-bill-wave w-5 h-5 mr-3"></i>
                                     Gestión de Egresos
                                 </div>
-                                <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg width="16" height="16" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
@@ -185,7 +197,7 @@
                                 <i class="fas fa-piggy-bank w-5 h-5 mr-3"></i>
                                 Gestión de Fondos
                             </div>
-                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg width="16" height="16" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
@@ -208,7 +220,7 @@
                                 <i class="fas fa-balance-scale w-5 h-5 mr-3"></i>
                                 Conciliación
                             </div>
-                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg width="16" height="16" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
@@ -231,7 +243,7 @@
                                 <i class="fas fa-file-alt w-5 h-5 mr-3"></i>
                                 Gestión de Documentos
                             </div>
-                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg width="16" height="16" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
@@ -267,7 +279,7 @@
                                     <div class="text-xs text-gray-500">{{ Auth::user()->email }}</div>
                                 </div>
                             </div>
-                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg width="16" height="16" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
@@ -294,7 +306,7 @@
                 <div class="lg:hidden bg-white shadow-sm border-b border-gray-200">
                     <div class="flex items-center justify-between h-16 px-4">
                         <button id="openSidebar" class="text-gray-600 hover:text-gray-900">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg width="24" height="24" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                             </svg>
                         </button>

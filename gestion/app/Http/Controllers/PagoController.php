@@ -11,8 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
-// Incluir configuración de timeout para evitar errores de tiempo de ejecución
-require_once __DIR__ . '/../../../config_timeout.php';
+if (file_exists(__DIR__ . '/../../../config_timeout.php')) {
+    require_once __DIR__ . '/../../../config_timeout.php';
+}
 
 class PagoController extends Controller
 {
@@ -55,12 +56,23 @@ class PagoController extends Controller
      */
     public function create(Request $request)
     {
-        $apartamentos = Apartamento::orderBy('numero')->get();
+        if (auth()->check() && method_exists(auth()->user(), 'isUsuarioPropietario') && auth()->user()->isUsuarioPropietario() && auth()->user()->apartamento_id) {
+            $apartamentos = Apartamento::where('id', auth()->user()->apartamento_id)->get();
+        } else {
+            $apartamentos = Apartamento::orderBy('numero')->get();
+        }
         $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])->orderBy('fecha_emision', 'desc')->get();
         
         // Si viene un apartamento específico desde la URL
         $apartamentoSeleccionado = $request->apartamento_id ? 
             Apartamento::find($request->apartamento_id) : null;
+        
+        if (!$apartamentoSeleccionado && auth()->check()) {
+            $user = auth()->user();
+            if (method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario() && $user->apartamento_id) {
+                $apartamentoSeleccionado = Apartamento::find($user->apartamento_id);
+            }
+        }
             
         // Si viene un recibo específico desde la URL
         $reciboSeleccionado = $request->recibo_id ? 
@@ -77,6 +89,12 @@ class PagoController extends Controller
      */
     public function store(Request $request)
     {
+        if (auth()->check() && method_exists(auth()->user(), 'isUsuarioPropietario') && auth()->user()->isUsuarioPropietario()) {
+            $request->merge([
+                'apartamento_id' => auth()->user()->apartamento_id,
+                'estado' => 'pendiente_confirmacion',
+            ]);
+        }
         $request->validate([
             'apartamento_id' => 'required|exists:apartamentos,id',
             'recibo_gasto_comun_id' => 'required|exists:recibo_gasto_comuns,id',

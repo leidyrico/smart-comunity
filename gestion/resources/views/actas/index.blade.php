@@ -56,7 +56,8 @@
                                        value="{{ request('fecha_desde') }}"
                                        lang="es-VE" 
                                        placeholder="dd/MM/yyyy"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                       data-no-flatpickr="true">
                             </div>
 
                             <!-- Filtro por Fecha Hasta -->
@@ -68,7 +69,8 @@
                                        value="{{ request('fecha_hasta') }}"
                                        lang="es-VE" 
                                        placeholder="dd/MM/yyyy"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                       data-no-flatpickr="true">
                             </div>
 
                             <!-- Botones de Acción -->
@@ -192,8 +194,7 @@
                             </div>
                         </div>
                     @endif
-
-                    <div class="mt-6">
+                    <div class="mt-6 no-print">
                         <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             Volver al Dashboard
                         </a>
@@ -204,7 +205,6 @@
     </div>
 
     @unless($isPropietario)
-    <!-- Modal de Confirmación para Eliminar Documento -->
     <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
@@ -262,7 +262,6 @@
              documentToDelete = null;
          }
 
-         // Event listeners
          document.getElementById('cancelDelete').addEventListener('click', closeDeleteModal);
 
          document.getElementById('confirmDelete').addEventListener('click', function() {
@@ -275,26 +274,22 @@
                  return;
              }
 
-             // Crear formulario para enviar la solicitud DELETE
              const form = document.createElement('form');
              form.method = 'POST';
              form.action = `{{ url('/actas') }}/${documentToDelete}`;
 
-             // Token CSRF
              const csrfToken = document.createElement('input');
              csrfToken.type = 'hidden';
              csrfToken.name = '_token';
              csrfToken.value = '{{ csrf_token() }}';
              form.appendChild(csrfToken);
 
-             // Método DELETE
              const methodField = document.createElement('input');
              methodField.type = 'hidden';
              methodField.name = '_method';
              methodField.value = 'DELETE';
              form.appendChild(methodField);
 
-             // Clave de administrador
              const passwordField = document.createElement('input');
              passwordField.type = 'hidden';
              passwordField.name = 'admin_password';
@@ -305,14 +300,12 @@
              form.submit();
          });
 
-         // Cerrar modal al hacer clic fuera de él
          document.getElementById('deleteModal').addEventListener('click', function(e) {
              if (e.target === this) {
                  closeDeleteModal();
              }
          });
 
-         // Cerrar modal con tecla Escape
          document.addEventListener('keydown', function(e) {
              if (e.key === 'Escape' && !document.getElementById('deleteModal').classList.contains('hidden')) {
                  closeDeleteModal();
@@ -320,4 +313,25 @@
          });
      </script>
      @endunless
- </x-app-with-sidebar>
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var ids = ['fecha_desde','fecha_hasta'];
+            ids.forEach(function(id){
+                var input = document.getElementById(id);
+                if (input && input._flatpickr) {
+                    try {
+                        input._flatpickr.destroy();
+                    } catch(e) {}
+                }
+            });
+            var calendars = document.querySelectorAll('.flatpickr-calendar');
+            calendars.forEach(function(el){
+                if (el && el.parentNode) {
+                    el.parentNode.removeChild(el);
+                }
+            });
+        });
+    </script>
+    @endpush
+</x-app-with-sidebar>
