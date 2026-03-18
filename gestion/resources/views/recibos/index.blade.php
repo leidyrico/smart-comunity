@@ -32,6 +32,7 @@
                     </div>
 
                     <!-- Filtros -->
+                    @unless($isPropietario)
                     <div class="mb-6 bg-gray-50 p-4 rounded-lg">
                         <form method="GET" action="{{ route('recibos.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
@@ -58,6 +59,7 @@
                             </div>
                         </form>
                     </div>
+                    @endunless
 
                     <!-- Resumen Estadístico -->
                     <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

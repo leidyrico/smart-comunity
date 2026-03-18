@@ -193,6 +193,96 @@
             </div>
             @endif
 
+            @if(isset($resumenPagosPorApartamento))
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6 text-gray-900">
+                    <div class="flex items-start justify-between gap-4 mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">Resumen por Apartamento</h3>
+                            <p class="text-sm text-gray-600">Monto del recibo: ${{ number_format($resumenPagosPorApartamento['monto_recibo'], 2, ',', '.') }}</p>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            Asignados: <span class="font-semibold text-gray-800">{{ $resumenPagosPorApartamento['asignados_total'] }}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="rounded-lg border border-green-200 bg-green-50 p-4">
+                            <div class="text-sm text-green-800">Pagaron completo</div>
+                            <div class="text-2xl font-bold text-green-900">{{ $resumenPagosPorApartamento['pagaron_completo']->count() }}</div>
+                        </div>
+                        <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                            <div class="text-sm text-yellow-800">Pagaron parcial</div>
+                            <div class="text-2xl font-bold text-yellow-900">{{ $resumenPagosPorApartamento['pagaron_parcial']->count() }}</div>
+                        </div>
+                        <div class="rounded-lg border border-red-200 bg-red-50 p-4">
+                            <div class="text-sm text-red-800">Deben</div>
+                            <div class="text-2xl font-bold text-red-900">{{ $resumenPagosPorApartamento['deben']->count() }}</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 space-y-3">
+                        <details class="rounded-lg border border-gray-200 bg-white">
+                            <summary class="cursor-pointer select-none px-4 py-3 font-semibold text-gray-800">
+                                Apartamentos que pagaron completo ({{ $resumenPagosPorApartamento['pagaron_completo']->count() }})
+                            </summary>
+                            <div class="px-4 pb-4">
+                                @if($resumenPagosPorApartamento['pagaron_completo']->count() === 0)
+                                    <div class="text-sm text-gray-600">Ninguno.</div>
+                                @else
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach($resumenPagosPorApartamento['pagaron_completo'] as $apt)
+                                            <span class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                                                Apto {{ $apt['numero'] }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        </details>
+
+                        <details class="rounded-lg border border-gray-200 bg-white">
+                            <summary class="cursor-pointer select-none px-4 py-3 font-semibold text-gray-800">
+                                Apartamentos que pagaron parcial ({{ $resumenPagosPorApartamento['pagaron_parcial']->count() }})
+                            </summary>
+                            <div class="px-4 pb-4">
+                                @if($resumenPagosPorApartamento['pagaron_parcial']->count() === 0)
+                                    <div class="text-sm text-gray-600">Ninguno.</div>
+                                @else
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach($resumenPagosPorApartamento['pagaron_parcial'] as $apt)
+                                            <span class="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-800">
+                                                Apto {{ $apt['numero'] }} (${{ number_format($apt['total_pagado'], 2, ',', '.') }} / ${{ number_format($resumenPagosPorApartamento['monto_recibo'], 2, ',', '.') }})
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        </details>
+
+                        <details class="rounded-lg border border-gray-200 bg-white">
+                            <summary class="cursor-pointer select-none px-4 py-3 font-semibold text-gray-800">
+                                Apartamentos que deben ({{ $resumenPagosPorApartamento['deben']->count() }})
+                            </summary>
+                            <div class="px-4 pb-4">
+                                @if($resumenPagosPorApartamento['deben']->count() === 0)
+                                    <div class="text-sm text-gray-600">Ninguno.</div>
+                                @else
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach($resumenPagosPorApartamento['deben'] as $apt)
+                                            <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-800">
+                                                Apto {{ $apt['numero'] }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Apartamentos Asociados -->
             @if(!$isPropietario && isset($apartamentos) && $apartamentos->count() > 0)
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">

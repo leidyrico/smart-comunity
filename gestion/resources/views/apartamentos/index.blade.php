@@ -38,6 +38,7 @@
                     @endif
 
                     <!-- Filtros -->
+                    @unless($isPropietario)
                     <div class="mb-6 bg-gray-50 p-4 rounded-lg">
                         <form method="GET" action="{{ route('apartamentos.index') }}" class="flex flex-wrap items-end gap-4">
                             <div class="flex-none">
@@ -66,6 +67,7 @@
                             @endif
                         </form>
                     </div>
+                    @endunless
 
                     {{-- Resumen para filtros Solvente/Deudor/Moroso --}}
                     @if(isset($estatusFiltrado) && in_array($estatusFiltrado, ['deudor','moroso','solvente']))

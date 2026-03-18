@@ -1,6 +1,7 @@
 <x-app-with-sidebar>
     @php($user = Auth::user())
     @php($isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario())
+    @php($isAdmin = $user && method_exists($user, 'isAdmin') && $user->isAdmin())
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Consulta de Deudas por Apartamento') }}
@@ -99,6 +100,7 @@
                     </div>
                 
                     <!-- Filtros -->
+                    @unless($isPropietario)
                     <div class="bg-gray-50 p-4 rounded-lg mb-6 no-print">
                         <form method="GET" action="{{ route('deudas.index') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <!-- Filtro por Apartamento -->
@@ -165,6 +167,7 @@
                             </div>
                         </form>
                     </div>
+                    @endunless
 
                 @if(session('success'))
                     <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
@@ -262,6 +265,34 @@
                                                         </svg>
                                                     </a>
                                                     @endif
+                                                @endif
+                                                @if($isAdmin && !empty($dato['pagos_pendientes']))
+                                                    <div class="mt-2">
+                                                        <span class="text-xs text-gray-500 font-medium">Pagos pendientes:</span>
+                                                        @foreach($dato['pagos_pendientes'] as $pagoPendiente)
+                                                            @if($pagoPendiente['monto'] > 0)
+                                                                <div class="flex items-center justify-between mt-1 p-1 bg-yellow-50 rounded text-xs">
+                                                                    <span class="text-gray-700">
+                                                                        ${{ number_format($pagoPendiente['monto'], 2, ',', '.') }}
+                                                                        @if($pagoPendiente['fecha'])
+                                                                            ({{ \Carbon\Carbon::parse($pagoPendiente['fecha'])->format('d/m/Y') }})
+                                                                        @else
+                                                                            (Sin fecha)
+                                                                        @endif
+                                                                    </span>
+                                                                    <form method="POST" action="{{ route('pagos.confirmar', $pagoPendiente['id']) }}">
+                                                                        @csrf
+                                                                        @method('PATCH')
+                                                                        <button type="submit" class="text-green-600 hover:text-green-900 ml-2" title="Confirmar pago">
+                                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                                            </svg>
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                            @endif
+                                                        @endforeach
+                                                    </div>
                                                 @endif
                                                 @if($dato['monto_pagado'] > 0 && !empty($dato['pagos']))
                                                     <div class="mt-2">

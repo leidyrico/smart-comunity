@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\Pago;
-use App\Models\Apartamento;
-use App\Models\ReciboGastoComun;
 use App\Mail\ComprobantePago;
+use App\Models\Apartamento;
+use App\Models\Pago;
+use App\Models\ReciboGastoComun;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
-if (file_exists(__DIR__ . '/../../../config_timeout.php')) {
-    require_once __DIR__ . '/../../../config_timeout.php';
+if (file_exists(__DIR__.'/../../../config_timeout.php')) {
+    require_once __DIR__.'/../../../config_timeout.php';
 }
 
 class PagoController extends Controller
@@ -47,7 +47,7 @@ class PagoController extends Controller
 
         $pagos = $query->orderBy('fecha_pago', 'desc')->paginate(15);
         $apartamentos = Apartamento::orderBy('numero')->get();
-        
+
         return view('pagos.index', compact('pagos', 'apartamentos'));
     }
 
@@ -62,25 +62,25 @@ class PagoController extends Controller
             $apartamentos = Apartamento::orderBy('numero')->get();
         }
         $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])->orderBy('fecha_emision', 'desc')->get();
-        
+
         // Si viene un apartamento específico desde la URL
-        $apartamentoSeleccionado = $request->apartamento_id ? 
+        $apartamentoSeleccionado = $request->apartamento_id ?
             Apartamento::find($request->apartamento_id) : null;
-        
-        if (!$apartamentoSeleccionado && auth()->check()) {
+
+        if (! $apartamentoSeleccionado && auth()->check()) {
             $user = auth()->user();
             if (method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario() && $user->apartamento_id) {
                 $apartamentoSeleccionado = Apartamento::find($user->apartamento_id);
             }
         }
-            
+
         // Si viene un recibo específico desde la URL
-        $reciboSeleccionado = $request->recibo_id ? 
+        $reciboSeleccionado = $request->recibo_id ?
             ReciboGastoComun::find($request->recibo_id) : null;
-            
+
         // Capturar los parámetros de filtro para mantenerlos
         $filtros = $request->only(['numero_apartamento', 'nombre_propietario', 'estado_deuda', 'numero_recibo']);
-            
+
         return view('pagos.create', compact('apartamentos', 'recibos', 'apartamentoSeleccionado', 'reciboSeleccionado', 'filtros'));
     }
 
@@ -89,9 +89,16 @@ class PagoController extends Controller
      */
     public function store(Request $request)
     {
-        if (auth()->check() && method_exists(auth()->user(), 'isUsuarioPropietario') && auth()->user()->isUsuarioPropietario()) {
+        $user = Auth::user();
+        $isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario();
+
+        if ($isPropietario) {
+            if (empty($user->apartamento_id)) {
+                abort(403);
+            }
+
             $request->merge([
-                'apartamento_id' => auth()->user()->apartamento_id,
+                'apartamento_id' => $user->apartamento_id,
                 'estado' => 'pendiente_confirmacion',
             ]);
         }
@@ -104,33 +111,37 @@ class PagoController extends Controller
             'metodo_pago' => 'required|in:efectivo,pago_movil,transferencia',
             'numero_comprobante' => 'nullable|string|max:100|unique:pagos,numero_comprobante',
             'observaciones' => 'nullable|string|max:1000',
-            'estado' => 'required|in:confirmado,pendiente_confirmacion,rechazado'
+            'estado' => 'required|in:confirmado,pendiente_confirmacion,rechazado',
         ]);
 
         $pago = Pago::create($request->all());
-        
+
         // Cargar las relaciones necesarias para el correo
         $pago->load(['apartamento', 'reciboGastoComun']);
-        
-        // Actualizar el estatus financiero del apartamento después de crear el pago
-        $pago->apartamento->actualizarEstatusFinanciero();
-        
-        // Enviar correo de confirmación si el apartamento tiene email
-        if ($pago->apartamento->email) {
-            try {
-                Mail::to($pago->apartamento->email)->send(new ComprobantePago($pago));
-                $mensaje = 'Pago registrado exitosamente y correo de confirmación enviado.';
-            } catch (\Exception $e) {
-                \Log::error('Error enviando correo de confirmación: ' . $e->getMessage());
-                $mensaje = 'Pago registrado exitosamente, pero hubo un error al enviar el correo de confirmación.';
-            }
+
+        if ($pago->estado !== 'confirmado') {
+            $mensaje = $isPropietario
+                ? 'Pago registrado y quedó pendiente de confirmación.'
+                : 'Pago registrado exitosamente en estado pendiente de confirmación.';
         } else {
-            $mensaje = 'Pago registrado exitosamente. No se pudo enviar correo (apartamento sin email registrado).';
+            $pago->apartamento->actualizarEstatusFinanciero();
+
+            if ($pago->apartamento->email) {
+                try {
+                    Mail::to($pago->apartamento->email)->send(new ComprobantePago($pago));
+                    $mensaje = 'Pago registrado exitosamente y correo de confirmación enviado.';
+                } catch (\Exception $e) {
+                    Log::error('Error enviando correo de confirmación: '.$e->getMessage());
+                    $mensaje = 'Pago registrado exitosamente, pero hubo un error al enviar el correo de confirmación.';
+                }
+            } else {
+                $mensaje = 'Pago registrado exitosamente. No se pudo enviar correo (apartamento sin email registrado).';
+            }
         }
 
         // Capturar los parámetros de filtro para mantenerlos en la redirección
         $filtros = $request->only(['numero_apartamento', 'nombre_propietario', 'estado_deuda', 'numero_recibo']);
-        
+
         return redirect()->route('deudas.index', $filtros)
             ->with('success', $mensaje);
     }
@@ -141,6 +152,7 @@ class PagoController extends Controller
     public function show(Pago $pago)
     {
         $pago->load(['apartamento', 'reciboGastoComun']);
+
         return view('pagos.show', compact('pago'));
     }
 
@@ -151,7 +163,7 @@ class PagoController extends Controller
     {
         $apartamentos = Apartamento::orderBy('numero')->get();
         $recibos = ReciboGastoComun::whereIn('estado', ['activo', 'vencido'])->orderBy('fecha_emision', 'desc')->get();
-        
+
         return view('pagos.edit', compact('pago', 'apartamentos', 'recibos'));
     }
 
@@ -166,13 +178,13 @@ class PagoController extends Controller
             'monto_pagado' => 'required|numeric|min:0.01',
             'fecha_pago' => 'required|date',
             'metodo_pago' => 'required|in:efectivo,pago_movil,transferencia',
-            'numero_comprobante' => 'nullable|string|max:100|unique:pagos,numero_comprobante,' . $pago->id,
+            'numero_comprobante' => 'nullable|string|max:100|unique:pagos,numero_comprobante,'.$pago->id,
             'observaciones' => 'nullable|string|max:1000',
-            'estado' => 'required|in:confirmado,pendiente_confirmacion,rechazado'
+            'estado' => 'required|in:confirmado,pendiente_confirmacion,rechazado',
         ]);
 
         $pago->update($request->all());
-        
+
         // Actualizar el estatus financiero del apartamento después de modificar el pago
         $pago->apartamento->actualizarEstatusFinanciero();
 
@@ -188,36 +200,36 @@ class PagoController extends Controller
         // Validar clave de administrador
         $adminPassword = $request->input('admin_password');
         $configuredPassword = config('app.admin_password', 'admin123'); // Clave por defecto
-        
+
         // Obtener los parámetros de filtro del referer para mantenerlos
         $referer = $request->headers->get('referer');
         $queryParams = [];
-        
+
         if ($referer) {
             $parsedUrl = parse_url($referer);
             if (isset($parsedUrl['query'])) {
                 parse_str($parsedUrl['query'], $queryParams);
             }
         }
-        
-        if (!$adminPassword || $adminPassword !== $configuredPassword) {
+
+        if (! $adminPassword || $adminPassword !== $configuredPassword) {
             return redirect()->route('deudas.index', $queryParams)
                 ->with('error', 'Clave de administrador incorrecta. No se pudo eliminar el pago.');
         }
-        
+
         // Obtener información del pago antes de eliminarlo para el mensaje
         $numeroRecibo = $pago->reciboGastoComun->numero_recibo;
         $numeroApartamento = $pago->apartamento->numero;
         $montoPagado = $pago->monto_pagado;
         $apartamento = $pago->apartamento;
-        
+
         $pago->delete();
-        
+
         // Actualizar el estatus financiero del apartamento después de eliminar el pago
         $apartamento->actualizarEstatusFinanciero();
-        
+
         return redirect()->route('deudas.index', $queryParams)
-            ->with('success', "Pago de $" . number_format($montoPagado, 2, ',', '.') . " eliminado exitosamente. El recibo {$numeroRecibo} del apartamento {$numeroApartamento} ahora tiene saldo pendiente.");
+            ->with('success', 'Pago de $'.number_format($montoPagado, 2, ',', '.')." eliminado exitosamente. El recibo {$numeroRecibo} del apartamento {$numeroApartamento} ahora tiene saldo pendiente.");
     }
 
     /**
@@ -226,12 +238,12 @@ class PagoController extends Controller
     public function estadoCuenta(Apartamento $apartamento)
     {
         $apartamento->load(['pagos.reciboGastoComun', 'recibos']);
-        
+
         // Calcular totales
         $totalPagado = $apartamento->pagos->where('estado', 'confirmado')->sum('monto_pagado');
         $totalRecibos = $apartamento->recibos->sum('total_recibo');
         $saldoPendiente = $totalRecibos - $totalPagado;
-        
+
         return view('pagos.estado-cuenta', compact('apartamento', 'totalPagado', 'totalRecibos', 'saldoPendiente'));
     }
 
@@ -240,8 +252,37 @@ class PagoController extends Controller
      */
     public function confirmar(Pago $pago)
     {
-        $pago->update(['estado' => 'confirmado']);
-        
+        $user = Auth::user();
+        $isAdmin = $user && method_exists($user, 'isAdmin') && $user->isAdmin();
+
+        if (! $isAdmin) {
+            abort(403);
+        }
+
+        if ($pago->estado !== 'confirmado') {
+            $pago->update(['estado' => 'confirmado']);
+        }
+
+        $pago->load(['apartamento', 'reciboGastoComun']);
+
+        if ($pago->apartamento) {
+            $pago->apartamento->actualizarEstatusFinanciero();
+        }
+
+        if ($pago->apartamento && $pago->apartamento->email) {
+            try {
+                Mail::to($pago->apartamento->email)->send(new ComprobantePago($pago));
+
+                return redirect()->back()
+                    ->with('success', 'Pago confirmado exitosamente y correo enviado.');
+            } catch (\Exception $e) {
+                Log::error('Error enviando correo de confirmación: '.$e->getMessage());
+
+                return redirect()->back()
+                    ->with('success', 'Pago confirmado exitosamente, pero hubo un error al enviar el correo.');
+            }
+        }
+
         return redirect()->back()
             ->with('success', 'Pago confirmado exitosamente.');
     }
@@ -252,14 +293,14 @@ class PagoController extends Controller
     public function rechazar(Request $request, Pago $pago)
     {
         $request->validate([
-            'motivo_rechazo' => 'required|string|max:500'
+            'motivo_rechazo' => 'required|string|max:500',
         ]);
-        
+
         $pago->update([
             'estado' => 'rechazado',
-            'observaciones' => $pago->observaciones . ' | Motivo rechazo: ' . $request->motivo_rechazo
+            'observaciones' => $pago->observaciones.' | Motivo rechazo: '.$request->motivo_rechazo,
         ]);
-        
+
         return redirect()->back()
             ->with('success', 'Pago rechazado.');
     }
@@ -271,17 +312,17 @@ class PagoController extends Controller
     public function getRecibosPorApartamento(Request $request)
     {
         $apartamentoId = $request->apartamento_id;
-        
-        if (!$apartamentoId) {
+
+        if (! $apartamentoId) {
             return response()->json([]);
         }
-        
+
         // Obtener solo los recibos asignados al apartamento a través de la tabla pagos
         // Excluir pagos rechazados para evitar mostrar recibos desasignados
-        $recibosAsignados = ReciboGastoComun::whereHas('pagos', function($query) use ($apartamentoId) {
-                $query->where('apartamento_id', $apartamentoId)
-                      ->where('estado', '!=', 'rechazado');
-            })
+        $recibosAsignados = ReciboGastoComun::whereHas('pagos', function ($query) use ($apartamentoId) {
+            $query->where('apartamento_id', $apartamentoId)
+                ->where('estado', '!=', 'rechazado');
+        })
             ->whereIn('estado', ['activo', 'vencido'])
             ->orderBy('fecha_vencimiento', 'asc')
             ->get();
@@ -295,9 +336,9 @@ class PagoController extends Controller
                 ->where('recibo_gasto_comun_id', $recibo->id)
                 ->where('estado', 'confirmado')
                 ->sum('monto_pagado');
-            
+
             $saldoPendiente = $recibo->total_recibo - $totalPagado;
-            
+
             // Solo incluir recibos con saldo pendiente > 0
             if ($saldoPendiente > 0) {
                 // Agregar el saldo pendiente calculado al recibo
@@ -308,11 +349,11 @@ class PagoController extends Controller
                     'periodo' => $recibo->periodo,
                     'total_recibo' => $recibo->total_recibo,
                     'fecha_vencimiento' => $recibo->fecha_vencimiento,
-                    'saldo_pendiente' => $saldoPendiente
+                    'saldo_pendiente' => $saldoPendiente,
                 ]);
             }
         }
-            
+
         return response()->json($recibosConSaldo);
     }
 
@@ -323,28 +364,28 @@ class PagoController extends Controller
     {
         $apartamentoId = $request->apartamento_id;
         $reciboId = $request->recibo_id;
-        
-        if (!$apartamentoId || !$reciboId) {
+
+        if (! $apartamentoId || ! $reciboId) {
             return response()->json(['error' => 'Parámetros requeridos'], 400);
         }
-        
+
         $recibo = ReciboGastoComun::find($reciboId);
-        if (!$recibo) {
+        if (! $recibo) {
             return response()->json(['error' => 'Recibo no encontrado'], 404);
         }
-        
+
         // Calcular total pagado para este recibo y apartamento
         $totalPagado = Pago::where('apartamento_id', $apartamentoId)
             ->where('recibo_gasto_comun_id', $reciboId)
             ->where('estado', 'confirmado')
             ->sum('monto_pagado');
-            
+
         $saldoPendiente = $recibo->total_recibo - $totalPagado;
-        
+
         return response()->json([
             'total_recibo' => $recibo->total_recibo,
             'total_pagado' => $totalPagado,
-            'saldo_pendiente' => max(0, $saldoPendiente)
+            'saldo_pendiente' => max(0, $saldoPendiente),
         ]);
     }
 
@@ -355,10 +396,10 @@ class PagoController extends Controller
     {
         // Obtener solo los recibos asignados al apartamento a través de la tabla pagos
         // Excluir pagos rechazados para evitar mostrar recibos desasignados
-        $recibosAsignados = ReciboGastoComun::whereHas('pagos', function($query) use ($apartamento) {
-                $query->where('apartamento_id', $apartamento->id)
-                      ->where('estado', '!=', 'rechazado');
-            })
+        $recibosAsignados = ReciboGastoComun::whereHas('pagos', function ($query) use ($apartamento) {
+            $query->where('apartamento_id', $apartamento->id)
+                ->where('estado', '!=', 'rechazado');
+        })
             ->whereIn('estado', ['activo', 'vencido'])
             ->orderBy('fecha_vencimiento', 'asc')
             ->get();
@@ -373,9 +414,9 @@ class PagoController extends Controller
                 ->where('recibo_gasto_comun_id', $recibo->id)
                 ->where('estado', 'confirmado')
                 ->sum('monto_pagado');
-            
+
             $saldoPendiente = $recibo->total_recibo - $totalPagado;
-            
+
             // Solo incluir recibos con saldo pendiente > 0
             if ($saldoPendiente > 0) {
                 // Agregar el saldo pendiente calculado al recibo
@@ -405,56 +446,58 @@ class PagoController extends Controller
         $apartamento = Apartamento::find($request->apartamento_id);
         $montoRestante = $request->monto_total;
         $pagosCreados = [];
-        
+
         // Obtener solo los recibos asignados al apartamento a través de la tabla pagos
         // Excluir pagos rechazados para evitar procesar recibos desasignados
-        $recibosAsignados = ReciboGastoComun::whereHas('pagos', function($query) use ($apartamento) {
+        $recibosAsignados = ReciboGastoComun::whereHas('pagos', function ($query) use ($apartamento) {
+            $query->where('apartamento_id', $apartamento->id)
+                ->where('estado', '!=', 'rechazado');
+        })
+            ->with(['pagos' => function ($query) use ($apartamento) {
                 $query->where('apartamento_id', $apartamento->id)
-                      ->where('estado', '!=', 'rechazado');
-            })
-            ->with(['pagos' => function($query) use ($apartamento) {
-                $query->where('apartamento_id', $apartamento->id)
-                      ->where('estado', 'confirmado');
+                    ->where('estado', 'confirmado');
             }])
             ->orderBy('fecha_vencimiento', 'asc')
             ->get();
-            
+
         // Filtrar solo los recibos con saldo pendiente para este apartamento
         $recibosConSaldo = collect();
-        
+
         foreach ($recibosAsignados as $recibo) {
             $totalPagado = $recibo->pagos->sum('monto_pagado');
             $saldoPendiente = $recibo->total_recibo - $totalPagado;
-            
+
             if ($saldoPendiente > 0) {
                 $recibo->saldo_pendiente_calculado = $saldoPendiente;
                 $recibosConSaldo->push($recibo);
             }
         }
-        
+
         // Nueva lógica de distribución según requerimiento:
         // 1. Recibos más recientes con estado 'activo' (ordenados por fecha descendente)
         // 2. Recibos más antiguos con estado 'vencido' (ordenados por fecha ascendente)
-        
+
         $recibosActivos = $recibosConSaldo->where('estado', 'activo')
             ->sortByDesc('fecha_emision'); // Más recientes primero
-            
+
         $recibosVencidos = $recibosConSaldo->where('estado', 'vencido')
             ->sortBy('fecha_vencimiento'); // Más antiguos primero
-            
+
         // Combinar en el orden de prioridad: activos recientes + vencidos antiguos
         $recibosOrdenados = $recibosActivos->concat($recibosVencidos);
-            
+
         // Procesar los recibos con saldo pendiente en el orden de prioridad
         foreach ($recibosOrdenados as $recibo) {
-            if ($montoRestante <= 0) break;
-            
+            if ($montoRestante <= 0) {
+                break;
+            }
+
             // Usar el saldo pendiente ya calculado
             $saldoPendiente = $recibo->saldo_pendiente_calculado;
-            
+
             // Determinar cuánto pagar de este recibo
             $montoPagar = min($montoRestante, $saldoPendiente);
-            
+
             // Crear el pago
             $pago = Pago::create([
                 'apartamento_id' => $apartamento->id,
@@ -463,19 +506,19 @@ class PagoController extends Controller
                 'fecha_pago' => $request->fecha_pago,
                 'metodo_pago' => $request->metodo_pago,
                 'numero_comprobante' => $request->numero_comprobante,
-                'observaciones' => ($request->observaciones ?? '') . ' | Pago global distribuido automáticamente',
-                'estado' => 'confirmado'
+                'observaciones' => ($request->observaciones ?? '').' | Pago global distribuido automáticamente',
+                'estado' => 'confirmado',
             ]);
-            
+
             $pagosCreados[] = $pago;
             $montoRestante -= $montoPagar;
         }
-        
+
         // Si queda monto restante, asociarlo al recibo más reciente asignado
         if ($montoRestante > 0) {
             // Buscar el recibo más reciente asignado al apartamento
             $reciboReciente = $recibosAsignados->sortByDesc('fecha_emision')->first();
-                
+
             if ($reciboReciente) {
                 $pago = Pago::create([
                     'apartamento_id' => $apartamento->id,
@@ -484,28 +527,28 @@ class PagoController extends Controller
                     'fecha_pago' => $request->fecha_pago,
                     'metodo_pago' => $request->metodo_pago,
                     'numero_comprobante' => $request->numero_comprobante,
-                    'observaciones' => ($request->observaciones ?? '') . ' | Pago global - monto excedente',
-                    'estado' => 'confirmado'
+                    'observaciones' => ($request->observaciones ?? '').' | Pago global - monto excedente',
+                    'estado' => 'confirmado',
                 ]);
-                
+
                 $pagosCreados[] = $pago;
             }
         }
-        
+
         // Enviar correo de confirmación si el apartamento tiene email
-        if ($apartamento->email && !empty($pagosCreados)) {
+        if ($apartamento->email && ! empty($pagosCreados)) {
             try {
                 // Enviar correo con el primer pago creado como referencia
                 Mail::to($apartamento->email)->send(new ComprobantePago($pagosCreados[0]));
-                $mensaje = 'Pago global procesado exitosamente. Se distribuyó entre ' . count($pagosCreados) . ' recibo(s). Correo de confirmación enviado.';
+                $mensaje = 'Pago global procesado exitosamente. Se distribuyó entre '.count($pagosCreados).' recibo(s). Correo de confirmación enviado.';
             } catch (\Exception $e) {
-                \Log::error('Error enviando correo de confirmación: ' . $e->getMessage());
-                $mensaje = 'Pago global procesado exitosamente. Se distribuyó entre ' . count($pagosCreados) . ' recibo(s). Error al enviar correo de confirmación.';
+                \Log::error('Error enviando correo de confirmación: '.$e->getMessage());
+                $mensaje = 'Pago global procesado exitosamente. Se distribuyó entre '.count($pagosCreados).' recibo(s). Error al enviar correo de confirmación.';
             }
         } else {
-            $mensaje = 'Pago global procesado exitosamente. Se distribuyó entre ' . count($pagosCreados) . ' recibo(s).';
+            $mensaje = 'Pago global procesado exitosamente. Se distribuyó entre '.count($pagosCreados).' recibo(s).';
         }
-        
+
         return redirect()->route('deudas.show', $apartamento)
             ->with('success', $mensaje);
     }

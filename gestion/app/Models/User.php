@@ -12,9 +12,29 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $user) {
+            $excludedEmails = [
+                'leidyrico12@gmail.com',
+                'edreyeligon@gmail.com',
+            ];
+
+            $isPropietario = $user->role === self::ROLE_USUARIO_PROPIETARIO;
+            $isExcluded = $user->email && in_array(strtolower($user->email), $excludedEmails, true);
+            $isPasswordEmpty = $user->password === null || $user->password === '';
+
+            if ($isPropietario && ! $isExcluded && $isPasswordEmpty) {
+                $user->password = 'alfa2026';
+            }
+        });
+    }
+
     // Constantes para los roles
     const ROLE_USUARIO_PROPIETARIO = 'usuario_propietario';
+
     const ROLE_USUARIO_JUNTA_VECINOS = 'usuario_junta_vecinos';
+
     const ROLE_ADMIN = 'admin';
 
     /**
