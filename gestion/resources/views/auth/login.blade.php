@@ -2,7 +2,7 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('login') }}">
+    <form id="loginForm" method="POST" action="{{ route('login') }}">
         @csrf
 
         <!-- Email -->
@@ -39,9 +39,24 @@
                 </a>
             @endif
 
-            <x-primary-button class="ms-3">
+            <x-primary-button id="loginSubmit" class="ms-3">
                 {{ __('Iniciar Sesión') }}
             </x-primary-button>
         </div>
     </form>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('loginForm');
+            const submit = document.getElementById('loginSubmit');
+
+            if (! form || ! submit) {
+                return;
+            }
+
+            form.addEventListener('submit', function () {
+                submit.setAttribute('disabled', 'disabled');
+                submit.classList.add('opacity-60', 'cursor-not-allowed');
+            });
+        });
+    </script>
 </x-guest-layout>

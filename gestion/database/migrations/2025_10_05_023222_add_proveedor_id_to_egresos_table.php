@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('egresos_temp_1759253507')) {
+            return;
+        }
+
         Schema::table('egresos_temp_1759253507', function (Blueprint $table) {
             $table->foreignId('proveedor_id')->nullable()->constrained('proveedors')->onDelete('set null');
         });
@@ -21,6 +25,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('egresos_temp_1759253507')) {
+            return;
+        }
+
         Schema::table('egresos_temp_1759253507', function (Blueprint $table) {
             $table->dropForeign(['proveedor_id']);
             $table->dropColumn('proveedor_id');

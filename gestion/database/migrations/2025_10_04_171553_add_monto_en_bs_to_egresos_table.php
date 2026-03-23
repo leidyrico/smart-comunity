@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('egresos_temp_1759253507')) {
+            return;
+        }
+
         Schema::table('egresos_temp_1759253507', function (Blueprint $table) {
             $table->decimal('monto_en_bs', 15, 2)->nullable()->after('monto');
         });
@@ -21,6 +25,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('egresos_temp_1759253507')) {
+            return;
+        }
+
         Schema::table('egresos_temp_1759253507', function (Blueprint $table) {
             $table->dropColumn('monto_en_bs');
         });

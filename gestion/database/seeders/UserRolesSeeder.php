@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class UserRolesSeeder extends Seeder
@@ -58,5 +57,25 @@ class UserRolesSeeder extends Seeder
             'role' => User::ROLE_ADMIN,
             'status' => true,
         ]);
+
+        User::updateOrCreate(
+            ['email' => 'presidente@residenciasalfa.com'],
+            [
+                'name' => 'Presidente Junta de Condominio',
+                'password' => Hash::make('alfa2026'),
+                'role' => User::ROLE_USUARIO_CONDOMINIO,
+                'status' => true,
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'tesorero@residenciasalfa.com'],
+            [
+                'name' => 'Tesorero Junta de Condominio',
+                'password' => Hash::make('alfa2026'),
+                'role' => User::ROLE_USUARIO_CONDOMINIO,
+                'status' => true,
+            ]
+        );
     }
 }

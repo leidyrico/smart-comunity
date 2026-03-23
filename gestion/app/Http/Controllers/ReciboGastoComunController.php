@@ -29,6 +29,9 @@ class ReciboGastoComunController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
+        $isPropietario = $user && method_exists($user, 'isUsuarioPropietario') && $user->isUsuarioPropietario();
+
         $query = ReciboGastoComun::query();
 
         // Filtros
@@ -44,21 +47,49 @@ class ReciboGastoComunController extends Controller
             $query->where('estado', $request->estado);
         }
 
-        $recibos = $query->orderBy('periodo', 'desc')->orderBy('fecha_emision', 'desc')->get();
+        if ($isPropietario) {
+            $apartamentoId = $user->apartamento_id;
+
+            if ($apartamentoId) {
+                $query->whereHas('pagos', function ($q) use ($apartamentoId) {
+                    $q->where('apartamento_id', $apartamentoId)
+                        ->where('estado', '!=', 'rechazado');
+                });
+            } else {
+                $query->whereRaw('0 = 1');
+            }
+        }
+
+        $recibos = (clone $query)->orderBy('periodo', 'desc')->orderBy('fecha_emision', 'desc')->get();
 
         // Calcular estadísticas de recibos vencidos
-        $estadisticas = [
-            'total_recibos' => ReciboGastoComun::count(),
-            'recibos_activos' => ReciboGastoComun::where('estado', 'activo')->count(),
-            'recibos_vencidos' => ReciboGastoComun::where('estado', 'vencido')->count(),
-            'recibos_anulados' => ReciboGastoComun::where('estado', 'anulado')->count(),
-            'total_valor_vencidos' => ReciboGastoComun::where('estado', 'vencido')->sum('total_recibo'),
-            'total_valor_activos' => ReciboGastoComun::where('estado', 'activo')->sum('total_recibo'),
-            'recibos_vencidos_detalle' => ReciboGastoComun::where('estado', 'vencido')
-                ->orderBy('fecha_vencimiento', 'asc')
-                ->take(5)
-                ->get(['numero_recibo', 'periodo', 'fecha_vencimiento', 'total_recibo']),
-        ];
+        if ($isPropietario) {
+            $estadisticas = [
+                'total_recibos' => (clone $query)->count(),
+                'recibos_activos' => (clone $query)->where('estado', 'activo')->count(),
+                'recibos_vencidos' => (clone $query)->where('estado', 'vencido')->count(),
+                'recibos_anulados' => (clone $query)->where('estado', 'anulado')->count(),
+                'total_valor_vencidos' => (clone $query)->where('estado', 'vencido')->sum('total_recibo'),
+                'total_valor_activos' => (clone $query)->where('estado', 'activo')->sum('total_recibo'),
+                'recibos_vencidos_detalle' => (clone $query)->where('estado', 'vencido')
+                    ->orderBy('fecha_vencimiento', 'asc')
+                    ->take(5)
+                    ->get(['numero_recibo', 'periodo', 'fecha_vencimiento', 'total_recibo']),
+            ];
+        } else {
+            $estadisticas = [
+                'total_recibos' => ReciboGastoComun::count(),
+                'recibos_activos' => ReciboGastoComun::where('estado', 'activo')->count(),
+                'recibos_vencidos' => ReciboGastoComun::where('estado', 'vencido')->count(),
+                'recibos_anulados' => ReciboGastoComun::where('estado', 'anulado')->count(),
+                'total_valor_vencidos' => ReciboGastoComun::where('estado', 'vencido')->sum('total_recibo'),
+                'total_valor_activos' => ReciboGastoComun::where('estado', 'activo')->sum('total_recibo'),
+                'recibos_vencidos_detalle' => ReciboGastoComun::where('estado', 'vencido')
+                    ->orderBy('fecha_vencimiento', 'asc')
+                    ->take(5)
+                    ->get(['numero_recibo', 'periodo', 'fecha_vencimiento', 'total_recibo']),
+            ];
+        }
 
         return view('recibos.index', compact('recibos', 'estadisticas'));
     }

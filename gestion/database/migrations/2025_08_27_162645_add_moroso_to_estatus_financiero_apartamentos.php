@@ -12,6 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Modificar el enum para incluir 'moroso'
         DB::statement("ALTER TABLE apartamentos MODIFY COLUMN estatus_financiero ENUM('solvente', 'deudor', 'moroso') DEFAULT 'solvente'");
     }
@@ -21,6 +25,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Revertir el enum a su estado original
         DB::statement("ALTER TABLE apartamentos MODIFY COLUMN estatus_financiero ENUM('solvente', 'deudor') DEFAULT 'solvente'");
     }

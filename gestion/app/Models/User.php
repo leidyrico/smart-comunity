@@ -35,6 +35,8 @@ class User extends Authenticatable
 
     const ROLE_USUARIO_JUNTA_VECINOS = 'usuario_junta_vecinos';
 
+    const ROLE_USUARIO_CONDOMINIO = 'usuario_condominio';
+
     const ROLE_ADMIN = 'admin';
 
     /**
@@ -121,7 +123,7 @@ class User extends Authenticatable
      */
     public function isAdmin()
     {
-        return $this->role === self::ROLE_ADMIN;
+        return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_USUARIO_CONDOMINIO], true);
     }
 
     /**
@@ -132,6 +134,7 @@ class User extends Authenticatable
         return [
             self::ROLE_USUARIO_PROPIETARIO => 'Usuario Propietario',
             self::ROLE_USUARIO_JUNTA_VECINOS => 'Usuario Junta de Vecinos',
+            self::ROLE_USUARIO_CONDOMINIO => 'Usuario Condominio',
             self::ROLE_ADMIN => 'Administrador',
         ];
     }
